@@ -145,7 +145,8 @@ int InitGL(){
 	// LoadObj("../models/cube.obj", &mesh);
 	// LoadObj("../models/monkey.obj", &mesh);
 	// LoadObj("../models/3d_arrow.obj", &mesh);
-	LoadObj("../models/polygons.obj", &mesh);
+	// LoadObj("../models/polygons.obj", &mesh);
+	LoadObj("../models/armature_test.obj", &mesh);
 	// LoadObj("../models/camera.obj", &mesh);
 	// LoadObj("../models/multi_mesh.obj", &mesh);
 	// LoadObj("../models/mug.obj", &mesh);
@@ -249,7 +250,7 @@ int InitGL(){
 // static float value = 0;
 static Vector3 direction = {0, 0, 0};
 static Vector3 view_position = {0, 0, 0};
-static Vector3 mesh_position = {0, 0.5, 0};
+static Vector3 mesh_position = {0, 0.0, 0};
 static float view_distance = 5;
 static float yaw, pitch;
 #include "ui/elements/slider.h"

@@ -178,33 +178,30 @@ void LoadObj(const char *path, MeshObject *mesh){
 
 				char vertex_string[128];
 
-				// Orders face data {{x, y, z}, {u, v, w}, {Nx, Ny, Nz}}
-				for(int attribute = 0; attribute < num_attributes; attribute++){
-					strcpy(vertex_string, GetFaceIndex(strchr(line_buffer, ' ') + 1, ' ', attribute));
-					// To parse triangles simply retrieve vertices
-					if(num_polygon_verts == 3){
-						for(int vert = 0; vert < 3; vert++){
-							mesh->f[mesh->num_faces * num_attributes * 3 + attribute * 3 + vert] = strtol(GetFaceIndex(vertex_string, '/', vert), NULL, 10);
+				// To parse triangles simply retrieve vertices
+				if(num_polygon_verts == 3){
+					// Orders face data {{x, y, z}, {u, v, w}, {Nx, Ny, Nz}} - nope
+					// Orders face data {{x, u, Nx}, {y, v, Nz}, {z, w, Nz}}
+					for(int vert = 0; vert < num_attributes; vert++){
+						strcpy(vertex_string, GetFaceIndex(strchr(line_buffer, ' ') + 1, ' ', vert));
+						for(int attr = 0; attr < 3; attr++){
+							mesh->f[mesh->num_vertices * num_attributes + vert * num_attributes + attr] = strtol(GetFaceIndex(vertex_string, '/', attr), NULL, 10);
 						}
-					
-					// To parse quads, first convert to triangles
-					}else{
-						printf("QUAD!\n");
-						// Get quad vertices
-						unsigned int v1 = strtol(GetFaceIndex(vertex_string, '/', 0), NULL, 10);
-						unsigned int v2 = strtol(GetFaceIndex(vertex_string, '/', 1), NULL, 10);
-						unsigned int v3 = strtol(GetFaceIndex(vertex_string, '/', 2), NULL, 10);
-						unsigned int v4 = strtol(GetFaceIndex(vertex_string, '/', 3), NULL, 10);
-						
-						// Triangle 1
-						mesh->f[mesh->num_faces * num_attributes * 3 + attribute * 3 + 0] = v1;
-						mesh->f[mesh->num_faces * num_attributes * 3 + attribute * 3 + 1] = v2;
-						mesh->f[mesh->num_faces * num_attributes * 3 + attribute * 3 + 2] = v3;
-						
-						// Triangle 2
-						mesh->f[(mesh->num_faces + 1) * num_attributes * 3 + attribute * 3 + 0] = v3;
-						mesh->f[(mesh->num_faces + 1) * num_attributes * 3 + attribute * 3 + 1] = v4;
-						mesh->f[(mesh->num_faces + 1) * num_attributes * 3 + attribute * 3 + 2] = v1;
+					}
+				// Parse quads and convert to triangles
+				}else{
+					int tmp[] = {0, 1, 2, 2, 3, 0};
+					for(int vert = 0; vert < 6; vert++){
+						strcpy(vertex_string, GetFaceIndex(strchr(line_buffer, ' ') + 1, ' ', tmp[vert]));
+						for(int attrib = 0; attrib < num_attributes; attrib++){
+							mesh->f[mesh->num_vertices * num_attributes + vert * num_attributes + attrib] = strtol(GetFaceIndex(vertex_string, '/', attrib), NULL, 10);
+						}
+						// int attr1 = strtol(GetFaceIndex(vertex_string, '/', 0), NULL, 10);
+						// int attr2 = strtol(GetFaceIndex(vertex_string, '/', 1), NULL, 10);
+						// int attr3 = strtol(GetFaceIndex(vertex_string, '/', 2), NULL, 10);						
+						// mesh->f[mesh->num_vertices * num_attributes + vert * num_attributes + 0] = attr1;
+						// mesh->f[mesh->num_vertices * num_attributes + vert * num_attributes + 1] = attr2;
+						// mesh->f[mesh->num_vertices * num_attributes + vert * num_attributes + 2] = attr3;
 					}
 				}
 				mesh->num_vertices += (num_polygon_verts - 2) * 3;
