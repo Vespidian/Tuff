@@ -1,0 +1,39 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"problems.decorations.enabled": false,
+		"explorer.sortOrder": "type",
+		"files.associations": {
+			"*.fs": "glsl",
+			"*.tcc": "c",
+			"button.h": "c",
+			"ui_elements.h": "c",
+			"event.h": "c",
+			"render_text.h": "c",
+			"sandbox.h": "c",
+			"start_screen.h": "c",
+			"renderer.h": "c",
+			"text_event.h": "c",
+			"resizable_rect.h": "c",
+			"global.h": "c",
+			"tilesheet.h": "c",
+			"unistd.h": "c",
+			"chunk.h": "c",
+			"mask.h": "c",
+			"quad.h": "c",
+			"slider.h": "c",
+			"checkbox.h": "c",
+			"stdio.h": "c",
+			"stdlib.h": "c",
+			"gl_context.h": "c",
+			"debug.h": "c",
+			"obj_loader.h": "c",
+			"gl_utils.h": "c",
+			"ui.h": "c"
+		}
+	}
+}

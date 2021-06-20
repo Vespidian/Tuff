@@ -1,0 +1,27 @@
+{
+    "C_Cpp.errorSquiggles": "Disabled",
+    "problems.decorations.enabled": false,
+    "C_Cpp.dimInactiveRegions": true,
+    "explorer.sortOrder": "type",
+    "C_Cpp.default.includePath": [
+        "C:/c_libs/include",
+        "C:/MinGW/include"
+    ],
+	"terminal.external.windowsExec": "S:\Programs\cmder\Cmder.exe"
+    "files.associations": {
+        "*.tcc": "c",
+        "button.h": "c",
+        "ui_elements.h": "c",
+        "event.h": "c",
+        "render_text.h": "c",
+        "sandbox.h": "c",
+        "start_screen.h": "c",
+        "renderer.h": "c",
+        "text_event.h": "c",
+        "resizable_rect.h": "c",
+        "global.h": "c",
+        "tilesheet.h": "c",
+        "unistd.h": "c",
+        "chunk.h": "c"
+    },
+}
