@@ -24,13 +24,17 @@ void main(){
 		// discard;
 	FragColor.a *= 1 - distance(vert_v.xyz, vec3(0)) * 10;
 
+	// z axis
 	if(distance(vert_v.x, 0) * 100 < 0.025f){
-		FragColor = vec4(1, 0, 0, 1);
-	}
-	if(distance(vert_v.z, 0) * 100 < 0.025f){
 		FragColor = vec4(0, 0, 1, 1);
 	}
 
+	// x axis
+	if(distance(vert_v.z, 0) * 100 < 0.025f){
+		FragColor = vec4(1, 0, 0, 1);
+	}
+
+	// y axis
 	if(distance(vert_v.xyz, vec3(0)) * 10 < 0.01){
 		FragColor = vec4(0, 1, 0, 1);
 	}

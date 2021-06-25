@@ -237,6 +237,8 @@ TextureObject LoadTexture(const char *path){
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    // GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    // GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
     tmp_surface = IMG_Load(path);
 	if(tmp_surface == NULL){
@@ -246,6 +248,7 @@ TextureObject LoadTexture(const char *path){
     InvertSurfaceVertical(tmp_surface);
 
     TextureObject tex_out = {texture, tmp_surface->w, tmp_surface->h};
+	printf("%s\n", path);
     if(tmp_surface){
         GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tmp_surface->w, tmp_surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp_surface->pixels));
         GLCall(glGenerateMipmap(GL_TEXTURE_2D));
@@ -255,7 +258,6 @@ TextureObject LoadTexture(const char *path){
 		tex_out = undefined_texture;
     }
     SDL_FreeSurface(tmp_surface);
-
     return tex_out;
 }
 

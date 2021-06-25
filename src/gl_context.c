@@ -9,6 +9,7 @@
 #include "ui/ui.h"
 
 #include "gl_context.h"
+#include "scene/model.h"
 
 
 #include "scene/obj_loader.h"
@@ -35,6 +36,7 @@ unsigned int axis_vao;
 unsigned int axis_vbo;
 unsigned int mesh_shader;
 unsigned int grid_shader;
+unsigned int unlit_shader;
 MeshObject mesh;
 MeshObject axis_mesh;
 mat4 mesh_matrix;
@@ -134,19 +136,24 @@ int InitGL(){
 	crate_tex = LoadTexture("../images/crate.png");
 
 
+
     DebugLog(D_ACT, "Initialized OpenGL");
 
-
-	mesh_shader = LoadShaderProgram("../shaders/mesh.vert", "../shaders/mesh.frag");
+	unlit_shader = LoadShaderProgram("../shaders/mesh.vert", "../shaders/unlit.frag");
+	mesh_shader = LoadShaderProgram("../shaders/mesh.vert", "../shaders/lit.frag");
 	grid_shader = LoadShaderProgram("../shaders/mesh.vert", "../shaders/grid.frag");
 
 	BindKeyEvent(ReloadObj, 'r', SDL_KEYDOWN);
 	LoadObj("../models/axis.obj", &axis_mesh);
 	// LoadObj("../models/cube.obj", &mesh);
-	// LoadObj("../models/monkey.obj", &mesh);
 	// LoadObj("../models/3d_arrow.obj", &mesh);
+	int start = SDL_GetTicks();
+	LoadObj("../models/monkey.obj", &mesh);
 	// LoadObj("../models/polygons.obj", &mesh);
-	LoadObj("../models/armature_test.obj", &mesh);
+	// LoadObj("../models/armature_test.obj", &mesh);
+	// LoadObj("../models/cube.obj", &mesh);
+	// LoadObj("../models/stanford_dragon.obj", &mesh);
+	printf("Loaded mesh in %dms\n", SDL_GetTicks() - start);
 	// LoadObj("../models/camera.obj", &mesh);
 	// LoadObj("../models/multi_mesh.obj", &mesh);
 	// LoadObj("../models/mug.obj", &mesh);
@@ -196,14 +203,14 @@ int InitGL(){
 
 
     glm_mat4_identity(perspective_projection);
-	glm_mat4_identity(mesh_matrix);
     glm_mat4_identity(view_matrix);
+	// glm_mat4_identity(mesh_matrix);
 
-    // set model transform
-    glm_translate(mesh_matrix, (vec3){0, 0, -1.0});
-    // glm_rotate(mesh_matrix, glm_rad(-55), (vec3){1.0, 0.0, 0.0});
-    glm_scale(mesh_matrix, (vec3){0.5, 0.5, 0.5});
-    // glm_scale(mesh_matrix, (vec3){0.1, 0.1, 0.1});
+    // // set model transform
+    // glm_translate(mesh_matrix, (vec3){0, 0, -1.0});
+    // // glm_rotate(mesh_matrix, glm_rad(-55), (vec3){1.0, 0.0, 0.0});
+    // glm_scale(mesh_matrix, (vec3){0.5, 0.5, 0.5});
+    // // glm_scale(mesh_matrix, (vec3){0.1, 0.1, 0.1});
 
     // set view transform
     // glm_translate(view_matrix, (vec3){0, 0, 1.0f});
@@ -213,34 +220,20 @@ int InitGL(){
     // glm_ortho(0.0, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0, -1, 1, projection);
 
     UniformSetMat4(mesh_shader, "projection", perspective_projection);
-    UniformSetMat4(mesh_shader, "model", mesh_matrix);
+    // UniformSetMat4(mesh_shader, "model", mesh_matrix);
     UniformSetMat4(mesh_shader, "view", view_matrix);
-
-    UniformSetMat4(grid_shader, "projection", perspective_projection);
-    UniformSetMat4(grid_shader, "model", mesh_matrix);
-    UniformSetMat4(grid_shader, "view", view_matrix);
-
 	UniformSetInt(mesh_shader, "tex", 0);
 
+    UniformSetMat4(grid_shader, "projection", perspective_projection);
+    // UniformSetMat4(grid_shader, "model", mesh_matrix);
+    UniformSetMat4(grid_shader, "view", view_matrix);
 
-	// for(int i = 0; i < 3 * 3 * 3 * 64; i++){
-	// // for(int i = 0; i < 3; i++){
-	// 	// if(i % 3 == 0){
-	// 	// 	printf("\n");
-	// 	// }
-	// 	if(i % 9 == 0){
-	// 		printf("\n");
-	// 	}
-	// 	// if(data[i] != vert_buffer[i]){
-	// 	// 	// printf("%f, ", data[i]);
-	// 	// 	// printf("%f, ", vert_buffer[i]);
-	// 	// 	// printf("!\n");
-	// 		printf("%f /", vert_buffer[i]);
-	// 	// }
-	// }
-
-	// vert_buffer[0] = 0;
-	// printf("%f\n", vert_buffer[0]);
+	UniformSetMat4(unlit_shader, "projection", perspective_projection);
+    // UniformSetMat4(unlit_shader, "model", mesh_matrix);
+    UniformSetMat4(unlit_shader, "view", view_matrix);
+	UniformSetInt(unlit_shader, "tex", 0);
+	UniformSetVec3_m(unlit_shader, "color", 1, 0.5, 1);
+	UniformSetVec3_m(mesh_shader, "color", 1, 0.5, 1);
 
     GLCall;
     return 0;
@@ -248,22 +241,35 @@ int InitGL(){
 
 
 // static float value = 0;
+float light_time = 0;
+Vector3 light_color = {1, 1, 1};
+TransformObject light_transform = {{1, 0.6, 1.2}, {1, 1, 1}, {0, 0, 0}};
 static Vector3 direction = {0, 0, 0};
 static Vector3 view_position = {0, 0, 0};
 static Vector3 mesh_position = {0, 0.0, 0};
+// static Vector3 light_position = {1, 0.6, 1.2};
 static float view_distance = 5;
 static float yaw, pitch;
 #include "ui/elements/slider.h"
 #include "ui/ui.h"
 #include "renderer/render_text.h"
 void RenderUI(){
+	Vector3 tmp = {0, 0, view_distance};
+	glm_vec3_rotate(tmp.v, -pitch * 2, (vec3){1, 0, 0});
+	glm_vec3_rotate(tmp.v, -yaw, (vec3){0, 1, 0});
+	// float w = view_distance * cos(pitch);
+	glm_vec3_add(view_position.v, tmp.v, tmp.v);
+	// UniformSetVec3(mesh_shader, "view_position", tmp.v);
+	UniformSetVec3(mesh_shader, "view_position", tmp.v);
+
+
 	Vector2 size = {200, 30};
 	Vector2 origin = {SCREEN_WIDTH - size.x / 2 - 10, size.y * 3};
 	Vector2 origin2 = {SCREEN_WIDTH - size.x / 2 - 10, size.y * 3};
-	RenderSlider(&yaw, 0.0, M_PI * 2, VerticalRectList_vec(3, 0, size, origin, 6));
-	RenderSlider(&pitch, 0.0, M_PI * 2, VerticalRectList_vec(3, 1, size, origin, 6));
-	RenderSlider(&direction.z, 0.0, M_PI * 2, VerticalRectList_vec(3, 2, size, origin, 6));
-	RenderTextEx(&default_font, 1, VerticalRectList_vec(3, 0, size, origin2, 6).x, VerticalRectList_vec(3, 0, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x: ");
+	RenderSlider(&light_time, 0.0000, 1.0000, VerticalRectList_vec(3, 0, size, origin, 6));
+	RenderSlider(&tmp.x, 0.0, 10, VerticalRectList_vec(3, 1, size, origin, 6));
+	RenderSlider(&tmp.z, 0.0, 10, VerticalRectList_vec(3, 2, size, origin, 6));
+	RenderTextEx(&default_font, 1, VerticalRectList_vec(3, 0, size, origin2, 6).x, VerticalRectList_vec(3, 0, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "light_time: ");
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(3, 1, size, origin2, 6).x, VerticalRectList_vec(3, 1, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y: ");
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(3, 2, size, origin2, 6).x, VerticalRectList_vec(3, 2, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z: ");
 
@@ -280,6 +286,7 @@ void RenderUI(){
 	
 
 	UniformSetMat4(mesh_shader, "view", view_matrix);
+	UniformSetMat4(unlit_shader, "view", view_matrix);
 	UniformSetMat4(grid_shader, "view", view_matrix);
 	RenderText(&default_font, 1, 0, 0, TEXT_ALIGN_LEFT, "view_distance: %f", view_distance);
 
@@ -287,16 +294,40 @@ void RenderUI(){
     glm_translate(mesh_matrix, mesh_position.v);
 	glm_scale_uni(mesh_matrix, 0.5f);
 
+	// float time = SDL_GetTicks() / 1000.0;
+	// glm_scale_uni(mesh_matrix, 0.1);
     UniformSetMat4(mesh_shader, "model", mesh_matrix);
+	glm_mat4_identity(light_transform.result);
+	glm_translate(light_transform.result, light_transform.position.v);
+	glm_vec3_rotate(light_transform.position.v, light_time, (vec3){0, 1, 0});
+	light_transform.position.y = cos(light_time * 7.5) / 1.5;
+	glm_scale_uni(light_transform.result, 0.25);
+    UniformSetMat4(unlit_shader, "model", light_transform.result);
 
 	glm_scale_uni(axis_matrix, 50.0f);
 	UniformSetMat4(grid_shader, "model", axis_matrix);
+
+
+	UniformSetVec3(mesh_shader, "light_pos", light_transform.position.v);
+	// glm_vec3_rotate(light_transform.position.v, -light_time, (vec3){0, 1, 0});
+	Vector3 color = {sin(light_time), cos(light_time), 1};
+	UniformSetVec3(unlit_shader, "color", color.v);
+	UniformSetVec3(mesh_shader, "light_color", color.v);
+
+	// Vector3 tmp = view_position;
+	// Vector3 tmp = {0, 0, -view_distance};
+	// glm_vec3_rotate(tmp.v, pitch * 2, (vec3){1, 0, 0});
+	// glm_vec3_rotate(tmp.v, yaw, (vec3){0, 1, 0});
+	// // float w = view_distance * cos(pitch);
+	// glm_vec3_add(view_position.v, tmp.v, tmp.v);
+	// // UniformSetVec3(mesh_shader, "view_position", tmp.v);
+	// UniformSetVec3(mesh_shader, "view_position", tmp.v);
 
     // // GLCall;
 }
 void RenderGL(){
 	RenderUI();
-	SetShaderProgram(mesh_shader);
+	// SetShaderProgram(mesh_shader);
 
 	glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, crate_tex.gl_tex);
@@ -306,6 +337,13 @@ void RenderGL(){
 	// glBindBuffer(GL_ARRAY_BUFFER, mesh_vbo);
 	glBindVertexArray(mesh_vao);
 	current_vao = mesh_vao;
+
+
+	SetShaderProgram(unlit_shader);
+	glDrawArrays(GL_TRIANGLES, 0, mesh.num_vertices);
+
+
+	SetShaderProgram(mesh_shader);
 	glDrawArrays(GL_TRIANGLES, 0, mesh.num_vertices);
 
 	// glBindBuffer(GL_ARRAY_BUFFER, mesh_vbo);
@@ -335,6 +373,7 @@ static void Zoom(EventData event){
 		view_distance += zoom_speed;
 	}
 }
+
 static void KeyPresses(EventData event){
 	// Forward / back
 	if(event.keyStates[SDL_SCANCODE_W]){view_position.z += movement_speed;}
@@ -360,6 +399,7 @@ static void WindowResize(EventData event){
     	// glm_mat4_identity(perspective_projection);
 		// printf("width: %d\nheight: %d\n", SCREEN_WIDTH, SCREEN_HEIGHT);
 		glm_perspective(glm_rad(90), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.01, 100, perspective_projection);
+		UniformSetMat4(unlit_shader, "projection", perspective_projection);
 		UniformSetMat4(mesh_shader, "projection", perspective_projection);
 		UniformSetMat4(grid_shader, "projection", perspective_projection);
 	}
@@ -371,78 +411,45 @@ static float sensitivity = 0.01f;
 static float move_sensitivity = 0.01f;
 static void MouseEvent(EventData event){
 	current_pos = (Vector2){mouse_pos.y, mouse_pos.x};
-	if(mouse_clicked){
+	if(mouse_clicked && !ui_hovered){
 		last_pos = (Vector2)current_pos;
 	}
-	if(mouse_held && !ui_hovered){
-		Vector2 difference;
-		glm_vec2_sub((vec2){mouse_pos.y, mouse_pos.x}, last_pos.v, difference.v);
+	// if(*event.mouseState & SDL_BUTTON(SDL_BUTTON_MIDDLE)){
+		if(mouse_held && !ui_hovered){
+			Vector2 difference;
+			glm_vec2_sub((vec2){mouse_pos.y, mouse_pos.x}, last_pos.v, difference.v);
 
-		if(event.keyStates[SDL_SCANCODE_LSHIFT]){
-			vec3 tmp = {difference.y * move_sensitivity, -difference.x * move_sensitivity, 0};
-			// view_position.y -= difference.x * move_sensitivity;
-			// view_position.x += difference.y * move_sensitivity;
-			glm_vec3_rotate(tmp, -pitch * 2, (vec3){1, 0, 0});
-			glm_vec3_rotate(tmp, yaw, (vec3){0, 1, 0});
-			glm_vec3_add(view_position.v, tmp, view_position.v);
-		}else{
-			// direction.x += difference.x * sensitivity;
-			// direction.y += difference.y * sensitivity;
-			yaw += difference.y * sensitivity;
-			pitch += difference.x * sensitivity;
-			// if(direction.x > M_PI * 2){
-			// 	direction.x -= M_PI * 2;
-			// }
-			// if(direction.x < 0){
-			// 	direction.x += M_PI * 2;
-			// }
+			if(event.keyStates[SDL_SCANCODE_LSHIFT]){
+				vec3 tmp = {difference.y * move_sensitivity, -difference.x * move_sensitivity, 0};
+				// view_position.y -= difference.x * move_sensitivity;
+				// view_position.x += difference.y * move_sensitivity;
+				glm_vec3_rotate(tmp, -pitch * 2, (vec3){1, 0, 0});
+				glm_vec3_rotate(tmp, yaw, (vec3){0, 1, 0});
+				glm_vec3_add(view_position.v, tmp, view_position.v);
+			}else{
 
-			// if(direction.y > M_PI * 2){
-			// 	direction.y -= M_PI * 2;
-			// }
-			// if(direction.y < 0){
-			// 	direction.y += M_PI * 2;
-			// }
-			if(pitch > M_PI * 2){
-				pitch -= M_PI * 2;
-			}
-			if(pitch < 0){
-				pitch += M_PI * 2;
+				yaw += difference.y * sensitivity;
+				pitch += difference.x * sensitivity;
+
+				if(pitch > M_PI * 2){
+					pitch -= M_PI * 2;
+				}
+				if(pitch < 0){
+					pitch += M_PI * 2;
+				}
+
+				if(yaw > M_PI * 2){
+					yaw -= M_PI * 2;
+				}
+				if(yaw < 0){
+					yaw += M_PI * 2;
+				}
+
+				direction.x = yaw;
+				direction.y = pitch;
 			}
 
-			if(yaw > M_PI * 2){
-				yaw -= M_PI * 2;
-			}
-			if(yaw < 0){
-				yaw += M_PI * 2;
-			}
-			// yaw += difference.x * sensitivity;
-			// pitch += difference.y * sensitivity;
-			// if(direction.x > 360){
-			// 	direction.x -= 360;
-			// }
-			// if(direction.x < 0){
-			// 	direction.x += 360;
-			// }
-
-			// if(direction.y > 360){
-			// 	direction.y -= 360;
-			// }
-			// if(direction.y < 0){
-			// 	direction.y += 360;
-			// }
-			// direction.x = cos(yaw) * cos(pitch);
-			// direction.y = sin(pitch);
-			// direction.z = sin(yaw) * cos(pitch);
-			// float distance = 10.0;
-			// direction.x = (distance * cos(yaw)) * cos(pitch);
-			// direction.y = distance * sin(pitch);
-			// direction.z = (distance * sin(yaw)) * cos(pitch);
-			// glm_normalize(direction.v);
-			direction.x = yaw;
-			direction.y = pitch;
+			last_pos = (Vector2)current_pos;
 		}
-
-		last_pos = (Vector2)current_pos;
-	}
+	// }
 }

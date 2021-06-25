@@ -13,6 +13,9 @@ out vec3 vert_v;
 out vec3 normal_v;
 out vec3 texture_v;
 
+// Used by light shader
+out vec3 frag_pos_v;
+
 void main(){
 	// vert_v = (projection * view * model * vec4(pos_a, 1)).xyz;
 	vert_v = pos_a;
@@ -21,6 +24,7 @@ void main(){
 	gl_Position = projection * view * model * vec4(pos_a, 1);
 	// gl_Position = projection * view * model * vec4(normal_a, 1);
 	// gl_Position = projection * view * model * vec4(texture_a, 1);
+	frag_pos_v = vec3(model * vec4(pos_a, 1));
 }
 
 // #version 130
