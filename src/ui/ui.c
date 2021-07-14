@@ -12,7 +12,7 @@ bool ui_hovered = false;
 TilesheetObject ui_tilesheet;
 
 void InitUI(){
-	ui_tilesheet = LoadTilesheet("../images/ui/ui.png", 16, 16);
+	ui_tilesheet = LoadTilesheet("../images/ui/ui.png", GL_RGBA, 16, 16);
 
 	DebugLog(D_ACT, "Initialized UI subsystem");
 }

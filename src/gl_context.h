@@ -16,7 +16,6 @@ int InitGL();
 //TMP
 void RenderGL();
 
-extern mat4 projection_matrix;
 extern unsigned int default_shader;
 
 extern int z_depth;

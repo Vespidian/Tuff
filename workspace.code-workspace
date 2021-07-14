@@ -33,7 +33,14 @@
 			"debug.h": "c",
 			"obj_loader.h": "c",
 			"gl_utils.h": "c",
-			"ui.h": "c"
+			"ui.h": "c",
+			"textures.h": "c",
+			"cgltf.h": "c",
+			"cstddef": "c",
+			"cstdlib": "c",
+			"initializer_list": "c",
+			"new": "c",
+			"type_traits": "c"
 		}
 	}
 }

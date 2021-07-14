@@ -11,3 +11,11 @@ void CalculateTransform(TransformObject *transform){
 	glm_mat4_identity(transform->result);
 
 }
+
+// Increase the size of the model buffer in the active scene struct
+// void CreateModel(char *name, )
+
+
+void RenderModel(ModelObject model){
+
+}

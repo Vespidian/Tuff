@@ -15,17 +15,17 @@ void SetQuadProjection();
 void InitQuadRender(){
 	quad_vao = NewVAO(3, ATTR_MAT4, ATTR_VEC4, ATTR_VEC4);
 
-    quad_shader = LoadShaderProgram("../shaders/quad_default.vert", "../shaders/quad_default.frag");
+    quad_shader = LoadShaderProgram("../shaders/quad_default.shader");
 	SetShaderProgram(quad_shader);
 	UniformSetInt(quad_shader, "src_texture", 0);
 	UniformSetMat4(quad_shader, "tex_coordinates", default_texture_coordinates);
-    UniformSetMat4(quad_shader, "projection", projection_matrix);
+    UniformSetMat4(quad_shader, "projection", orthographic_projection);
 
 	BindEvent(EV_ACCURATE, SDL_WINDOWEVENT, SetQuadProjection);
 }
 
 void SetQuadProjection(){
-    UniformSetMat4(quad_shader, "projection", projection_matrix);
+    UniformSetMat4(quad_shader, "projection", orthographic_projection);
 }
 
 void RenderQuad(TextureObject texture, SDL_Rect *src, SDL_Rect *dst, int zpos, Vector4 color, float rot){

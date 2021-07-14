@@ -5,10 +5,16 @@
 
 #include "gl_utils.h"
 
+// Active opengl references
+unsigned int current_shader;
+unsigned int current_vao;
+unsigned int bound_textures[16];
+unsigned int current_texture_unit;
+
 TextureObject undefined_texture;
 
 void InitGLUtils(){
-	undefined_texture = LoadTexture("../images/undefined.png");
+	undefined_texture = LoadTexture("../images/undefined.png", GL_RGBA);
 }
 
 void CheckGLErrors(const char *file, int line){
@@ -45,9 +51,8 @@ void CheckGLErrors(const char *file, int line){
     }
 }
 
-Uint32 LoadShader(Uint32 shader_type, const char *filename){
+void LoadShader(const char *filename, unsigned int *vertex, unsigned int *fragment){
     SDL_RWops *shader_file;
-    Uint32 shader;
     char *shader_source;
     int file_size;
 
@@ -56,46 +61,120 @@ Uint32 LoadShader(Uint32 shader_type, const char *filename){
     if(shader_file == NULL){
         DebugLog(D_ERR, "Shader loading error! Shader file: %s not found", filename);
         printf("Shader loading error! Shader file: %s not found", filename);
-        return 0;
+        return;
     }
+
     // Find length of shader source file
     file_size = SDL_RWseek(shader_file, 0, SEEK_END);
     SDL_RWseek(shader_file, 0, SEEK_SET);
 
     // Allocate space for shader string
     shader_source = (char*)malloc(sizeof(char) * (file_size + 2));
+
     // Read shader to string and null terminate it
     SDL_RWread(shader_file, shader_source, 1, file_size);
     shader_source[file_size + 1] = '\0';
 
-    // Tell opengl to comile the shader
-    shader = glCreateShader(shader_type);
-    GLCall(glShaderSource(shader, 1, (const GLchar*const*)&shader_source, &file_size));
-    GLCall(glCompileShader(shader));
+	// Split string into seperate strings for each shader type
+	char *vert_string;
+	char *frag_string;
+	char shader_type_string[32] = {0}; // String containing the name of the current shader
+	char *header_offset = shader_source; // String pointer for offseting through the 'shader_source' string
+	do{
+		// Find the start of the next shader
+		header_offset = strstr(header_offset, "@shader ");
 
-    // Free variables
-    SDL_RWclose(shader_file);
-    free(shader_source);
+		// Make sure there is a shader left to find
+		if(header_offset == NULL){
+			break;
+		}
+
+		// Set the offset pointer to the start of the shader type
+		header_offset += 8 * sizeof(char);
+
+		// Copy the shader type into the 'shader_type_string'
+		memcpy(shader_type_string, header_offset, strchr(header_offset, '\n') - header_offset - 1);
+
+		// Find the end of the current shader (either the beginning of the next shader or the end of file)
+		char *shader_end = strstr(header_offset, "@shader ");
+		if(shader_end == NULL){
+			shader_end = shader_source + file_size + 1;
+		}
+
+		// Set the offset to the beginning of this shader (Jump over the shader type)
+		header_offset += strchr(header_offset, '\n') - header_offset;
+
+		// Copy shaders into corresponding strings
+		if(strcmp(shader_type_string, "vertex") == 0){
+			vert_string = malloc(shader_end - header_offset);
+			memcpy(vert_string, header_offset, shader_end - header_offset - 1);
+			vert_string[shader_end - header_offset - 1] = 0; // Null terminate the shader string
+
+		}else if(strcmp(shader_type_string, "fragment") == 0){
+			frag_string = malloc(shader_end - header_offset);
+			memcpy(frag_string, header_offset, shader_end - header_offset - 1);
+			frag_string[shader_end - header_offset - 1] = 0; // Null terminate the shader string
+
+		}else{
+			DebugLog(D_WARN, "Error unknown shader type '%s' specified in file '%s'", shader_type_string, filename);
+		}
+
+		// Reset the shader type string
+		memset(shader_type_string, 0, sizeof(shader_type_string));
+	}while(header_offset != NULL);
+
+    // Tell opengl to compile the shader
+
+	// FRAGMENT SHADER
+    unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+	int length = strlen(frag_string);
+    GLCall(glShaderSource(fragment_shader, 1, (const GLchar*const*)&frag_string, &length));
+    GLCall(glCompileShader(fragment_shader));
+
+	free(frag_string);
 
     // Check for errors
     int success;
-    GLCall(glGetShaderiv(shader, GL_COMPILE_STATUS, &success));
+    GLCall(glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success));
     if(!success){
         char info_log[1024];
-        GLCall(glGetShaderInfoLog(shader, 1024, NULL, info_log));
+        GLCall(glGetShaderInfoLog(fragment_shader, 1024, NULL, info_log));
         DebugLog(D_ERR, "Shader: '%s' compilation failed: %s", filename, info_log);
         printf("Shader: '%s' compilation failed: %s", filename, info_log);
-        return 0;
+    }
+	
+	// VERTEX SHADER
+    unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+	length = strlen(vert_string);
+    GLCall(glShaderSource(vertex_shader, 1, (const GLchar*const*)&vert_string, &length));
+    GLCall(glCompileShader(vertex_shader));
+
+	free(vert_string);
+
+    // Check for errors
+    GLCall(glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success));
+    if(!success){
+        char info_log[1024];
+        GLCall(glGetShaderInfoLog(vertex_shader, 1024, NULL, info_log));
+        DebugLog(D_ERR, "Shader: '%s' compilation failed: %s", filename, info_log);
+        printf("Shader: '%s' compilation failed: %s", filename, info_log);
     }
 
-    return shader;
+	// Free variables
+    SDL_RWclose(shader_file);
+    free(shader_source);
+	
+	*vertex = vertex_shader;
+	*fragment = fragment_shader;
 }
 
-Uint32 LoadShaderProgram(const char *vertex_shader_file, const char *fragment_shader_file){
+Uint32 LoadShaderProgram(char *shader_file){
     Uint32 shader_program;
-    Uint32 v, f;
-    v = LoadShader(GL_VERTEX_SHADER, vertex_shader_file);
-    f = LoadShader(GL_FRAGMENT_SHADER, fragment_shader_file);
+    unsigned int v, f;
+    // v = LoadShader(GL_VERTEX_SHADER, vertex_shader_file);
+    // f = LoadShader(GL_FRAGMENT_SHADER, fragment_shader_file);
+	// printf("v before: %u\n", v);
+	LoadShader(shader_file, &v, &f);
 
     shader_program = glCreateProgram();
     GLCall(glAttachShader(shader_program, v));
@@ -121,6 +200,13 @@ void SetShaderProgram(unsigned int shader){
 	if(current_shader != shader){
 		glUseProgram(shader);
 		current_shader = shader;
+	}
+}
+
+void SetVAO(unsigned int vao){
+	if(current_vao != vao){
+		glBindVertexArray(vao);
+		current_vao = vao;
 	}
 }
 
@@ -226,7 +312,7 @@ int InvertSurfaceVertical(SDL_Surface *surface)
     return 0;
 }
 
-TextureObject LoadTexture(const char *path){
+TextureObject LoadTexture(const char *path, int format){
     unsigned int texture;
     SDL_Surface *tmp_surface;
     
@@ -235,10 +321,10 @@ TextureObject LoadTexture(const char *path){
 
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-    // GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-    // GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    // GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    // GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
     tmp_surface = IMG_Load(path);
 	if(tmp_surface == NULL){
@@ -248,9 +334,13 @@ TextureObject LoadTexture(const char *path){
     InvertSurfaceVertical(tmp_surface);
 
     TextureObject tex_out = {texture, tmp_surface->w, tmp_surface->h};
-	printf("%s\n", path);
     if(tmp_surface){
-        GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tmp_surface->w, tmp_surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp_surface->pixels));
+		int internal = GL_RGBA8;
+		if(format == GL_RGB){
+			internal = GL_RGB8;
+		}
+        // GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tmp_surface->w, tmp_surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp_surface->pixels));
+        GLCall(glTexImage2D(GL_TEXTURE_2D, 0, internal, tmp_surface->w, tmp_surface->h, 0, format, GL_UNSIGNED_BYTE, tmp_surface->pixels));
         GLCall(glGenerateMipmap(GL_TEXTURE_2D));
 		DebugLog(D_ACT, "Loaded texture: '%s'", path);
     }else{
@@ -261,6 +351,6 @@ TextureObject LoadTexture(const char *path){
     return tex_out;
 }
 
-TilesheetObject LoadTilesheet(const char *path, int tile_width, int tile_height){
-    return (TilesheetObject){0, LoadTexture(path), tile_width, tile_height};
+TilesheetObject LoadTilesheet(const char *path, int format, int tile_width, int tile_height){
+    return (TilesheetObject){0, LoadTexture(path, format), tile_width, tile_height};
 }

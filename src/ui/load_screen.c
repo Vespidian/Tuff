@@ -15,7 +15,7 @@ int duration = 40000;
 TextureObject loadscreen_texture;
 
 void LoadScreenInit(){
-	loadscreen_texture = LoadTexture("../images/loadScreen.png");
+	loadscreen_texture = LoadTexture("../images/loadScreen.png", GL_RGBA);
 }
 
 void LoadScreen(){

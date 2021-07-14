@@ -37,12 +37,7 @@ mat4 default_texture_coordinates = {
 InstanceBuffer *instance_buffer;
 unsigned int num_instances = 0;
 int num_append_instance_calls = 0;
-
-// Active opengl references
-unsigned int current_shader;
-unsigned int current_vao;
-unsigned int bound_textures[16];
-unsigned int current_texture_unit;
+mat4 orthographic_projection;
 
 void RendererInit(){
 	instance_buffer = malloc(sizeof(InstanceBuffer) * 2);

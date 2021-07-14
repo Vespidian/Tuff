@@ -42,6 +42,15 @@ typedef struct {
 
 typedef struct {
 	union{
+		struct {int r, g, b;};
+		struct {int x, y, z;};
+		struct {int s, t, p;};
+		int v[3];
+	};
+}Vector3_i;
+
+typedef struct {
+	union{
 		struct {float r, g, b, a;};
 		struct {float x, y, z, w;};
 		struct {float s, t, p, q;};

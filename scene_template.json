@@ -1,0 +1,31 @@
+{
+	"meshes" : [
+		"model.gltf" : [1, 2, 4],
+		"lamp.gltf" : [0],
+	],
+	"textures" : [
+		"texture.png",
+	],
+	"shaders" : [
+		"default.glsl",
+	]
+	"objects" : [
+		{
+			"mesh" : 0, 					// Index from 'meshes'
+			"name" : "Cube",
+			"transform" : {
+				"rotation" : [0, 0, 0, 0],
+				"translation" : [0, 0, 0],
+				"scale" : [0, 0, 0],
+			},
+			"material" : {
+				"shader" : 0, 				// Index from 'shaders'
+				"textures" : [0], 			// Index from 'textures'
+				
+			}
+			"objects" : [
+				
+			]
+		}
+	]
+}

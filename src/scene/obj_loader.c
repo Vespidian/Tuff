@@ -219,7 +219,7 @@ void LoadObj(const char *path, MeshObject *mesh){
 
 	// 3 vertices per face
 	// (f, (mesh->num_faces + 1) * 3 * num_components_per_vertex * sizeof(float));
-	mesh->data = malloc((mesh->num_vertices + 1) * num_components_per_vertex * sizeof(float));
+	mesh->vertex_buffer = malloc((mesh->num_vertices + 1) * num_components_per_vertex * sizeof(float));
 
 	// printf("num v: %d\nnum vt: %d\nnum vn: %d\nnum f: %d\n", v_size, vt_size, vn_size, mesh->num_faces);
 
@@ -228,11 +228,11 @@ void LoadObj(const char *path, MeshObject *mesh){
 		for(int attrib = 0; attrib < num_attributes; attrib++){
 			for(int i = 0; i < 3; i++){
 				if(attrib == 0){// v
-					mesh->data[vert * num_components_per_vertex + attrib * 3 + i] =  mesh->v[(mesh->f[vert * num_attributes + attrib] - 1) * 3 + i];
+					mesh->vertex_buffer[vert * num_components_per_vertex + attrib * 3 + i] =  mesh->v[(mesh->f[vert * num_attributes + attrib] - 1) * 3 + i];
 				}else if(attrib == 1){// vt
-					mesh->data[vert * num_components_per_vertex + attrib * 3 + i] = mesh->vt[(mesh->f[vert * num_attributes + attrib] - 1) * 3 + i];
+					mesh->vertex_buffer[vert * num_components_per_vertex + attrib * 3 + i] = mesh->vt[(mesh->f[vert * num_attributes + attrib] - 1) * 3 + i];
 				}else if(attrib == 2){// vn
-					mesh->data[vert * num_components_per_vertex + attrib * 3 + i] = mesh->vn[(mesh->f[vert * num_attributes + attrib] - 1) * 3 + i];
+					mesh->vertex_buffer[vert * num_components_per_vertex + attrib * 3 + i] = mesh->vn[(mesh->f[vert * num_attributes + attrib] - 1) * 3 + i];
 				}
 				// printf("%f /", mesh->data[vert * num_components_per_vertex + attrib * 3 + i]);
 				// printf("%f /", mesh->data[vert * num_components_per_vertex + attrib * 3 + 1]);
@@ -253,7 +253,7 @@ void LoadObj(const char *path, MeshObject *mesh){
 }
 
 void FreeObj(MeshObject *mesh){
-	free(mesh->data);
+	free(mesh->vertex_buffer);
 	free(mesh->v);
 	free(mesh->vt);
 	free(mesh->vn);

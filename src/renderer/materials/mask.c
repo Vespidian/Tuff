@@ -15,15 +15,15 @@ TilesheetObject autotile_mask_sheet;
 void InitMaskedRender(){
 	mask_vao = NewVAO(5, ATTR_MAT4, ATTR_VEC4, ATTR_VEC4, ATTR_VEC4, ATTR_VEC4);
 
-	mask_shader = LoadShaderProgram("../shaders/mask.vert", "../shaders/mask.frag");
+	mask_shader = LoadShaderProgram("../shaders/mask.shader");
 	SetShaderProgram(mask_shader);
 	UniformSetMat4(mask_shader, "tex_coordinates", default_texture_coordinates);
 	UniformSetInt(mask_shader, "top_texture_s", 0);
 	UniformSetInt(mask_shader, "bottom_texture_s", 1);
 	UniformSetInt(mask_shader, "mask_texture_s", 2);
 
-	autotile_mask_sheet = LoadTilesheet("../images/autotile_mask.png", 16, 16);
-	UniformSetMat4(mask_shader, "projection_matrix", projection_matrix);
+	autotile_mask_sheet = LoadTilesheet("../images/autotile_mask.png", GL_RGBA, 16, 16);
+	UniformSetMat4(mask_shader, "orthographic_projection", orthographic_projection);
 	BindEvent(EV_ACCURATE, SDL_WINDOWEVENT, WindowResize);
 }
 
@@ -72,7 +72,7 @@ static void WindowResize(EventData event){
 	if(event.e->window.event == SDL_WINDOWEVENT_RESIZED){
 		// SDL_GetWindowSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
 		// glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-		// glm_ortho(0.0, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0, -z_depth / 2, z_depth / 2, projection_matrix);
-		UniformSetMat4(mask_shader, "projection_matrix", projection_matrix);
+		// glm_ortho(0.0, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0, -z_depth / 2, z_depth / 2, orthographic_projection);
+		UniformSetMat4(mask_shader, "orthographic_projection", orthographic_projection);
 	}
 }

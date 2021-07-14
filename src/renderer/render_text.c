@@ -17,7 +17,7 @@ unsigned int num_fonts = 0;
 static unsigned int nextID = 0;
 
 void InitFonts(){
-    default_font = *NewRawFont("default_font", "../images/fonts/default_font.png", (Vector2){6, 12}, (Vector2){5, 2});
+    default_font = *NewRawFont("default_font", "../images/fonts/default_font.png", GL_RGBA, (Vector2){6, 12}, (Vector2){5, 2});
     DebugLog(D_ACT, "Initialized font subsystem");
 }
 
@@ -37,8 +37,8 @@ FontObject *NewFont(char *name, TilesheetObject *tilesheet, Vector2 char_size, V
     return &font_stack[num_fonts++];
 }
 
-FontObject *NewRawFont(char *name, char *path, Vector2 char_size, Vector2 padding){
-    return NewFont(name, NewTilesheetFromFile(path, char_size.x + padding.x * 2, char_size.y + padding.y * 2), char_size, padding);
+FontObject *NewRawFont(char *name, char *path, int image_format, Vector2 char_size, Vector2 padding){
+    return NewFont(name, NewTilesheetFromFile(path, image_format, char_size.x + padding.x * 2, char_size.y + padding.y * 2), char_size, padding);
 }
 
 FontObject *FindFont(char *name){

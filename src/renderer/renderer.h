@@ -28,31 +28,6 @@ typedef struct InstanceBuffer{
 }InstanceBuffer;
 
 /**
- *  Active shader
- */
-extern unsigned int current_shader;
-
-/**
- *  Active VAO
- */
-extern unsigned int current_vao;
-
-/**
- *  Ordered array of all bound textures
- */
-extern unsigned int bound_textures[16];
-
-/**
- *  Bound texture unit
- */
-extern unsigned int current_texture_unit;
-
-/**
- *  Undefined texture to use in case of error
- */
-extern TextureObject undefined_texture;
-
-/**
  *  Quad texture coordinates
  */
 extern mat4 default_texture_coordinates;
@@ -61,6 +36,11 @@ extern mat4 default_texture_coordinates;
  *  Number of calls to 'AppendInstance()' in current frame
  */
 extern int num_append_instance_calls;
+
+/**
+ *  Orthographic projection matrix for use with ui rendering
+ */
+extern mat4 orthographic_projection;
 
 /**
  *  @brief Initialize the render system

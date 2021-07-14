@@ -3,9 +3,31 @@
 
 void InitGLUtils();
 
+/**
+ *  Active shader
+ */
+extern unsigned int current_shader;
+
+/**
+ *  Active VAO
+ */
+extern unsigned int current_vao;
+
+/**
+ *  Ordered array of all bound textures
+ */
+extern unsigned int bound_textures[16];
+
+/**
+ *  Bound texture unit
+ */
+extern unsigned int current_texture_unit;
+
 void CheckGLErrors(const char *file, int line);
-Uint32 LoadShaderProgram(const char *vertex_shader_file, const char *fragment_shader_file);
+Uint32 LoadShaderProgram(char *shader_file);
+
 void SetShaderProgram(unsigned int shader);
+void SetVAO(unsigned int vao);
 
 void UniformSetBool(Uint32 program, const char *uniform_name, bool value);
 void UniformSetInt(Uint32 program, const char *uniform_name, int value);
@@ -41,8 +63,11 @@ typedef struct TilesheetObject{
     int tile_h;
 }TilesheetObject;
 
+/**
+ *  Undefined texture to use in case of error
+ */
 extern TextureObject undefined_texture;
-TextureObject LoadTexture(const char *path);
-TilesheetObject LoadTilesheet(const char *path, int tile_width, int tile_height);
+TextureObject LoadTexture(const char *path, int format);
+TilesheetObject LoadTilesheet(const char *path, int format, int tile_width, int tile_height);
 
 #endif
