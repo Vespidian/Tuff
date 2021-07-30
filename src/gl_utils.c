@@ -86,6 +86,16 @@ void PassShaderUniforms(ShaderObject *shader){
 			case UNI_MAT4:
 				glUniformMatrix4fv(shader->uniforms[i].uniform, 1, GL_FALSE, shader->uniforms[i]._mat4[0]);
 				break;
+
+			case UNI_SAMPLER1D:
+				glUniform1i(shader->uniforms[i].uniform, shader->uniforms[i]._sampler1d);
+				break;
+			case UNI_SAMPLER2D:
+				glUniform1i(shader->uniforms[i].uniform, shader->uniforms[i]._sampler2d);
+				break;
+			case UNI_SAMPLER3D:
+				glUniform1i(shader->uniforms[i].uniform, shader->uniforms[i]._sampler3d);
+				break;
 		}
 	}
 }
@@ -159,22 +169,20 @@ ShaderObject ParseShaderUniforms(char *name, unsigned int id, char *vertex, char
 				// printf("THIS: %d\n", shader.uniforms[shader.num_uniforms].type);
 
 			}else if(strncmp(uniform_ptr, "sampler", 7) == 0){
-				// uniform_ptr += 7;
+				uniform_ptr += 7;
 				shader.using_texture_slot[num_samplers++] = true;
-				// switch((uniform_ptr)[0]){
-				// 	case '2':
-				// 		shader.uniforms[shader.num_uniforms].type = UNI_SAMPLER1D;
-				// 		break;
-				// 	case '3':
-				// 		shader.uniforms[shader.num_uniforms].type = UNI_SAMPLER2D;
-				// 		break;
-				// 	case '4':
-				// 		shader.uniforms[shader.num_uniforms].type = UNI_SAMPLER3D;
-				// 		break;
-				// }
-				// uniform_ptr += 2;
-				uniform_ptr += 9;
-				shader.uniforms[shader.num_uniforms].type = UNI_INT;
+				switch((uniform_ptr)[0]){
+					case '1':
+						shader.uniforms[shader.num_uniforms].type = UNI_SAMPLER1D;
+						break;
+					case '2':
+						shader.uniforms[shader.num_uniforms].type = UNI_SAMPLER2D;
+						break;
+					case '3':
+						shader.uniforms[shader.num_uniforms].type = UNI_SAMPLER3D;
+						break;
+				}
+				uniform_ptr += 2;
 			}else{
 				shader.uniforms[shader.num_uniforms]._float = 0;
 				if(strncmp(uniform_ptr, "float", 5) == 0){
@@ -229,8 +237,6 @@ ShaderObject ParseShaderUniforms(char *name, unsigned int id, char *vertex, char
 }
 
 ShaderObject LoadShaderProgram(char *filename){
-
-// static void LoadShader(const char *filename, unsigned int *vertex, unsigned int *fragment, char **vertex_source, char **fragment_source){
     SDL_RWops *shader_file;
     char *shader_source;
     int file_size;
@@ -347,17 +353,8 @@ ShaderObject LoadShaderProgram(char *filename){
 	
 	vertex = shaders[0];
 	fragment = shaders[1];
-// }
 
-// Uint32 LoadShaderProgram(char *shader_file){
-    // Uint32 shader_program;
-    // unsigned int v, f;
-    // v = LoadShader(GL_VERTEX_SHADER, vertex_shader_file);
-    // f = LoadShader(GL_FRAGMENT_SHADER, fragment_shader_file);
-	// printf("v before: %u\n", v);
-	// LoadShader(shader_file, &v, &f, &v_source, &f_source);
-	// printf("heres something: \n%s\n", v_source);
-
+	// Compiling the separate shaders into one program
     shader_program.id = glCreateProgram();
     GLCall(glAttachShader(shader_program.id, vertex));
     GLCall(glAttachShader(shader_program.id, fragment));
@@ -490,6 +487,26 @@ void UniformSetMat4(ShaderObject *shader, char *uniform_name, mat4 mat){
 	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
 	if(shader->uniforms[uniform_index].type == UNI_MAT4){
     	memcpy(shader->uniforms[uniform_index]._mat4, mat[0], sizeof(float) * 16);
+	}
+}
+
+// Samplers
+void UniformSetSampler1D(ShaderObject *shader, char *uniform_name, int sampler){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_SAMPLER1D){
+		shader->uniforms[uniform_index]._sampler1d = sampler;
+	}
+}
+void UniformSetSampler2D(ShaderObject *shader, char *uniform_name, int sampler){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_SAMPLER2D){
+		shader->uniforms[uniform_index]._sampler2d = sampler;
+	}
+}
+void UniformSetSampler3D(ShaderObject *shader, char *uniform_name, int sampler){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_SAMPLER3D){
+		shader->uniforms[uniform_index]._sampler3d = sampler;
 	}
 }
 

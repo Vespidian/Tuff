@@ -40,10 +40,7 @@ bool main_menu = true;
 bool window_active = true;
 
 TilesheetObject builtin_tilesheet;
-TilesheetObject tmp_block_tilesheet;
 void LoadBuiltinResources(){
-	tmp_block_tilesheet = LoadTilesheet("../images/testingTemp/tmpTilesheet.png", GL_RGBA, 16, 16);
-
 	builtin_tilesheet = LoadTilesheet("../images/builtin.png", GL_RGBA, 16, 16);
 }
 

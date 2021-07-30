@@ -22,6 +22,10 @@ typedef struct ShaderUniformObject{
 		mat2 _mat2;
 		mat3 _mat3;
 		mat4 _mat4;
+
+		int _sampler1d;
+		int _sampler2d;
+		int _sampler3d;
 	};
 }ShaderUniformObject;
 
@@ -78,6 +82,11 @@ void UniformSetVec4_m(ShaderObject *shader, char *uniform_name, float x, float y
 void UniformSetMat2(ShaderObject *shader, char *uniform_name, mat2 mat);
 void UniformSetMat3(ShaderObject *shader, char *uniform_name, mat3 mat);
 void UniformSetMat4(ShaderObject *shader, char *uniform_name, mat4 mat);
+
+// Samplers
+void UniformSetSampler1D(ShaderObject *shader, char *uniform_name, int sampler);
+void UniformSetSampler2D(ShaderObject *shader, char *uniform_name, int sampler);
+void UniformSetSampler3D(ShaderObject *shader, char *uniform_name, int sampler);
 
 int InvertSurfaceVertical(SDL_Surface *surface);
 

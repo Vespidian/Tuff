@@ -22,7 +22,6 @@ extern int z_depth;
 
 //tmp
 #include "gl_utils.h"
-extern TilesheetObject tilesheet_texture;
 
 
 #endif

@@ -19,7 +19,6 @@ SDL_GLContext gl_context;
 
 int z_depth = 1000;
 
-TilesheetObject tilesheet_texture;
 TextureObject crate_tex;
 TextureObject normal_map;
 
@@ -198,8 +197,7 @@ int InitGL(){
 	RendererInit();
 
 
-    tilesheet_texture = LoadTilesheet("../images/testingTemp/tmpTilesheet.png", GL_RGBA, 16, 16);
-	crate_tex = LoadTexture("../images/wood2.png", GL_RGB);
+	crate_tex = LoadTexture("../images/crate.png", GL_RGBA);
 	normal_map = LoadTexture("../images/brick_normal.png", GL_RGBA);
 	// grid_texture = LoadTexture("../images/grid.png", GL_RGBA);
 
@@ -297,10 +295,14 @@ printf("%d\n", pos->size);
     // set projection transform
     glm_perspective(glm_rad(90), SCREEN_WIDTH / SCREEN_HEIGHT, 0.01, 100, perspective_projection);
 
-	UniformSetInt(&mesh_shader, "tex", 0);
-	UniformSetInt(&mesh_shader, "normal_map", 1);
+	// UniformSetInt(&mesh_shader, "tex", 0);
+	// UniformSetInt(&mesh_shader, "normal_map", 1);
+	// // UniformSetVec3_m(&mesh_shader, "color", 1, 0.5, 1);
+	// UniformSetInt(&grid_shader, "texture_0", 0);
+	UniformSetSampler2D(&mesh_shader, "tex", 0);
+	UniformSetSampler2D(&mesh_shader, "normal_map", 1);
 	// UniformSetVec3_m(&mesh_shader, "color", 1, 0.5, 1);
-	UniformSetInt(&grid_shader, "texture_0", 0);
+	UniformSetSampler2D(&grid_shader, "texture_0", 0);
 
 
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, 64, &perspective_projection);
@@ -309,6 +311,37 @@ printf("%d\n", pos->size);
 	
     GLCall;
     return 0;
+}
+
+#include "ui/ui.h"
+#include "renderer/render_text.h"
+#include "ui/resizable_rect.h"
+
+char uniform_types[12][16] = {
+	"bool",
+	"int",
+	"float",
+	"vec2",
+	"vec3",
+	"vec4",
+	"mat2",
+	"mat3",
+	"mat4",
+	"sampler1d",
+	"sampler2d",
+	"sampler3d",
+};
+
+void DisplayShaderUniforms(ShaderObject *shader){
+	ResizableRect(ui_tilesheet, (SDL_Rect){10, 10, 300, 400}, 7, 6, RNDR_UI, (Vector4){0, 0, 0, 0.75});
+
+	Vector2 size = {200, 20};
+	Vector2 origin = {115, 205};
+
+	for(int i = 0; i < shader->num_uniforms; i++){
+		Vector4_i pos = VerticalRectList_vec(shader->num_uniforms, i, size, origin, 6);
+		RenderText(&default_font, 1, pos.x, pos.y, TEXT_ALIGN_LEFT, "%s : %s", shader->uniforms[i].name, uniform_types[shader->uniforms[i].type]);
+	}
 }
 
 
@@ -323,9 +356,8 @@ static Vector3 mesh_position = {0, 0.01, 0};
 static float view_distance = 2;
 static float yaw, pitch;
 #include "ui/elements/slider.h"
-#include "ui/ui.h"
-#include "renderer/render_text.h"
 void RenderUI(){
+	DisplayShaderUniforms(&mesh_shader);
 	Vector3 tmp = {0, 0, view_distance};
 	glm_vec3_rotate(tmp.v, -pitch * 2, (vec3){1, 0, 0});
 	glm_vec3_rotate(tmp.v, -yaw, (vec3){0, 1, 0});
@@ -335,7 +367,7 @@ void RenderUI(){
 	UniformSetVec3(&mesh_shader, "view_position", tmp.v);
 
 	static float normal_intense;
-	Vector2 size = {200, 30};
+	Vector2 size = {200, 15};
 	Vector2 origin = {SCREEN_WIDTH - size.x / 2 - 10, size.y * 3};
 	Vector2 origin2 = {SCREEN_WIDTH - size.x / 2 - 10, size.y * 3};
 	RenderSlider(&light_time, 0.0000, 1.0000, VerticalRectList_vec(3, 0, size, origin, 6));
@@ -478,12 +510,12 @@ void RenderGL(){
 
 float movement_speed = 0.05f;
 float rotation_speed = 0.3f;
-float zoom_speed = 0.05f;
+float zoom_speed = 0.075f;
 static void Zoom(EventData event){
 	if(event.e->wheel.y > 0){
-		view_distance -= zoom_speed;
+		view_distance -= zoom_speed * view_distance;
 	}else if(event.e->wheel.y < 0){
-		view_distance += zoom_speed;
+		view_distance += zoom_speed * view_distance;
 	}
 }
 
@@ -525,26 +557,30 @@ Vector2 current_pos;
 static float sensitivity = 0.005f;
 static float move_sensitivity = 0.01f;
 static void MouseEvent(EventData event){
-	current_pos = (Vector2){mouse_pos.y, mouse_pos.x};
+	current_pos = (Vector2){mouse_pos.x, mouse_pos.y};
 	if(mouse_clicked && !ui_hovered){
 		last_pos = (Vector2)current_pos;
 	}
+
 	// if(*event.mouseState & SDL_BUTTON(SDL_BUTTON_MIDDLE)){
 		if(mouse_held && !ui_hovered){
+			SDL_SetWindowGrab(window, SDL_TRUE);
 			Vector2 difference;
-			glm_vec2_sub((vec2){mouse_pos.y, mouse_pos.x}, last_pos.v, difference.v);
+			glm_vec2_sub(current_pos.v, last_pos.v, difference.v);
 
+			printf("yaw: %f\n", yaw);
 			if(event.keyStates[SDL_SCANCODE_LSHIFT]){
-				vec3 tmp = {difference.y * move_sensitivity, -difference.x * move_sensitivity, 0};
-				// view_position.y -= difference.x * move_sensitivity;
-				// view_position.x += difference.y * move_sensitivity;
-				glm_vec3_rotate(tmp, -pitch * 2, (vec3){1, 0, 0});
-				glm_vec3_rotate(tmp, yaw, (vec3){0, 1, 0});
-				glm_vec3_add(view_position.v, tmp, view_position.v);
+				Vector3 tmp = {-difference.x * move_sensitivity, -difference.y * move_sensitivity, 0};
+				glm_vec3_rotate(tmp.v, -pitch * 2, (vec3){1, 0, 0});
+				glm_vec3_rotate(tmp.v, yaw, (vec3){0, 1, 0});
+				view_position.x += -tmp.x;
+				view_position.y += tmp.y;
+				view_position.z += tmp.z;
+
 			}else{
 
-				yaw += difference.y * sensitivity;
-				pitch += difference.x * sensitivity;
+				yaw += difference.x * sensitivity;
+				pitch += difference.y * sensitivity;
 
 				if(pitch > M_PI * 2){
 					pitch -= M_PI * 2;
@@ -565,15 +601,30 @@ static void MouseEvent(EventData event){
 			}
 
 			if(mouse_pos.x <= 10){
-				SDL_WarpMouseInWindow(window, SCREEN_WIDTH - 11, mouse_pos.y);
-			}
-			if(mouse_pos.x >= SCREEN_WIDTH - 10){
-				SDL_WarpMouseInWindow(window, 11, mouse_pos.y);
+				SDL_WarpMouseInWindow(window, SCREEN_WIDTH - 11, current_pos.y);
 				SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
 				current_pos = (Vector2){mouse_pos.x, mouse_pos.y};
-				// last_pos = (Vector2)current_pos;
+			}
+			if(mouse_pos.x >= SCREEN_WIDTH - 10){
+				SDL_WarpMouseInWindow(window, 11, current_pos.y);
+				SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
+				current_pos = (Vector2){mouse_pos.x, mouse_pos.y};
+			}
+			if(mouse_pos.y <= 10){
+				SDL_WarpMouseInWindow(window, current_pos.x, SCREEN_HEIGHT - 11);
+				SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
+				current_pos = (Vector2){mouse_pos.x, mouse_pos.y};
+			}
+			if(mouse_pos.y >= SCREEN_HEIGHT - 10){
+				SDL_WarpMouseInWindow(window, current_pos.x, 11);
+				SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
+				current_pos = (Vector2){mouse_pos.x, mouse_pos.y};
 			}
 			last_pos = (Vector2)current_pos;
+		}else{
+			SDL_SetWindowGrab(window, SDL_FALSE);
 		}
 	// }
+	printf("Window height: %d\nmouse_y: %d\n", SCREEN_HEIGHT, mouse_pos.y);
+
 }
