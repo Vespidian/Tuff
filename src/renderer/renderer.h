@@ -21,7 +21,7 @@ typedef struct AttribArray{
 typedef struct InstanceBuffer{
 	char num_textures_used;
 	unsigned int texture[16];
-	unsigned int shader;
+	ShaderObject *shader;
 	AttribArray vao;
 	unsigned int count;
 	float *buffer;
@@ -63,7 +63,7 @@ AttribArray NewVAO(int num_attribs, ...);
  *  @param num_textures_used number of textures to copy to instance texture buffer
  *  @param textures[16] array of textures to use
  */
-void AppendInstance(AttribArray vao, float data[64], unsigned int shader, char num_textures_used, TextureObject textures[16]);
+void AppendInstance(AttribArray vao, float data[64], ShaderObject *shader, char num_textures_used, TextureObject textures[16]);
 
 /**
  *  @brief Passes all instance data to the GPU (window buffer still needs to be swapped)

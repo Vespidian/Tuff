@@ -3,6 +3,36 @@
 
 void InitGLUtils();
 
+#include "vectorlib.h"
+
+enum ShaderTypes { UNI_BOOL = 0, UNI_INT, UNI_FLOAT, UNI_VEC2, UNI_VEC3, UNI_VEC4, UNI_MAT2, UNI_MAT3, UNI_MAT4, UNI_SAMPLER1D, UNI_SAMPLER2D, UNI_SAMPLER3D };
+typedef struct ShaderUniformObject{
+	char *name;
+	unsigned int uniform;
+	int type;
+	union value{
+		bool _bool;
+		int _int;
+		float _float;
+
+		Vector2 _vec2;
+		Vector3 _vec3;
+		Vector4 _vec4;
+
+		mat2 _mat2;
+		mat3 _mat3;
+		mat4 _mat4;
+	};
+}ShaderUniformObject;
+
+typedef struct ShaderObject{
+	char *name; // Unsure yet whether to use a custom name or shader file path
+	unsigned int id;
+	ShaderUniformObject *uniforms;
+	unsigned int num_uniforms;
+	bool using_texture_slot[16];
+}ShaderObject;
+ShaderObject ParseShaderUniforms(char *name, unsigned int id, char *vertex, char *fragment);
 /**
  *  Active shader
  */
@@ -24,29 +54,30 @@ extern unsigned int bound_textures[16];
 extern unsigned int current_texture_unit;
 
 void CheckGLErrors(const char *file, int line);
-Uint32 LoadShaderProgram(char *shader_file);
+ShaderObject LoadShaderProgram(char *filename);
 
-void SetShaderProgram(unsigned int shader);
+void PassShaderUniforms(ShaderObject *shader);
+void SetShaderProgram(ShaderObject *shader);
 void SetVAO(unsigned int vao);
 
-void UniformSetBool(Uint32 program, const char *uniform_name, bool value);
-void UniformSetInt(Uint32 program, const char *uniform_name, int value);
-void UniformSetFloat(Uint32 program, const char *uniform_name, float value);
+void UniformSetBool(ShaderObject *shader, char *uniform_name, bool value);
+void UniformSetInt(ShaderObject *shader, char *uniform_name, int value);
+void UniformSetFloat(ShaderObject *shader, char *uniform_name, float value);
 
 // Vectors (datatype)
-void UniformSetVec2(Uint32 program, const char *uniform_name, vec2 value);
-void UniformSetVec3(Uint32 program, const char *uniform_name, vec3 value);
-void UniformSetVec4(Uint32 program, const char *uniform_name, vec4 value);
+void UniformSetVec2(ShaderObject *shader, char *uniform_name, vec2 value);
+void UniformSetVec3(ShaderObject *shader, char *uniform_name, vec3 value);
+void UniformSetVec4(ShaderObject *shader, char *uniform_name, vec4 value);
 
 // Vectors (manual)
-void UniformSetVec2_m(Uint32 program, const char *uniform_name, float x, float y);
-void UniformSetVec3_m(Uint32 program, const char *uniform_name, float x, float y, float z);
-void UniformSetVec4_m(Uint32 program, const char *uniform_name, float x, float y, float z, float w);
+void UniformSetVec2_m(ShaderObject *shader, char *uniform_name, float x, float y);
+void UniformSetVec3_m(ShaderObject *shader, char *uniform_name, float x, float y, float z);
+void UniformSetVec4_m(ShaderObject *shader, char *uniform_name, float x, float y, float z, float w);
 
 // Matrix
-void UniformSetMat2(Uint32 program, const char *uniform_name, mat2 mat);
-void UniformSetMat3(Uint32 program, const char *uniform_name, mat3 mat);
-void UniformSetMat4(Uint32 program, const char *uniform_name, mat4 mat);
+void UniformSetMat2(ShaderObject *shader, char *uniform_name, mat2 mat);
+void UniformSetMat3(ShaderObject *shader, char *uniform_name, mat3 mat);
+void UniformSetMat4(ShaderObject *shader, char *uniform_name, mat4 mat);
 
 int InvertSurfaceVertical(SDL_Surface *surface);
 

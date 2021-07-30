@@ -136,7 +136,7 @@ AttribArray NewVAO(int num_attribs, ...){
 	return vao;
 }
 
-unsigned int NewInstance(char num_textures_used, TextureObject textures[16], AttribArray vao, unsigned int shader){
+unsigned int NewInstance(char num_textures_used, TextureObject textures[16], AttribArray vao, ShaderObject *shader){
 	// Extend buffer by 1 instance
 	instance_buffer = realloc(instance_buffer, sizeof(InstanceBuffer) * (num_instances + 1));
 
@@ -156,8 +156,8 @@ unsigned int NewInstance(char num_textures_used, TextureObject textures[16], Att
 	return num_instances++;
 }
 
-unsigned int FindInstance(char num_textures_used, TextureObject textures[16], AttribArray vao, unsigned int shader){
-	// Loop throgh all instances to find exact match
+unsigned int FindInstance(char num_textures_used, TextureObject textures[16], AttribArray vao, ShaderObject *shader){
+	// Loop through all instances to find exact match
 	for(int i = 0; i < num_instances; i++){
 		if(instance_buffer[i].vao.array_object == vao.array_object && instance_buffer[i].shader == shader){
 			
@@ -166,6 +166,8 @@ unsigned int FindInstance(char num_textures_used, TextureObject textures[16], At
 			for(int j = 0; j < num_textures_used; j++){
 				if(instance_buffer[i].texture[j] == textures[j].gl_tex){
 					count++;
+				}else{
+					break;
 				}
 			}
 
@@ -180,7 +182,7 @@ unsigned int FindInstance(char num_textures_used, TextureObject textures[16], At
 	return NewInstance(num_textures_used, textures, vao, shader);
 }
 
-void AppendInstance(AttribArray vao, float data[64], unsigned int shader, char num_textures_used, TextureObject textures[16]){
+void AppendInstance(AttribArray vao, float data[64], ShaderObject *shader, char num_textures_used, TextureObject textures[16]){
 	// Retrieve instance id for inputed configuration
 	unsigned int instance = FindInstance(num_textures_used, textures, vao, shader);
 
@@ -219,7 +221,7 @@ void PushRender(){
 		}
 
 		// Bind shader
-		SetShaderProgram(instance_buffer[instance].shader);
+		PassShaderUniforms(instance_buffer[instance].shader);
 
 		// Loop through textures
 		for(int texture_slot = 0; texture_slot < instance_buffer[instance].num_textures_used; texture_slot++){

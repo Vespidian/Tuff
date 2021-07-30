@@ -1,7 +1,7 @@
 {
 	"meshes" : [
-		"model.gltf" : [1, 2, 4],
-		"lamp.gltf" : [0],
+		"model.gltf",
+		"lamp.gltf",
 	],
 	"textures" : [
 		"texture.png",
@@ -23,9 +23,7 @@
 				"textures" : [0], 			// Index from 'textures'
 				
 			}
-			"objects" : [
-				
-			]
+			"objects" : []					// Any children of this object
 		}
 	]
 }

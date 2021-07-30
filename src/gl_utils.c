@@ -2,6 +2,7 @@
 #include "debug.h"
 #include "gl_context.h"
 #include "renderer/renderer.h"
+#include "vectorlib.h"
 
 #include "gl_utils.h"
 
@@ -51,17 +52,198 @@ void CheckGLErrors(const char *file, int line){
     }
 }
 
-void LoadShader(const char *filename, unsigned int *vertex, unsigned int *fragment){
+void PassShaderUniforms(ShaderObject *shader){
+	SetShaderProgram(shader);
+
+	for(int i = 0; i < shader->num_uniforms; i++){
+		switch(shader->uniforms[i].type){
+			case UNI_BOOL:
+				glUniform1i(shader->uniforms[i].uniform, (int)shader->uniforms[i]._bool);
+				break;
+			case UNI_INT:
+				glUniform1i(shader->uniforms[i].uniform, (int)shader->uniforms[i]._int);
+				break;
+			case UNI_FLOAT:
+				glUniform1i(shader->uniforms[i].uniform, (int)shader->uniforms[i]._float);
+				break;
+
+			case UNI_VEC2:
+				glUniform2fv(shader->uniforms[i].uniform, 1, shader->uniforms[i]._vec2.v);
+				break;
+			case UNI_VEC3:
+				glUniform3fv(shader->uniforms[i].uniform, 1, shader->uniforms[i]._vec3.v);
+				break;
+			case UNI_VEC4:
+				glUniform4fv(shader->uniforms[i].uniform, 1, shader->uniforms[i]._vec4.v);
+				break;
+
+			case UNI_MAT2:
+				glUniformMatrix2fv(shader->uniforms[i].uniform, 1, GL_FALSE, shader->uniforms[i]._mat2[0]);
+				break;
+			case UNI_MAT3:
+				glUniformMatrix3fv(shader->uniforms[i].uniform, 1, GL_FALSE, shader->uniforms[i]._mat3[0]);
+				break;
+			case UNI_MAT4:
+				glUniformMatrix4fv(shader->uniforms[i].uniform, 1, GL_FALSE, shader->uniforms[i]._mat4[0]);
+				break;
+		}
+	}
+}
+
+ShaderObject ParseShaderUniforms(char *name, unsigned int id, char *vertex, char *fragment){
+	ShaderObject shader = {.id = id};
+	
+	shader.name = malloc(sizeof(char) * strlen(name));
+	strcpy(shader.name, name);
+
+	shader.num_uniforms = 0;
+	memset(shader.using_texture_slot, false, sizeof(bool) * 16);
+
+	printf("Shader: %s\n", name);
+
+	// --- CURRENTLY ONLY SCANS VERTEX STRING ---
+	char *uniform_ptr = vertex;
+	int num_samplers = 0;
+	for(int i = 0; i < 2; i++){
+		while((uniform_ptr = strstr(uniform_ptr, "uniform")) != NULL){
+			if(strchr(uniform_ptr, '{') < strchr(uniform_ptr, ';')){
+				uniform_ptr += 8; // Increment by length of "uniform "
+				continue;
+			}
+
+			shader.uniforms = realloc(shader.uniforms, sizeof(ShaderUniformObject) * (shader.num_uniforms + 1));
+			uniform_ptr += 8; // Increment by length of "uniform "
+			// Make sure this "uniform" keyword isnt referring to a uniform buffer
+
+			// Determine the type of this uniform
+			if(strncmp(uniform_ptr, "vec", 3) == 0){
+				uniform_ptr += 3;
+				switch((uniform_ptr)[0]){
+					case '2':
+						// printf("VEC2\n");
+						memset(shader.uniforms[shader.num_uniforms]._vec2.v, 0, sizeof(Vector2));
+						shader.uniforms[shader.num_uniforms].type = UNI_VEC2;
+						break;
+					case '3':
+						// printf("VEC3\n");
+						memset(shader.uniforms[shader.num_uniforms]._vec3.v, 0, sizeof(Vector2));
+						shader.uniforms[shader.num_uniforms].type = UNI_VEC3;
+						break;
+					case '4':
+						// printf("VEC4\n");
+						memset(shader.uniforms[shader.num_uniforms]._vec4.v, 0, sizeof(Vector2));
+						shader.uniforms[shader.num_uniforms].type = UNI_VEC4;
+						break;
+				}
+				uniform_ptr += 1;
+			}else if(strncmp(uniform_ptr, "mat", 3) == 0){
+				uniform_ptr += 3;
+				switch((uniform_ptr)[0]){
+					case '2':
+						// printf("MAT2\n");
+						memset(shader.uniforms[shader.num_uniforms]._mat2, 0, sizeof(mat2));
+						shader.uniforms[shader.num_uniforms].type = UNI_MAT2;
+						break;
+					case '3':
+						// printf("MAT3\n");
+						memset(shader.uniforms[shader.num_uniforms]._mat3, 0, sizeof(mat3));
+						shader.uniforms[shader.num_uniforms].type = UNI_MAT3;
+						break;
+					case '4':
+						// printf("MAT4\n");
+						memset(shader.uniforms[shader.num_uniforms]._mat4, 0, sizeof(mat4));
+						shader.uniforms[shader.num_uniforms].type = UNI_MAT4;
+						break;
+				}
+				uniform_ptr += 1;
+				// printf("THIS: %d\n", shader.uniforms[shader.num_uniforms].type);
+
+			}else if(strncmp(uniform_ptr, "sampler", 7) == 0){
+				// uniform_ptr += 7;
+				shader.using_texture_slot[num_samplers++] = true;
+				// switch((uniform_ptr)[0]){
+				// 	case '2':
+				// 		shader.uniforms[shader.num_uniforms].type = UNI_SAMPLER1D;
+				// 		break;
+				// 	case '3':
+				// 		shader.uniforms[shader.num_uniforms].type = UNI_SAMPLER2D;
+				// 		break;
+				// 	case '4':
+				// 		shader.uniforms[shader.num_uniforms].type = UNI_SAMPLER3D;
+				// 		break;
+				// }
+				// uniform_ptr += 2;
+				uniform_ptr += 9;
+				shader.uniforms[shader.num_uniforms].type = UNI_INT;
+			}else{
+				shader.uniforms[shader.num_uniforms]._float = 0;
+				if(strncmp(uniform_ptr, "float", 5) == 0){
+					// printf("FLOAT\n");
+					uniform_ptr += 5;
+					shader.uniforms[shader.num_uniforms].type = UNI_FLOAT;
+				}else if(strncmp(uniform_ptr, "int", 3) == 0){
+					// printf("INT\n");
+					uniform_ptr += 3;
+					shader.uniforms[shader.num_uniforms].type = UNI_INT;
+				}else if(strncmp(uniform_ptr, "bool", 4) == 0){
+					// printf("BOOL\n");
+					uniform_ptr += 4;
+					shader.uniforms[shader.num_uniforms].type = UNI_BOOL;
+				}
+			}
+			uniform_ptr += 1;
+
+			// Get the name of the uniform
+			int uniform_name_length = strchr(uniform_ptr, ';') - uniform_ptr;
+			shader.uniforms[shader.num_uniforms].name = malloc(sizeof(char) * (uniform_name_length + 1));
+
+			// Copy section of string
+			memcpy(shader.uniforms[shader.num_uniforms].name, uniform_ptr, uniform_name_length);
+			shader.uniforms[shader.num_uniforms].name[uniform_name_length] = 0;
+
+			shader.uniforms[shader.num_uniforms].uniform = glGetUniformLocation(shader.id, shader.uniforms[shader.num_uniforms].name);
+
+			printf("uniform[%d].name = %s, .type = %d\n", shader.num_uniforms, shader.uniforms[shader.num_uniforms].name, shader.uniforms[shader.num_uniforms].type);
+		
+			// Make sure this isnt a copy of a uniform from another shader type
+			bool found_copy = false;
+			for(int j = 0; j < shader.num_uniforms; j++){
+				if(strcmp(shader.uniforms[j].name, shader.uniforms[shader.num_uniforms].name) == 0){
+					found_copy = true;
+					break;
+				}
+			}
+
+			// If there is a copy, remove the uniform we just created
+			if(found_copy){
+				free(shader.uniforms[shader.num_uniforms].name);
+				shader.uniforms = realloc(shader.uniforms, sizeof(ShaderUniformObject) * (shader.num_uniforms));
+			}else{
+				shader.num_uniforms++;
+			}
+
+		}
+		uniform_ptr = fragment;
+	}
+	return shader;
+}
+
+ShaderObject LoadShaderProgram(char *filename){
+
+// static void LoadShader(const char *filename, unsigned int *vertex, unsigned int *fragment, char **vertex_source, char **fragment_source){
     SDL_RWops *shader_file;
     char *shader_source;
     int file_size;
+
+	ShaderObject shader_program;
+    unsigned int vertex, fragment;
 
     // Read shader source from file
     shader_file = SDL_RWFromFile(filename, "rb");
     if(shader_file == NULL){
         DebugLog(D_ERR, "Shader loading error! Shader file: %s not found", filename);
         printf("Shader loading error! Shader file: %s not found", filename);
-        return;
+		// SHOULD EXIT THE FUNCTION HERE
     }
 
     // Find length of shader source file
@@ -76,8 +258,9 @@ void LoadShader(const char *filename, unsigned int *vertex, unsigned int *fragme
     shader_source[file_size + 1] = '\0';
 
 	// Split string into seperate strings for each shader type
-	char *vert_string;
-	char *frag_string;
+	char *shader_strings[2];
+	// char *vert_string;
+	// char *frag_string;
 	char shader_type_string[32] = {0}; // String containing the name of the current shader
 	char *header_offset = shader_source; // String pointer for offseting through the 'shader_source' string
 	do{
@@ -102,104 +285,108 @@ void LoadShader(const char *filename, unsigned int *vertex, unsigned int *fragme
 		}
 
 		// Set the offset to the beginning of this shader (Jump over the shader type)
-		header_offset += strchr(header_offset, '\n') - header_offset;
+		int offset_amount = strchr(header_offset, '\n') - header_offset;
+		header_offset += offset_amount;
 
 		// Copy shaders into corresponding strings
-		if(strcmp(shader_type_string, "vertex") == 0){
-			vert_string = malloc(shader_end - header_offset);
-			memcpy(vert_string, header_offset, shader_end - header_offset - 1);
-			vert_string[shader_end - header_offset - 1] = 0; // Null terminate the shader string
+		// if(header_offset[ - 8] != '/' && header_offset[ - 7] != '/'){
+		// if(strstr(header_offset - (8 + offset_amount) * sizeof(char), "//") == NULL){
+			if(strcmp(shader_type_string, "vertex") == 0){
+				shader_strings[0] = malloc(shader_end - header_offset);
+				memcpy(shader_strings[0], header_offset, shader_end - header_offset - 1);
+				shader_strings[0][shader_end - header_offset - 1] = 0; // Null terminate the shader string
 
-		}else if(strcmp(shader_type_string, "fragment") == 0){
-			frag_string = malloc(shader_end - header_offset);
-			memcpy(frag_string, header_offset, shader_end - header_offset - 1);
-			frag_string[shader_end - header_offset - 1] = 0; // Null terminate the shader string
+			}else if(strcmp(shader_type_string, "fragment") == 0){
+				shader_strings[1] = malloc(shader_end - header_offset);
+				memcpy(shader_strings[1], header_offset, shader_end - header_offset - 1);
+				shader_strings[1][shader_end - header_offset - 1] = 0; // Null terminate the shader string
 
-		}else{
-			DebugLog(D_WARN, "Error unknown shader type '%s' specified in file '%s'", shader_type_string, filename);
-		}
+			}else{
+				DebugLog(D_WARN, "Error unknown shader type '%s' specified in file '%s'", shader_type_string, filename);
+			}
+		// }
 
 		// Reset the shader type string
 		memset(shader_type_string, 0, sizeof(shader_type_string));
 	}while(header_offset != NULL);
 
     // Tell opengl to compile the shader
+	unsigned int shaders[2];
 
-	// FRAGMENT SHADER
-    unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	int length = strlen(frag_string);
-    GLCall(glShaderSource(fragment_shader, 1, (const GLchar*const*)&frag_string, &length));
-    GLCall(glCompileShader(fragment_shader));
 
-	free(frag_string);
 
-    // Check for errors
-    int success;
-    GLCall(glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success));
-    if(!success){
-        char info_log[1024];
-        GLCall(glGetShaderInfoLog(fragment_shader, 1024, NULL, info_log));
-        DebugLog(D_ERR, "Shader: '%s' compilation failed: %s", filename, info_log);
-        printf("Shader: '%s' compilation failed: %s", filename, info_log);
-    }
-	
-	// VERTEX SHADER
-    unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-	length = strlen(vert_string);
-    GLCall(glShaderSource(vertex_shader, 1, (const GLchar*const*)&vert_string, &length));
-    GLCall(glCompileShader(vertex_shader));
+	for(int i = 0; i < 2; i++){
+		switch(i){
+			case 0:
+				shaders[i] = glCreateShader(GL_VERTEX_SHADER);
+				break;
+			case 1:
+				shaders[i] = glCreateShader(GL_FRAGMENT_SHADER);
+				break;
+		}
+		int length = strlen(shader_strings[i]);
+		GLCall(glShaderSource(shaders[i], 1, (const GLchar*const*)&shader_strings[i], &length));
+		GLCall(glCompileShader(shaders[i]));
+		
+		// free(shader_strings[i]);
 
-	free(vert_string);
-
-    // Check for errors
-    GLCall(glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success));
-    if(!success){
-        char info_log[1024];
-        GLCall(glGetShaderInfoLog(vertex_shader, 1024, NULL, info_log));
-        DebugLog(D_ERR, "Shader: '%s' compilation failed: %s", filename, info_log);
-        printf("Shader: '%s' compilation failed: %s", filename, info_log);
-    }
+		// Check for errors
+		int success;
+		GLCall(glGetShaderiv(shaders[i], GL_COMPILE_STATUS, &success));
+		if(!success){
+			char info_log[1024];
+			GLCall(glGetShaderInfoLog(shaders[i], 1024, NULL, info_log));
+			DebugLog(D_ERR, "Shader: '%s' compilation failed: %s", filename, info_log);
+			printf("Shader: '%s' compilation failed: %s", filename, info_log);
+		}
+	}
 
 	// Free variables
     SDL_RWclose(shader_file);
     free(shader_source);
 	
-	*vertex = vertex_shader;
-	*fragment = fragment_shader;
-}
+	vertex = shaders[0];
+	fragment = shaders[1];
+// }
 
-Uint32 LoadShaderProgram(char *shader_file){
-    Uint32 shader_program;
-    unsigned int v, f;
+// Uint32 LoadShaderProgram(char *shader_file){
+    // Uint32 shader_program;
+    // unsigned int v, f;
     // v = LoadShader(GL_VERTEX_SHADER, vertex_shader_file);
     // f = LoadShader(GL_FRAGMENT_SHADER, fragment_shader_file);
 	// printf("v before: %u\n", v);
-	LoadShader(shader_file, &v, &f);
+	// LoadShader(shader_file, &v, &f, &v_source, &f_source);
+	// printf("heres something: \n%s\n", v_source);
 
-    shader_program = glCreateProgram();
-    GLCall(glAttachShader(shader_program, v));
-    GLCall(glAttachShader(shader_program, f));
-    GLCall(glLinkProgram(shader_program));
+    shader_program.id = glCreateProgram();
+    GLCall(glAttachShader(shader_program.id, vertex));
+    GLCall(glAttachShader(shader_program.id, fragment));
+    GLCall(glLinkProgram(shader_program.id));
 
     int success;
-    GLCall(glGetProgramiv(shader_program, GL_LINK_STATUS, &success));
+    GLCall(glGetProgramiv(shader_program.id, GL_LINK_STATUS, &success));
     if(!success){
         char info_log[1024];
-        GLCall(glGetProgramInfoLog(shader_program, 1024, NULL, info_log));
+        GLCall(glGetProgramInfoLog(shader_program.id, 1024, NULL, info_log));
         DebugLog(D_ERR, "Shader linking failed: %s", info_log);
         printf("Shader linking failed: %s", info_log);
     }
 
-    GLCall(glDeleteShader(v));
-    GLCall(glDeleteShader(f));
+    GLCall(glDeleteShader(vertex));
+    GLCall(glDeleteShader(fragment));
+
+	shader_program = ParseShaderUniforms(filename, shader_program.id, shader_strings[0], shader_strings[1]);
+
+	free(shader_strings[0]);
+	free(shader_strings[1]);
 
     return shader_program;
 }
 
-void SetShaderProgram(unsigned int shader){
-	if(current_shader != shader){
-		glUseProgram(shader);
-		current_shader = shader;
+void SetShaderProgram(ShaderObject *shader){
+	if(current_shader != shader->id){
+		glUseProgram(shader->id);
+		current_shader = shader->id;
 	}
 }
 
@@ -210,60 +397,100 @@ void SetVAO(unsigned int vao){
 	}
 }
 
-void UniformSetBool(Uint32 program, const char *uniform_name, bool value){
-	SetShaderProgram(program);
-    glUniform1i(glGetUniformLocation(program, uniform_name), (int)value);
+int SearchShaderUniformNames(ShaderObject *shader, char *name){
+	for(int i = 0; i < shader->num_uniforms; i++){
+		if(strcmp(name, shader->uniforms[i].name) == 0){
+			return i;
+		}
+	}
+	printf("couldnt find shader uniforms: %s\n", shader->name);
+	return -1;
 }
 
-void UniformSetInt(Uint32 program, const char *uniform_name, int value){
-	SetShaderProgram(program);
-    glUniform1i(glGetUniformLocation(program, uniform_name), value);
+void UniformSetBool(ShaderObject *shader, char *uniform_name, bool value){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_BOOL){
+    	shader->uniforms[uniform_index]._bool = value;
+	}
 }
 
-void UniformSetFloat(Uint32 program, const char *uniform_name, float value){
-	SetShaderProgram(program);
-    glUniform1i(glGetUniformLocation(program, uniform_name), value);
+void UniformSetInt(ShaderObject *shader, char *uniform_name, int value){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_INT){
+    	shader->uniforms[uniform_index]._int = value;
+	}
+}
+
+void UniformSetFloat(ShaderObject *shader, char *uniform_name, float value){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_FLOAT){
+    	shader->uniforms[uniform_index]._float = value;
+	}
 }
 
 // Vector (datatype)
-void UniformSetVec2(Uint32 program, const char *uniform_name, vec2 value){
-	SetShaderProgram(program);
-    glUniform2fv(glGetUniformLocation(program, uniform_name), 1, value);
+void UniformSetVec2(ShaderObject *shader, char *uniform_name, vec2 value){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_VEC2){
+    	memcpy(shader->uniforms[uniform_index]._vec2.v, value, sizeof(float) * 2);
+	}
 }
-void UniformSetVec3(Uint32 program, const char *uniform_name, vec3 value){
-	SetShaderProgram(program);
-    glUniform3fv(glGetUniformLocation(program, uniform_name), 1, value);
+void UniformSetVec3(ShaderObject *shader, char *uniform_name, vec3 value){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_VEC3){
+    	memcpy(shader->uniforms[uniform_index]._vec3.v, value, sizeof(float) * 3);
+	}
 }
-void UniformSetVec4(Uint32 program, const char *uniform_name, vec4 value){
-	SetShaderProgram(program);
-    glUniform4fv(glGetUniformLocation(program, uniform_name), 1, value);
+void UniformSetVec4(ShaderObject *shader, char *uniform_name, vec4 value){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_VEC4){
+    	memcpy(shader->uniforms[uniform_index]._vec4.v, value, sizeof(float) * 4);
+	}
 }
 // Vector (manual)
-void UniformSetVec2_m(Uint32 program, const char *uniform_name, float x, float y){
-	SetShaderProgram(program);
-    glUniform2f(glGetUniformLocation(program, uniform_name), x, y);
+void UniformSetVec2_m(ShaderObject *shader, char *uniform_name, float x, float y){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_VEC2){
+		shader->uniforms[uniform_index]._vec2.x = x;
+		shader->uniforms[uniform_index]._vec2.y = y;
+	}
 }
-void UniformSetVec3_m(Uint32 program, const char *uniform_name, float x, float y, float z){
-	SetShaderProgram(program);
-    glUniform3f(glGetUniformLocation(program, uniform_name), x, y, z);
+void UniformSetVec3_m(ShaderObject *shader, char *uniform_name, float x, float y, float z){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_VEC3){
+		shader->uniforms[uniform_index]._vec3.x = x;
+		shader->uniforms[uniform_index]._vec3.y = y;
+		shader->uniforms[uniform_index]._vec3.z = z;
+	}
 }
-void UniformSetVec4_m(Uint32 program, const char *uniform_name, float x, float y, float z, float w){
-	SetShaderProgram(program);
-    glUniform4f(glGetUniformLocation(program, uniform_name), x, y, z, w);
+void UniformSetVec4_m(ShaderObject *shader, char *uniform_name, float x, float y, float z, float w){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_VEC4){
+		shader->uniforms[uniform_index]._vec4.x = x;
+		shader->uniforms[uniform_index]._vec4.y = y;
+		shader->uniforms[uniform_index]._vec4.z = z;
+		shader->uniforms[uniform_index]._vec4.w = w;
+	}
 }
 
 // Matrix
-void UniformSetMat2(Uint32 program, const char *uniform_name, mat2 mat){
-	SetShaderProgram(program);
-    glUniformMatrix2fv(glGetUniformLocation(program, uniform_name), 1, GL_FALSE, mat[0]);
+void UniformSetMat2(ShaderObject *shader, char *uniform_name, mat2 mat){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_MAT2){
+    	memcpy(shader->uniforms[uniform_index]._mat2, mat[0], sizeof(float) * 4);
+	}
 }
-void UniformSetMat3(Uint32 program, const char *uniform_name, mat3 mat){
-	SetShaderProgram(program);
-    glUniformMatrix3fv(glGetUniformLocation(program, uniform_name), 1, GL_FALSE, mat[0]);
+void UniformSetMat3(ShaderObject *shader, char *uniform_name, mat3 mat){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_MAT3){
+    	memcpy(shader->uniforms[uniform_index]._mat3, mat[0], sizeof(float) * 9);
+	}
 }
-void UniformSetMat4(Uint32 program, const char *uniform_name, mat4 mat){
-	SetShaderProgram(program);
-    glUniformMatrix4fv(glGetUniformLocation(program, uniform_name), 1, GL_FALSE, mat[0]);
+void UniformSetMat4(ShaderObject *shader, char *uniform_name, mat4 mat){
+	int uniform_index = SearchShaderUniformNames(shader, uniform_name);
+	if(shader->uniforms[uniform_index].type == UNI_MAT4){
+    	memcpy(shader->uniforms[uniform_index]._mat4, mat[0], sizeof(float) * 16);
+	}
 }
 
 int InvertSurfaceVertical(SDL_Surface *surface)

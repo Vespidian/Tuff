@@ -15,7 +15,7 @@ cgltf_buffer_view *texc;
 cgltf_buffer_view *ind;
 
 void LoadGLTF(){
-	const char file[] = "../models/plane.gltf";
+	const char file[] = "../models/stanford_dragon_lowply.gltf";
 
 	cgltf_options options;
 	memset(&options, 0, sizeof(cgltf_options));

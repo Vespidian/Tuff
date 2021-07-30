@@ -10,6 +10,7 @@ layout (location = 3) in vec3 tangent_a;
 layout (std140) uniform Matrices{
 	mat4 projection;
 	mat4 view;
+	int time;
 };
 
 uniform mat4 model;
@@ -21,6 +22,12 @@ out mat3 TBN_v;
 
 // Used by light shader
 out vec3 frag_pos_v;
+uniform float value;
+float PHI = 1.61803398874989484820459;  // Φ = Golden Ratio  
+
+float gold_noise(in vec2 xy, in float seed){
+	return fract(tan(distance(xy*PHI, xy)*seed)*xy.x);
+}
 
 void main(){
 	vec3 T = normalize(vec3(model * vec4(tangent_a, 0)));
@@ -31,6 +38,8 @@ void main(){
 	vert_v = pos_a;
 	normal_v = normal_a;
 	texture_v = texture_a;
+	// float value = time * gold_noise(pos_a.xz, 502);
+	// gl_Position = projection * view * model * vec4(pos_a + vec3(sin(value / 300.0) / 2), 1);
 	gl_Position = projection * view * model * vec4(pos_a, 1);
 	// gl_Position = projection * view * model * vec4(normal_a, 1);
 	// gl_Position = projection * view * model * vec4(texture_a, 1);
@@ -47,6 +56,7 @@ in vec3 vert_v;
 in vec3 normal_v;
 in vec2 texture_v;
 in mat3 TBN_v;
+uniform float value;
 
 
 in vec3 frag_pos_v;

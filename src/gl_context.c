@@ -9,7 +9,7 @@
 #include "ui/ui.h"
 
 #include "gl_context.h"
-#include "scene/model.h"
+#include "scene/scene.h"
 
 
 // #include "scene/obj_loader.h"
@@ -37,7 +37,7 @@ unsigned int mesh_ebo;
 unsigned int vert_vbo;
 unsigned int norm_vbo;
 unsigned int texc_vbo;
-unsigned int mesh_shader;
+ShaderObject mesh_shader;
 mat4 mesh_matrix;
 
 float axis[] = {
@@ -51,7 +51,7 @@ float axis[] = {
 };
 unsigned int axis_vao;
 unsigned int axis_vbo;
-unsigned int axis_shader;
+ShaderObject axis_shader;
 
 // float grid[] = { // floor grid
 // 	-1, 0, 1,
@@ -62,30 +62,98 @@ unsigned int axis_shader;
 // 	1, 0, -1,
 // 	-1, 0, -1,
 // };
-float grid[] = { // screen space grid
-	// vertical quad
-	// -1, 1, 0,
-	// 1, 1, 0,
-	// 1, -1, 0,
+// float grid[] = { // screen space grid
+// 	// vertical quad
+// 	// -1, 1, 0,
+// 	// 1, 1, 0,
+// 	// 1, -1, 0,
 
-	// -1, 1, 0,
-	// 1, -1, 0,
-	// -1, -1, 0,
+// 	// -1, 1, 0,
+// 	// 1, -1, 0,
+// 	// -1, -1, 0,
 
-	// horizontal
-	-1, 0, 1,
-	1, 0, 1,
-	1, 0, -1,
+// 	// horizontal
+// 	-1, 0, 1,
+// 	1, 0, 1,
+// 	1, 0, -1,
 
-	-1, 0, 1,
-	1, 0, -1,
-	-1, 0, -1,
+// 	-1, 0, 1,
+// 	1, 0, -1,
+// 	-1, 0, -1,
 
-};
+// };
+float *grid;
+int grid_vertex_count;
+int num_grid_verts;
 unsigned int grid_vao;
 unsigned int grid_vbo;
-unsigned int grid_shader;
-TextureObject grid_texture;
+ShaderObject grid_shader;
+// TextureObject grid_texture;
+
+void GenerateGrid(){
+	// glLineWidth(2);
+	Vector3 grid_position = {0, 0, 0};
+	
+	float cell_size = 0.5;
+	int num_cells = 32;
+	int divisions_per_cell = 5;
+
+	float grid_size = cell_size * num_cells;
+	int num_lines = num_cells * divisions_per_cell + 1;
+	float division_spacing = cell_size / divisions_per_cell;
+
+	grid = malloc(grid_vertex_count = (sizeof(float) * 24 * num_lines));
+	num_grid_verts = num_lines * 2;
+	// memset(grid, grid_position.z, sizeof(float) * 3 * (num_cells * divisions_per_cell + 1));
+
+	for(int i = -num_lines / 2; i < num_lines / 2 + 1; i++){
+		// if(i == 0){
+		// 	continue;
+		// }
+		int offset = (i + num_lines / 2) * 24;
+		float color = (i % divisions_per_cell == 0) ? 0.55 : 0.4;
+		// int offset = (i) * 6;
+		// x aligned
+		// start
+		grid[offset + 0] = -grid_size / 2; 			// x
+		grid[offset + 1] = grid_position.y; 		// y
+		grid[offset + 2] = i * division_spacing; 	// z
+		//color
+		grid[offset + 3] = color; // r
+		grid[offset + 4] = color; // g
+		grid[offset + 5] = color; // b
+
+		// end
+		grid[offset + 6] = grid_size / 2; 			// x
+		grid[offset + 7] = grid_position.y; 		// y
+		grid[offset + 8] = i * division_spacing; 	// z
+		//color
+		grid[offset + 9 ] = color; // r
+		grid[offset + 10] = color; // g
+		grid[offset + 11] = color; // b
+
+		// z aligned
+		// start
+		grid[offset + 12] = i * division_spacing; 	// x
+		grid[offset + 13] = grid_position.y; 		// y
+		grid[offset + 14] = -grid_size / 2; 			// z
+		//color
+		grid[offset + 15] = color; // r
+		grid[offset + 16] = color; // g
+		grid[offset + 17] = color; // b
+		
+		// end
+		grid[offset + 18] = i * division_spacing; 	// x
+		grid[offset + 19] = grid_position.y; 		// y
+		grid[offset + 20] = grid_size / 2; 			// z
+		//color
+		grid[offset + 21] = color; // r
+		grid[offset + 22] = color; // g
+		grid[offset + 23] = color; // b
+		
+	}
+	printf("HERE\n");
+}
 
 int InitGL(){
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -110,6 +178,7 @@ int InitGL(){
 	glEnable(GL_PROGRAM_POINT_SIZE);
     // glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_LINE_SMOOTH);
 	// glFrontFace(GL_CCW);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	// glClearColor(0.5f, 0.4f, 0.3f, 1);
@@ -122,6 +191,8 @@ int InitGL(){
     BindEvent(EV_ACCURATE, SDL_MOUSEMOTION, MouseEvent);
     BindEvent(EV_ACCURATE, SDL_MOUSEBUTTONDOWN, MouseEvent);
 
+	printf("SHADER UNIFORM TYPES:\nbool: %d\nfloat: %d\nint: %d\nvec2: %d\nvec3: %d\nvec4: %d\nmat2: %d\nmat3: %d\nmat4: %d\n", UNI_BOOL, UNI_FLOAT, UNI_INT, UNI_VEC2, UNI_VEC3, UNI_VEC4, UNI_MAT2, UNI_MAT3, UNI_MAT4);
+
 	InitGLUtils();
 
 	RendererInit();
@@ -130,11 +201,10 @@ int InitGL(){
     tilesheet_texture = LoadTilesheet("../images/testingTemp/tmpTilesheet.png", GL_RGBA, 16, 16);
 	crate_tex = LoadTexture("../images/wood2.png", GL_RGB);
 	normal_map = LoadTexture("../images/brick_normal.png", GL_RGBA);
-	grid_texture = LoadTexture("../images/grid.png", GL_RGBA);
+	// grid_texture = LoadTexture("../images/grid.png", GL_RGBA);
 
 
 
-    DebugLog(D_ACT, "Initialized OpenGL");
 
 	// mesh_shader = LoadShaderProgram("../shaders/mesh.vert", "../shaders/lit.frag");
 	// axis_shader = LoadShaderProgram("../shaders/axis.vert", "../shaders/axis.frag");
@@ -147,14 +217,13 @@ int InitGL(){
 
 	glGenBuffers(1, &uniform_buffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(float) * 16 * 2, NULL, GL_STATIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(float) * (16 * 2 + 1), NULL, GL_STATIC_DRAW);
 	// glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniform_buffer);
 
-	glUniformBlockBinding(mesh_shader, glGetUniformBlockIndex(mesh_shader, "Matrices"), 0);
-	glUniformBlockBinding(axis_shader, glGetUniformBlockIndex(mesh_shader, "Matrices"), 0);
-	glUniformBlockBinding(grid_shader, glGetUniformBlockIndex(mesh_shader, "Matrices"), 0);
-
+	glUniformBlockBinding(mesh_shader.id, glGetUniformBlockIndex(mesh_shader.id, "Matrices"), 0);
+	glUniformBlockBinding(axis_shader.id, glGetUniformBlockIndex(axis_shader.id, "Matrices"), 0);
+	glUniformBlockBinding(grid_shader.id, glGetUniformBlockIndex(grid_shader.id, "Matrices"), 0);
 
 
 	glGenVertexArrays(1, &axis_vao);
@@ -170,17 +239,21 @@ int InitGL(){
 
 
 
-
+	GenerateGrid();
 	glGenVertexArrays(1, &grid_vao);
 	glBindVertexArray(grid_vao);
 	glGenBuffers(1, &grid_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, grid_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(grid), grid, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, grid_vertex_count, grid, GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)(0));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)(0));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)(sizeof(float) * 3));
 
-
+// ShaderObject shad = ParseShaderUniforms("test", 0, "uniform vec2 finding_nemo_is_a_sad_story;", "");
+// 	printf("nam: %s\n", shad.name);
+// 	printf("uni[0] name: %s\n", shad.uniforms[0].name);
 
 
 	// int start = SDL_GetTicks();
@@ -224,14 +297,15 @@ printf("%d\n", pos->size);
     // set projection transform
     glm_perspective(glm_rad(90), SCREEN_WIDTH / SCREEN_HEIGHT, 0.01, 100, perspective_projection);
 
-	UniformSetInt(mesh_shader, "tex", 0);
-	UniformSetInt(mesh_shader, "normal_map", 1);
-	UniformSetVec3_m(mesh_shader, "color", 1, 0.5, 1);
-	UniformSetInt(grid_shader, "texture_0", 0);
+	UniformSetInt(&mesh_shader, "tex", 0);
+	UniformSetInt(&mesh_shader, "normal_map", 1);
+	// UniformSetVec3_m(&mesh_shader, "color", 1, 0.5, 1);
+	UniformSetInt(&grid_shader, "texture_0", 0);
 
 
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, 64, &perspective_projection);
 
+    DebugLog(D_ACT, "Initialized OpenGL");
 	
     GLCall;
     return 0;
@@ -258,7 +332,7 @@ void RenderUI(){
 	// float w = view_distance * cos(pitch);
 	glm_vec3_add(view_position.v, tmp.v, tmp.v);
 	// UniformSetVec3(mesh_shader, "view_position", tmp.v);
-	UniformSetVec3(mesh_shader, "view_position", tmp.v);
+	UniformSetVec3(&mesh_shader, "view_position", tmp.v);
 
 	static float normal_intense;
 	Vector2 size = {200, 30};
@@ -271,7 +345,7 @@ void RenderUI(){
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(3, 1, size, origin2, 6).x, VerticalRectList_vec(3, 1, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y: ");
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(3, 2, size, origin2, 6).x, VerticalRectList_vec(3, 2, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z: ");
 
-	UniformSetFloat(mesh_shader, "normal_map_intensity", normal_intense);
+	UniformSetFloat(&mesh_shader, "normal_map_intensity", normal_intense);
 
     glm_mat4_identity(view_matrix);
 	glm_mat4_identity(mesh_matrix);
@@ -290,10 +364,14 @@ void RenderUI(){
 	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 16, sizeof(float) * 16, &view_matrix);
 	RenderText(&default_font, 1, 0, 0, TEXT_ALIGN_LEFT, "view_distance: %f", view_distance);
 
+	// Set the time uniform
+	int time = SDL_GetTicks();
+	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
+	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 16 * 2, sizeof(float), &time);
 
     glm_translate(mesh_matrix, mesh_position.v);
 	glm_scale_uni(mesh_matrix, 0.5f);
-    UniformSetMat4(mesh_shader, "model", mesh_matrix);
+    UniformSetMat4(&mesh_shader, "model", mesh_matrix);
 
 	// float time = SDL_GetTicks() / 1000.0;
 	// glm_scale_uni(mesh_matrix, 0.1);
@@ -302,11 +380,11 @@ void RenderUI(){
 	glm_vec3_rotate(light_transform.position.v, light_time, (vec3){0, 1, 0});
 	light_transform.position.y = cos(light_time * 7.5) / 1.5;
 	glm_scale_uni(light_transform.result, 0.25);
-	UniformSetVec3(mesh_shader, "light_pos", light_transform.position.v);
+	UniformSetVec3(&mesh_shader, "light_pos", light_transform.position.v);
 
 	// Vector3 color = {sin(1), cos(1), 1.2};
 	Vector3 color = {0.5, 0.5, 0.5};
-	UniformSetVec3(mesh_shader, "light_color", color.v);
+	UniformSetVec3(&mesh_shader, "light_color", color.v);
 
 
 	// glm_vec3_rotate(light_transform.position.v, -light_time, (vec3){0, 1, 0});
@@ -341,7 +419,9 @@ void RenderGL(){
 	// glBindBuffer(GL_ARRAY_BUFFER, mesh_vbo);
 	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_ebo);
 	SetVAO(mesh_vao);
-	SetShaderProgram(mesh_shader);
+	// SetShaderProgram(&mesh_shader);
+	PassShaderUniforms(&mesh_shader);
+
 	// glDrawArrays(GL_TRIANGLES, 24, mesh_vbo);
 	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_ebo);
 	// glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, NULL);
@@ -354,18 +434,25 @@ void RenderGL(){
 	}
 	glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
 
+
+	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_LINE_SMOOTH);
 	SetVAO(axis_vao);
-	SetShaderProgram(axis_shader);
+	// SetShaderProgram(&axis_shader);
+	PassShaderUniforms(&axis_shader);
 	glDrawArrays(GL_LINES, 0, 26);
 
-
-	glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, grid_texture.gl_tex);
-	current_texture_unit = 0;
-	bound_textures[0] = grid_texture.gl_tex;
+	// glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, grid_texture.gl_tex);
+	// current_texture_unit = 0;
+	// bound_textures[0] = grid_texture.gl_tex;
 	SetVAO(grid_vao);
-	SetShaderProgram(grid_shader);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	// SetShaderProgram(&grid_shader);
+	PassShaderUniforms(&grid_shader);
+	// glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDrawArrays(GL_LINES, 0, grid_vertex_count);
+	glDisable(GL_MULTISAMPLE);
+	glDisable(GL_LINE_SMOOTH);
 	// glBindBuffer(GL_ARRAY_BUFFER, mesh_vbo);
 	// glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 192, mesh.data, GL_STATIC_DRAW);
 	// glDrawArrays(GL_TRIANGLES, 0, 192);
@@ -435,7 +522,7 @@ static void WindowResize(EventData event){
 
 Vector2 last_pos;
 Vector2 current_pos;
-static float sensitivity = 0.01f;
+static float sensitivity = 0.005f;
 static float move_sensitivity = 0.01f;
 static void MouseEvent(EventData event){
 	current_pos = (Vector2){mouse_pos.y, mouse_pos.x};
@@ -477,6 +564,15 @@ static void MouseEvent(EventData event){
 				direction.y = pitch;
 			}
 
+			if(mouse_pos.x <= 10){
+				SDL_WarpMouseInWindow(window, SCREEN_WIDTH - 11, mouse_pos.y);
+			}
+			if(mouse_pos.x >= SCREEN_WIDTH - 10){
+				SDL_WarpMouseInWindow(window, 11, mouse_pos.y);
+				SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
+				current_pos = (Vector2){mouse_pos.x, mouse_pos.y};
+				// last_pos = (Vector2)current_pos;
+			}
 			last_pos = (Vector2)current_pos;
 		}
 	// }
