@@ -37,13 +37,11 @@ bool running = true;
 float time_scale = 1.0f;
 bool paused = false;
 bool main_menu = true;
+bool window_active = true;
 
 TilesheetObject builtin_tilesheet;
-TilesheetObject tmp_block_tilesheet;
 void LoadBuiltinResources(){
-	tmp_block_tilesheet = LoadTilesheet("../images/testingTemp/tmpTilesheet.png", 16, 16);
-
-	builtin_tilesheet = LoadTilesheet("../images/builtin.png", 16, 16);
+	builtin_tilesheet = LoadTilesheet("../images/builtin.png", GL_RGBA, 16, 16);
 }
 
 void InitSDL(){
@@ -100,40 +98,51 @@ void GameLoop(){
 
 }
 
+static void CheckWindowActive(EventData event){
+	if(event.e->window.event == SDL_WINDOWEVENT_FOCUS_LOST){
+		window_active = false;
+	}else if(event.e->window.event == SDL_WINDOWEVENT_FOCUS_GAINED){
+		window_active = true;
+	}
+}
+
 bool wireframe = false;
-static void ToggleWireframe(){
-	wireframe = !wireframe;
-	if(wireframe){
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	}else{
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+static void ToggleWireframe(EventData event){
+	if(event.keyStates[SDL_SCANCODE_LSHIFT]){
+		wireframe = !wireframe;
+		if(wireframe){
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}else{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
 	}
 }
 #include "scene/obj_loader.h"
 int main(int argc, char *argv[]){
 	Setup();
 	// startupTime.x = SDL_GetTicks();
-	BindKeyEvent(ToggleWireframe, 'u', SDL_KEYDOWN);
+	BindKeyEvent(ToggleWireframe, 'z', SDL_KEYDOWN);
+	BindEvent(EV_ACCURATE, SDL_WINDOWEVENT, CheckWindowActive);
 
 	// LoadObj("../models/cube.obj");
 
 	while(running){
 		loop_start_ticks = SDL_GetTicks();
 		EventListener();
-		
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		if(window_active){
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		LoopUI();
+			LoopUI();
 
-		RenderGL();
-		// if(main_menu){
-			// RenderStartScreen();
-		// }else{
-		// 	GameLoop();
-		// }
-		PushRender();
-		SDL_GL_SwapWindow(window);
-
+			RenderGL();
+			// if(main_menu){
+				// RenderStartScreen();
+			// }else{
+			// 	GameLoop();
+			// }
+			PushRender();
+			SDL_GL_SwapWindow(window);
+		}
 		
 		SDL_Delay(1000 / target_framerate);
 		deltatime = (SDL_GetTicks() - loop_start_ticks) / 10.0;

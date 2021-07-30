@@ -16,14 +16,12 @@ int InitGL();
 //TMP
 void RenderGL();
 
-extern mat4 projection_matrix;
 extern unsigned int default_shader;
 
 extern int z_depth;
 
 //tmp
 #include "gl_utils.h"
-extern TilesheetObject tilesheet_texture;
 
 
 #endif

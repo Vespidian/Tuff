@@ -6,7 +6,7 @@
 
 #include "quad.h"
 
-unsigned int quad_shader;
+ShaderObject quad_shader;
 
 AttribArray quad_vao;
 
@@ -15,17 +15,16 @@ void SetQuadProjection();
 void InitQuadRender(){
 	quad_vao = NewVAO(3, ATTR_MAT4, ATTR_VEC4, ATTR_VEC4);
 
-    quad_shader = LoadShaderProgram("../shaders/quad_default.vert", "../shaders/quad_default.frag");
-	SetShaderProgram(quad_shader);
-	UniformSetInt(quad_shader, "src_texture", 0);
-	UniformSetMat4(quad_shader, "tex_coordinates", default_texture_coordinates);
-    UniformSetMat4(quad_shader, "projection", projection_matrix);
+    quad_shader = LoadShaderProgram("../shaders/quad_default.shader");
+	UniformSetSampler2D(&quad_shader, "src_texture", 0);
+	UniformSetMat4(&quad_shader, "tex_coordinates", default_texture_coordinates);
+    UniformSetMat4(&quad_shader, "projection", orthographic_projection);
 
 	BindEvent(EV_ACCURATE, SDL_WINDOWEVENT, SetQuadProjection);
 }
 
 void SetQuadProjection(){
-    UniformSetMat4(quad_shader, "projection", projection_matrix);
+    UniformSetMat4(&quad_shader, "projection", orthographic_projection);
 }
 
 void RenderQuad(TextureObject texture, SDL_Rect *src, SDL_Rect *dst, int zpos, Vector4 color, float rot){
@@ -66,7 +65,7 @@ void RenderQuad(TextureObject texture, SDL_Rect *src, SDL_Rect *dst, int zpos, V
 	TextureObject texture_array[16] = {texture};
 
 	//Send data to be processed
-	AppendInstance(quad_vao, data, quad_shader, 1, texture_array);
+	AppendInstance(quad_vao, data, &quad_shader, 1, texture_array);
 
 }
 // {				Model Matrix				 } {  Color  } { Texture source positions }
@@ -100,5 +99,5 @@ void RenderTilesheet(TilesheetObject tilesheet, unsigned int index, SDL_Rect *ds
 
 
 	TextureObject textures[16] = {tilesheet.texture};
-	AppendInstance(quad_vao, data, quad_shader, 1, textures);
+	AppendInstance(quad_vao, data, &quad_shader, 1, textures);
 }

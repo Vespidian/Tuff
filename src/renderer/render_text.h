@@ -45,11 +45,12 @@ FontObject *NewFont(char *name, TilesheetObject *tilesheet, Vector2 char_size, V
  *  @brief generate a new font directly from a texture on the disk (to be used when rendering text)
  *  @param name name of the font
  *  @param path path to texture file on disk
+ *  @param image_format format of tilesheet image (GL_RGB, RL_RGBA)
  *  @param char_size size of the boundaries of all characters within font
  *  @param padding area around character in tilesheet
  *  @return A pointer to the font in the font stack
  */
-FontObject *NewRawFont(char *name, char *path, Vector2 char_size, Vector2 padding);
+FontObject *NewRawFont(char *name, char *path, int image_format, Vector2 char_size, Vector2 padding);
 
 /**
  *  @return Font with name 'name' from the font stack

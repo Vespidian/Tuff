@@ -21,36 +21,11 @@ typedef struct AttribArray{
 typedef struct InstanceBuffer{
 	char num_textures_used;
 	unsigned int texture[16];
-	unsigned int shader;
+	ShaderObject *shader;
 	AttribArray vao;
 	unsigned int count;
 	float *buffer;
 }InstanceBuffer;
-
-/**
- *  Active shader
- */
-extern unsigned int current_shader;
-
-/**
- *  Active VAO
- */
-extern unsigned int current_vao;
-
-/**
- *  Ordered array of all bound textures
- */
-extern unsigned int bound_textures[16];
-
-/**
- *  Bound texture unit
- */
-extern unsigned int current_texture_unit;
-
-/**
- *  Undefined texture to use in case of error
- */
-extern TextureObject undefined_texture;
 
 /**
  *  Quad texture coordinates
@@ -61,6 +36,11 @@ extern mat4 default_texture_coordinates;
  *  Number of calls to 'AppendInstance()' in current frame
  */
 extern int num_append_instance_calls;
+
+/**
+ *  Orthographic projection matrix for use with ui rendering
+ */
+extern mat4 orthographic_projection;
 
 /**
  *  @brief Initialize the render system
@@ -83,7 +63,7 @@ AttribArray NewVAO(int num_attribs, ...);
  *  @param num_textures_used number of textures to copy to instance texture buffer
  *  @param textures[16] array of textures to use
  */
-void AppendInstance(AttribArray vao, float data[64], unsigned int shader, char num_textures_used, TextureObject textures[16]);
+void AppendInstance(AttribArray vao, float data[64], ShaderObject *shader, char num_textures_used, TextureObject textures[16]);
 
 /**
  *  @brief Passes all instance data to the GPU (window buffer still needs to be swapped)

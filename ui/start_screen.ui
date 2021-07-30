@@ -1,0 +1,13 @@
+// Starting off with declaring some possible functions in the library itself
+ExposeUIFunction(UIFunc_t function, char *name); // Exposes a function with its corresponding name
+
+
+// Now for the ui scene structure
+// Element types: 
+// button, checkbox, textbox, context menu, 
+// radio buttons, dropdown list, rectangle, text
+{
+	"scene" : {
+		
+	}
+}
