@@ -12,16 +12,16 @@ TextureObject *texture_stack;
 unsigned int num_textures = 0;
 
 void InitTextures(){
-    undefined_texture = LoadTexture("../images/undefined.png", GL_RGBA);
+    undefined_texture = LoadTexture("../images/undefined.png");
     DebugLog(D_ACT, "Initialized texture subsystem");
 }
 
-TextureObject *LoadTextureToStack(const char *path, int format){
+TextureObject *LoadTextureToStack(const char *path){
 	// Expand 'texture_stack' to fit new texture
     texture_stack = realloc(texture_stack, sizeof(TextureObject) * (num_textures + 1));
     
 	// Load the new texture
-	texture_stack[num_textures] = LoadTexture(path, format);
+	texture_stack[num_textures] = LoadTexture(path);
 
     return &texture_stack[num_textures++];
 }

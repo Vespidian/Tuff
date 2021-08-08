@@ -41,7 +41,7 @@ bool window_active = true;
 
 TilesheetObject builtin_tilesheet;
 void LoadBuiltinResources(){
-	builtin_tilesheet = LoadTilesheet("../images/builtin.png", GL_RGBA, 16, 16);
+	builtin_tilesheet = LoadTilesheet("../images/builtin.png", 16, 16);
 }
 
 void InitSDL(){

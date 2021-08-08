@@ -9,7 +9,7 @@ enum ShaderTypes { UNI_BOOL = 0, UNI_INT, UNI_FLOAT, UNI_VEC2, UNI_VEC3, UNI_VEC
 typedef struct ShaderUniformObject{
 	char *name;
 	unsigned int uniform;
-	int type;
+	enum ShaderTypes type;
 	union value{
 		bool _bool;
 		int _int;
@@ -37,6 +37,7 @@ typedef struct ShaderObject{
 	bool using_texture_slot[16];
 }ShaderObject;
 ShaderObject ParseShaderUniforms(char *name, unsigned int id, char *vertex, char *fragment);
+
 /**
  *  Active shader
  */
@@ -107,7 +108,7 @@ typedef struct TilesheetObject{
  *  Undefined texture to use in case of error
  */
 extern TextureObject undefined_texture;
-TextureObject LoadTexture(const char *path, int format);
-TilesheetObject LoadTilesheet(const char *path, int format, int tile_width, int tile_height);
+TextureObject LoadTexture(const char *path);
+TilesheetObject LoadTilesheet(const char *path, int tile_width, int tile_height);
 
 #endif

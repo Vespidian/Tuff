@@ -30,64 +30,40 @@ static void MouseEvent(EventData event);
 //testing
 mat4 perspective_projection;
 mat4 view_matrix;
-unsigned int uniform_buffer;
 unsigned int mesh_vao;
 unsigned int mesh_ebo;
+
 unsigned int vert_vbo;
 unsigned int norm_vbo;
 unsigned int texc_vbo;
+
 ShaderObject mesh_shader;
 mat4 mesh_matrix;
+TransformObject mesh_transform;
+TransformObject origin_transform;
+ModelObject *parent;
+ModelObject *child;
+
+unsigned int uniform_buffer;
 
 float axis[] = {
 	// x1, y1, z1, r, g, b, x2, y2, z2, r, g, b,
 	0, 0, 0,  1, 0, 0,    1, 0, 0,  1, 0, 0, // x axis
 	0, 0, 0,  0, 1, 0,    0, 1, 0,  0, 1, 0, // y axis
 	0, 0, 0,  0, 0, 1,    0, 0, 1,  0, 0, 1, // z axis
-	// -10, 0, 0,  1, 0, 0,    10, 0, 0,  1, 0, 0, // x axis
-	// 0, -10, 0,  0, 1, 0,    0, 10, 0,  0, 1, 0, // y axis
-	// 0, 0, -10,  0, 0, 1,    0, 0, 10,  0, 0, 1, // z axis
 };
 unsigned int axis_vao;
 unsigned int axis_vbo;
 ShaderObject axis_shader;
 
-// float grid[] = { // floor grid
-// 	-1, 0, 1,
-// 	1, 0, 1,
-// 	1, 0, -1,
 
-// 	-1, 0, 1,
-// 	1, 0, -1,
-// 	-1, 0, -1,
-// };
-// float grid[] = { // screen space grid
-// 	// vertical quad
-// 	// -1, 1, 0,
-// 	// 1, 1, 0,
-// 	// 1, -1, 0,
-
-// 	// -1, 1, 0,
-// 	// 1, -1, 0,
-// 	// -1, -1, 0,
-
-// 	// horizontal
-// 	-1, 0, 1,
-// 	1, 0, 1,
-// 	1, 0, -1,
-
-// 	-1, 0, 1,
-// 	1, 0, -1,
-// 	-1, 0, -1,
-
-// };
 float *grid;
 int grid_vertex_count;
 int num_grid_verts;
 unsigned int grid_vao;
 unsigned int grid_vbo;
 ShaderObject grid_shader;
-// TextureObject grid_texture;
+
 
 void GenerateGrid(){
 	// glLineWidth(2);
@@ -180,7 +156,6 @@ int InitGL(){
 	glEnable(GL_LINE_SMOOTH);
 	// glFrontFace(GL_CCW);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	// glClearColor(0.5f, 0.4f, 0.3f, 1);
 	glClearColor(0.258, 0.258, 0.258, 1);
 	glm_ortho(0.0, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0, -z_depth / 2, z_depth / 2, orthographic_projection);
 
@@ -190,33 +165,23 @@ int InitGL(){
     BindEvent(EV_ACCURATE, SDL_MOUSEMOTION, MouseEvent);
     BindEvent(EV_ACCURATE, SDL_MOUSEBUTTONDOWN, MouseEvent);
 
-	printf("SHADER UNIFORM TYPES:\nbool: %d\nfloat: %d\nint: %d\nvec2: %d\nvec3: %d\nvec4: %d\nmat2: %d\nmat3: %d\nmat4: %d\n", UNI_BOOL, UNI_FLOAT, UNI_INT, UNI_VEC2, UNI_VEC3, UNI_VEC4, UNI_MAT2, UNI_MAT3, UNI_MAT4);
-
 	InitGLUtils();
 
 	RendererInit();
 
 
-	crate_tex = LoadTexture("../images/crate.png", GL_RGBA);
-	normal_map = LoadTexture("../images/brick_normal.png", GL_RGBA);
-	// grid_texture = LoadTexture("../images/grid.png", GL_RGBA);
+	crate_tex = LoadTexture("../images/example_atlas.png");
+	normal_map = LoadTexture("../images/brick_normal.png");
 
 
-
-
-	// mesh_shader = LoadShaderProgram("../shaders/mesh.vert", "../shaders/lit.frag");
-	// axis_shader = LoadShaderProgram("../shaders/axis.vert", "../shaders/axis.frag");
-	// grid_shader = LoadShaderProgram("../shaders/grid.vert", "../shaders/grid.frag");
-	mesh_shader = LoadShaderProgram("../shaders/mesh.shader");
-	printf("GOT HERE\n");
-	axis_shader = LoadShaderProgram("../shaders/axis.shader");
-	grid_shader = LoadShaderProgram("../shaders/grid.shader");
+	mesh_shader = LoadShaderProgram("mesh.shader");
+	axis_shader = LoadShaderProgram("axis.shader");
+	grid_shader = LoadShaderProgram("grid.shader");
 
 
 	glGenBuffers(1, &uniform_buffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(float) * (16 * 2 + 1), NULL, GL_STATIC_DRAW);
-	// glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniform_buffer);
 
 	glUniformBlockBinding(mesh_shader.id, glGetUniformBlockIndex(mesh_shader.id, "Matrices"), 0);
@@ -268,7 +233,6 @@ int InitGL(){
 
 
 	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, 72, data->meshes->primitives->indices->buffer_view->buffer->data, GL_STATIC_DRAW);
-printf("%d\n", pos->size);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vert_vbo);
 	// glBufferData(GL_ARRAY_BUFFER, pos->size + norm->size, pos->buffer->data, GL_STATIC_DRAW);
@@ -295,20 +259,21 @@ printf("%d\n", pos->size);
     // set projection transform
     glm_perspective(glm_rad(90), SCREEN_WIDTH / SCREEN_HEIGHT, 0.01, 100, perspective_projection);
 
-	// UniformSetInt(&mesh_shader, "tex", 0);
-	// UniformSetInt(&mesh_shader, "normal_map", 1);
-	// // UniformSetVec3_m(&mesh_shader, "color", 1, 0.5, 1);
-	// UniformSetInt(&grid_shader, "texture_0", 0);
 	UniformSetSampler2D(&mesh_shader, "tex", 0);
 	UniformSetSampler2D(&mesh_shader, "normal_map", 1);
-	// UniformSetVec3_m(&mesh_shader, "color", 1, 0.5, 1);
 	UniformSetSampler2D(&grid_shader, "texture_0", 0);
 
 
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, 64, &perspective_projection);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float) * 16, &perspective_projection);
 
     DebugLog(D_ACT, "Initialized OpenGL");
-	
+
+	mesh_transform.scale = (Vector3){0.5, 0.5, 0.5};
+	InitTransform(&origin_transform);
+
+	InitScene(&active_scene);
+	parent = NewModel("parent", NULL, NULL, 0, 0, 0, 0);
+	child = NewModel("child", parent, NULL, 0, 0, 0, 0);
     GLCall;
     return 0;
 }
@@ -333,10 +298,10 @@ char uniform_types[12][16] = {
 };
 
 void DisplayShaderUniforms(ShaderObject *shader){
-	ResizableRect(ui_tilesheet, (SDL_Rect){10, 10, 300, 400}, 7, 6, RNDR_UI, (Vector4){0, 0, 0, 0.75});
+	ResizableRect(ui_tilesheet, (SDL_Rect){10, 10, 280, shader->num_uniforms * 26}, 7, 6, RNDR_UI, (Vector4){0, 0, 0, 0.25});
 
 	Vector2 size = {200, 20};
-	Vector2 origin = {115, 205};
+	Vector2 origin = {115, (shader->num_uniforms * 26) / 2 + 10};
 
 	for(int i = 0; i < shader->num_uniforms; i++){
 		Vector4_i pos = VerticalRectList_vec(shader->num_uniforms, i, size, origin, 6);
@@ -351,10 +316,10 @@ Vector3 light_color = {1, 1, 1};
 TransformObject light_transform = {{1, 0.6, 1.2}, {1, 1, 1}, {0, 0, 0}};
 static Vector3 direction = {0, 0, 0};
 static Vector3 view_position = {0, 0, 0};
-static Vector3 mesh_position = {0, 0.01, 0};
+// static Vector3 mesh_position = {0, 0.01, 0};
 // static Vector3 light_position = {1, 0.6, 1.2};
 static float view_distance = 2;
-static float yaw, pitch;
+static float yaw, pitch = 0.25;
 #include "ui/elements/slider.h"
 void RenderUI(){
 	DisplayShaderUniforms(&mesh_shader);
@@ -367,20 +332,62 @@ void RenderUI(){
 	UniformSetVec3(&mesh_shader, "view_position", tmp.v);
 
 	static float normal_intense;
-	Vector2 size = {200, 15};
-	Vector2 origin = {SCREEN_WIDTH - size.x / 2 - 10, size.y * 3};
-	Vector2 origin2 = {SCREEN_WIDTH - size.x / 2 - 10, size.y * 3};
-	RenderSlider(&light_time, 0.0000, 1.0000, VerticalRectList_vec(3, 0, size, origin, 6));
-	RenderSlider(&normal_intense, 0.0, 10, VerticalRectList_vec(3, 1, size, origin, 6));
-	RenderSlider(&tmp.z, 0.0, 10, VerticalRectList_vec(3, 2, size, origin, 6));
-	RenderTextEx(&default_font, 1, VerticalRectList_vec(3, 0, size, origin2, 6).x, VerticalRectList_vec(3, 0, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "light_time: ");
-	RenderTextEx(&default_font, 1, VerticalRectList_vec(3, 1, size, origin2, 6).x, VerticalRectList_vec(3, 1, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y: ");
-	RenderTextEx(&default_font, 1, VerticalRectList_vec(3, 2, size, origin2, 6).x, VerticalRectList_vec(3, 2, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z: ");
+	Vector2 size = {200, 20};
+	int num_elements = 9;
+	Vector2 origin = {SCREEN_WIDTH - size.x / 2 - 10, size.y * ((num_elements + 6) / 2)};
+	Vector2 origin2 = {SCREEN_WIDTH - size.x / 2 - 10, size.y * ((num_elements + 6) / 2)};
+
+
+	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 0, size, origin2, 6).x, VerticalRectList_vec(num_elements, 0, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_pos: ");
+	// RenderSlider(&mesh_transform.position.x		, -1.5, 1.5, VerticalRectList_vec(num_elements, 0, size, origin, 6));
+	
+	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 1, size, origin2, 6).x, VerticalRectList_vec(num_elements, 1, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y_pos: ");
+	// RenderSlider(&mesh_transform.position.y		, -1.5, 1.5, VerticalRectList_vec(num_elements, 1, size, origin, 6));
+	
+	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 2, size, origin2, 6).x, VerticalRectList_vec(num_elements, 2, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_pos: ");
+	// RenderSlider(&mesh_transform.position.z		, -1.5, 1.5, VerticalRectList_vec(num_elements, 2, size, origin, 6));
+	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 0, size, origin2, 6).x, VerticalRectList_vec(num_elements, 0, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_parent_pos: ");
+	RenderSlider(&parent->transform.position.x		, -1.5, 1.5, VerticalRectList_vec(num_elements, 0, size, origin, 6));
+	
+	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 1, size, origin2, 6).x, VerticalRectList_vec(num_elements, 1, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y_parent_pos: ");
+	RenderSlider(&parent->transform.position.y		, -1.5, 1.5, VerticalRectList_vec(num_elements, 1, size, origin, 6));
+	
+	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 2, size, origin2, 6).x, VerticalRectList_vec(num_elements, 2, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_parent_pos: ");
+	RenderSlider(&parent->transform.position.z		, -1.5, 1.5, VerticalRectList_vec(num_elements, 2, size, origin, 6));
+	
+	
+	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 3, size, origin2, 6).x, VerticalRectList_vec(num_elements, 3, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_rot: ");
+	RenderSlider(&mesh_transform.rotation_e.x	, -1.5, 1.5, VerticalRectList_vec(num_elements, 3, size, origin, 6));
+	
+	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 4, size, origin2, 6).x, VerticalRectList_vec(num_elements, 4, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y_rot: ");
+	RenderSlider(&mesh_transform.rotation_e.y	, -1.5, 1.5, VerticalRectList_vec(num_elements, 4, size, origin, 6));
+	
+	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 5, size, origin2, 6).x, VerticalRectList_vec(num_elements, 5, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_rot: ");
+	RenderSlider(&mesh_transform.rotation_e.z	, -1.5, 1.5, VerticalRectList_vec(num_elements, 5, size, origin, 6));
+	
+	
+	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 6, size, origin2, 6).x, VerticalRectList_vec(num_elements, 6, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_scale: ");
+	// RenderSlider(&mesh_transform.scale.x		, 0.5, 3, VerticalRectList_vec(num_elements, 6, size, origin, 6));
+	
+	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 7, size, origin2, 6).x, VerticalRectList_vec(num_elements, 7, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y_scale: ");
+	// RenderSlider(&mesh_transform.scale.y		, 0.5, 3, VerticalRectList_vec(num_elements, 7, size, origin, 6));
+	
+	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 8, size, origin2, 6).x, VerticalRectList_vec(num_elements, 8, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_scale: ");
+	// RenderSlider(&mesh_transform.scale.z		, 0.5, 3, VerticalRectList_vec(num_elements, 8, size, origin, 6));
+	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 6, size, origin2, 6).x, VerticalRectList_vec(num_elements, 6, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_child_pos: ");
+	RenderSlider(&child->transform.position.x		, -1.5, 1.5, VerticalRectList_vec(num_elements, 6, size, origin, 6));
+	
+	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 7, size, origin2, 6).x, VerticalRectList_vec(num_elements, 7, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y_child_pos: ");
+	RenderSlider(&child->transform.position.y		, -1.5, 1.5, VerticalRectList_vec(num_elements, 7, size, origin, 6));
+	
+	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 8, size, origin2, 6).x, VerticalRectList_vec(num_elements, 8, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_child_pos: ");
+	RenderSlider(&child->transform.position.z		, -1.5, 1.5, VerticalRectList_vec(num_elements, 8, size, origin, 6));
+
 
 	UniformSetFloat(&mesh_shader, "normal_map_intensity", normal_intense);
 
     glm_mat4_identity(view_matrix);
-	glm_mat4_identity(mesh_matrix);
+	// glm_mat4_identity(mesh_matrix);
 
 	
 	glm_translate(view_matrix, (vec3){0, 0, -view_distance});
@@ -394,16 +401,15 @@ void RenderUI(){
 	// UniformSetMat4(grid_shader, "view", view_matrix);
 	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
 	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 16, sizeof(float) * 16, &view_matrix);
-	RenderText(&default_font, 1, 0, 0, TEXT_ALIGN_LEFT, "view_distance: %f", view_distance);
 
 	// Set the time uniform
 	int time = SDL_GetTicks();
 	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
 	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 16 * 2, sizeof(float), &time);
 
-    glm_translate(mesh_matrix, mesh_position.v);
-	glm_scale_uni(mesh_matrix, 0.5f);
-    UniformSetMat4(&mesh_shader, "model", mesh_matrix);
+    // glm_translate(mesh_matrix, mesh_position.v);
+	// glm_scale_uni(mesh_matrix, 0.5f);
+    // UniformSetMat4(&mesh_shader, "model", mesh_matrix);
 
 	// float time = SDL_GetTicks() / 1000.0;
 	// glm_scale_uni(mesh_matrix, 0.1);
@@ -435,7 +441,6 @@ void RenderUI(){
 
 void RenderGL(){
 	RenderUI();
-	// SetShaderProgram(mesh_shader);
 
 	glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, crate_tex.gl_tex);
@@ -448,67 +453,57 @@ void RenderGL(){
 	bound_textures[1] = normal_map.gl_tex;
 
 
-	// glBindBuffer(GL_ARRAY_BUFFER, mesh_vbo);
-	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_ebo);
 	SetVAO(mesh_vao);
-	// SetShaderProgram(&mesh_shader);
+	CalculateTransform(&mesh_transform);
+    UniformSetMat4(&mesh_shader, "model", mesh_transform.result);
 	PassShaderUniforms(&mesh_shader);
-
-	// glDrawArrays(GL_TRIANGLES, 24, mesh_vbo);
-	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_ebo);
-	// glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, NULL);
-	// glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, NULL);
 	int type;
 	if(data->meshes->primitives->indices->component_type == cgltf_component_type_r_16u){
 		type = GL_UNSIGNED_SHORT;
 	}else{
 		type = GL_UNSIGNED_INT;
 	}
-	glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
+	// glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
 
 
 	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_LINE_SMOOTH);
+
+	// Scene axis
 	SetVAO(axis_vao);
-	// SetShaderProgram(&axis_shader);
+    UniformSetMat4(&axis_shader, "model", origin_transform.result);
+	PassShaderUniforms(&axis_shader);
+	glDrawArrays(GL_LINES, 0, 26);
+	
+	// Mesh axis
+	SetVAO(axis_vao);
+    UniformSetMat4(&axis_shader, "model", mesh_transform.result);
 	PassShaderUniforms(&axis_shader);
 	glDrawArrays(GL_LINES, 0, 26);
 
-	// glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_2D, grid_texture.gl_tex);
-	// current_texture_unit = 0;
-	// bound_textures[0] = grid_texture.gl_tex;
+	// parent axis
+	SetVAO(mesh_vao);
+	CalculateModelTransform(parent);
+	// CalculateTransform(&parent->transform);
+    UniformSetMat4(&mesh_shader, "model", parent->transform.result);
+	PassShaderUniforms(&mesh_shader);
+	glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
+	// child axis
+	SetVAO(mesh_vao);
+	CalculateModelTransform(child);
+	// CalculateTransform(&child->transform);
+    UniformSetMat4(&mesh_shader, "model", child->transform.result);
+	PassShaderUniforms(&mesh_shader);
+	glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
+
 	SetVAO(grid_vao);
-	// SetShaderProgram(&grid_shader);
 	PassShaderUniforms(&grid_shader);
-	// glDrawArrays(GL_TRIANGLES, 0, 6);
 	glDrawArrays(GL_LINES, 0, grid_vertex_count);
 	glDisable(GL_MULTISAMPLE);
 	glDisable(GL_LINE_SMOOTH);
-	// glBindBuffer(GL_ARRAY_BUFFER, mesh_vbo);
-	// glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 192, mesh.data, GL_STATIC_DRAW);
-	// glDrawArrays(GL_TRIANGLES, 0, 192);
-
-	// glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
-	// glBufferData(GL_ARRAY_BUFFER, sizeof(float) * mesh.data_size, mesh.data, GL_STATIC_DRAW);
-
-	// glBufferData(GL_ARRAY_BUFFER, sizeof(float) * axis_mesh.data_size, axis_mesh.data, GL_STATIC_DRAW);
-	// glBindBuffer(GL_ARRAY_BUFFER, axis_vbo);
-	// glBindVertexArray(mesh_vao);
-	// SetShaderProgram(grid_shader);
-	// glBindVertexArray(axis_vao);
-	// current_vao = axis_vao;
-	// glDrawArrays(GL_TRIANGLES, 0, mesh.num_vertices);
-
-		// SetShaderProgram(unlit_shader);
-	// glDrawArrays(GL_TRIANGLES, 0, mesh.num_vertices);
-	// glDrawElements(GL_TRIANGLES, mesh.num_indices, GL_UNSIGNED_INT, 0);
-
-
-
 }
 
-float movement_speed = 0.05f;
+float movement_speed = 0.01f;
 float rotation_speed = 0.3f;
 float zoom_speed = 0.075f;
 static void Zoom(EventData event){
@@ -520,20 +515,35 @@ static void Zoom(EventData event){
 }
 
 static void KeyPresses(EventData event){
+	Vector3 direction = {0};
 	// Forward / back
-	if(event.keyStates[SDL_SCANCODE_W]){view_position.z += movement_speed;}
-	if(event.keyStates[SDL_SCANCODE_A]){view_position.x += movement_speed;}
+	if(event.keyStates[SDL_SCANCODE_W]){
+		direction = (Vector3){0, 0, 1};
+	}
+	if(event.keyStates[SDL_SCANCODE_A]){
+		direction = (Vector3){-1, 0, 0};
+	}
 	// Left / right
-	if(event.keyStates[SDL_SCANCODE_S]){view_position.z -= movement_speed;}
-	if(event.keyStates[SDL_SCANCODE_D]){view_position.x -= movement_speed;}
-	// Up / down
-	if(event.keyStates[SDL_SCANCODE_LCTRL]){view_position.y += movement_speed;}
-	if(event.keyStates[SDL_SCANCODE_SPACE]){view_position.y -= movement_speed;}
+	if(event.keyStates[SDL_SCANCODE_S]){
+		direction = (Vector3){0, 0, -1};
+	}
+	if(event.keyStates[SDL_SCANCODE_D]){
+		direction = (Vector3){1, 0, 0};
+	}
+	// Up / Down
+	if(event.keyStates[SDL_SCANCODE_LCTRL]){
+		direction = (Vector3){0, 1, 0};
+	}
+	if(event.keyStates[SDL_SCANCODE_SPACE]){
+		direction = (Vector3){0, -1, 0};
+	}
 
-	if(event.keyStates[SDL_SCANCODE_LEFT]){direction.y += rotation_speed;}
-	if(event.keyStates[SDL_SCANCODE_RIGHT]){direction.y -= rotation_speed;}
-	if(event.keyStates[SDL_SCANCODE_UP]){direction.x += rotation_speed;}
-	if(event.keyStates[SDL_SCANCODE_DOWN]){direction.x -= rotation_speed;}
+	glm_vec3_scale(direction.v, movement_speed * view_distance, direction.v);
+	glm_vec3_rotate(direction.v, -pitch * 2, (vec3){1, 0, 0});
+	glm_vec3_rotate(direction.v, yaw, (vec3){0, 1, 0});
+	view_position.x += -direction.x;
+	view_position.y += direction.y;
+	view_position.z += direction.z;
 }
 
 static void WindowResize(EventData event){
@@ -541,21 +551,16 @@ static void WindowResize(EventData event){
 		SDL_GetWindowSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
 		glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 		glm_ortho(0.0, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0, -z_depth / 2, z_depth / 2, orthographic_projection);
-    	// glm_mat4_identity(perspective_projection);
-		// printf("width: %d\nheight: %d\n", SCREEN_WIDTH, SCREEN_HEIGHT);
 		glm_perspective(glm_rad(90), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.01, 100, perspective_projection);
 		glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float) * 16, &perspective_projection);
-		// UniformSetMat4(unlit_shader, "projection", perspective_projection);
-		// UniformSetMat4(mesh_shader, "projection", perspective_projection);
-		// UniformSetMat4(grid_shader, "projection", perspective_projection);
 	}
 }
 
 Vector2 last_pos;
 Vector2 current_pos;
 static float sensitivity = 0.005f;
-static float move_sensitivity = 0.01f;
+static float move_sensitivity = 0.0025f;
 static void MouseEvent(EventData event){
 	current_pos = (Vector2){mouse_pos.x, mouse_pos.y};
 	if(mouse_clicked && !ui_hovered){
@@ -568,9 +573,8 @@ static void MouseEvent(EventData event){
 			Vector2 difference;
 			glm_vec2_sub(current_pos.v, last_pos.v, difference.v);
 
-			printf("yaw: %f\n", yaw);
 			if(event.keyStates[SDL_SCANCODE_LSHIFT]){
-				Vector3 tmp = {-difference.x * move_sensitivity, -difference.y * move_sensitivity, 0};
+				Vector3 tmp = {-difference.x * move_sensitivity * view_distance, -difference.y * move_sensitivity * view_distance, 0};
 				glm_vec3_rotate(tmp.v, -pitch * 2, (vec3){1, 0, 0});
 				glm_vec3_rotate(tmp.v, yaw, (vec3){0, 1, 0});
 				view_position.x += -tmp.x;
@@ -625,6 +629,4 @@ static void MouseEvent(EventData event){
 			SDL_SetWindowGrab(window, SDL_FALSE);
 		}
 	// }
-	printf("Window height: %d\nmouse_y: %d\n", SCREEN_HEIGHT, mouse_pos.y);
-
 }

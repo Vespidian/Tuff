@@ -22,7 +22,7 @@ void InitTextures();
  *  @brief Load a texture from file and place it into the texture stack
  *  @return A pointer to the 'TextureObject' containing the texture
  */
-TextureObject *LoadTextureToStack(const char *path, int format);
+TextureObject *LoadTextureToStack(const char *path);
 
 /**
  *  @return A pointer to the texture with id 'id' from the texture stack

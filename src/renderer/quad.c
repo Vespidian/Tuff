@@ -15,7 +15,7 @@ void SetQuadProjection();
 void InitQuadRender(){
 	quad_vao = NewVAO(3, ATTR_MAT4, ATTR_VEC4, ATTR_VEC4);
 
-    quad_shader = LoadShaderProgram("../shaders/quad_default.shader");
+    quad_shader = LoadShaderProgram("quad_default.shader");
 	UniformSetSampler2D(&quad_shader, "src_texture", 0);
 	UniformSetMat4(&quad_shader, "tex_coordinates", default_texture_coordinates);
     UniformSetMat4(&quad_shader, "projection", orthographic_projection);

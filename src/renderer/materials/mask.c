@@ -15,13 +15,13 @@ TilesheetObject autotile_mask_sheet;
 void InitMaskedRender(){
 	mask_vao = NewVAO(5, ATTR_MAT4, ATTR_VEC4, ATTR_VEC4, ATTR_VEC4, ATTR_VEC4);
 
-	mask_shader = LoadShaderProgram("../shaders/mask.shader");
+	mask_shader = LoadShaderProgram("mask.shader");
 	UniformSetMat4(&mask_shader, "tex_coordinates", default_texture_coordinates);
 	UniformSetInt(&mask_shader, "top_texture_s", 0);
 	UniformSetInt(&mask_shader, "bottom_texture_s", 1);
 	UniformSetInt(&mask_shader, "mask_texture_s", 2);
 
-	autotile_mask_sheet = LoadTilesheet("../images/autotile_mask.png", GL_RGBA, 16, 16);
+	autotile_mask_sheet = LoadTilesheet("../images/autotile_mask.png", 16, 16);
 	UniformSetMat4(&mask_shader, "orthographic_projection", orthographic_projection);
 	BindEvent(EV_ACCURATE, SDL_WINDOWEVENT, WindowResize);
 }

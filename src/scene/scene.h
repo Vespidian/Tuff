@@ -33,11 +33,17 @@ typedef struct MeshObject{
 }MeshObject;
 
 
+typedef struct MaterialObject{
+	unsigned int shader;
+	unsigned int textures[16];
+	Vector3 color;
+}MaterialObject;
 
 typedef struct TransformObject{
 	Vector3 position;
 	Vector3 scale;
-	Vector4 rotation;
+	Vector4 rotation_q;
+	Vector3 rotation_e;
 	mat4 result;
 }TransformObject;
 
@@ -45,12 +51,12 @@ typedef struct ModelObject{
 	char *name;
 	struct ModelObject *parent;		// Pointer to the parent in the scene heirarchy (NULL if this is a root object)
 	struct ModelObject *children;	// Array of all children to this object
-	unsigned int num_children;
+	unsigned int num_children;		// Number of direct children this model has
 	TransformObject transform;		// Transform for this and all child models
 	unsigned int mesh_file;
 	unsigned int mesh_index;
 	unsigned int shader;
-	unsigned int *textures;
+	unsigned int textures[16];
 	// -- TODO --
 	// physics
 }ModelObject;
@@ -84,5 +90,15 @@ typedef struct SceneObject{
 	// physics constants
 	// 
 }SceneObject;
+
+void InitTransform(TransformObject *transform);
+void CalculateTransform(TransformObject *transform);
+void CalculateModelTransform(ModelObject *model);
+
+extern SceneObject active_scene;
+
+void InitScene(SceneObject *scene);
+
+ModelObject *NewModel(char *name, ModelObject *parent, TransformObject *transform, unsigned int mesh_file, unsigned int mesh_index, unsigned int shader, unsigned int textures[16]);
 
 #endif

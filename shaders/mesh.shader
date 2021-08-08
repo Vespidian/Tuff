@@ -71,10 +71,10 @@ uniform float normal_map_intensity;
 
 void main(){
 
-	vec3 new_normal = normalize(normal_v + (texture(normal_map, texture_v.xy)).rgb);
+	// vec3 new_normal = normalize(normal_v + (texture(normal_map, texture_v.xy)).rgb);
 	// new_normal *= 2.0 - 1.0;
 	// new_normal = normalize(TBN_v * new_normal);
-	// vec3 new_normal = normalize(normal_v);
+	vec3 new_normal = normalize(normal_v);
 	// vec3 new_normal = normalize((texture(normal_map, texture_v.xy)).rgb);
 
 	vec3 ambient = vec3(0.25);
@@ -105,12 +105,13 @@ void main(){
 	// vec3 specular = specular_strength * spec * light_color;
 	// vec3 specular = vec3(specular_strength * spec);
 	
-	// FragColor = texture(tex, texture_v.xy);
+	// FragColor = texture(tex, vec2(texture_v.x, 1 - texture_v.y));
 	// FragColor = vec4(abs(vert_v.zzz), 1);
 	// FragColor = vec4(abs(vert_v.zzz), 1) + texture(tex, texture_v.xy);
 	FragColor = vec4(vec3(0.75), 1);
 	// FragColor *= vec4(diffuse, 1);
 	FragColor *= vec4(diffuse + specular + ambient, 1);
+	// FragColor *= vec4(diffuse + ambient, 1);
 	// FragColor = vec4(diffuse + specular + ambient, 1);
 	// FragColor *= vec4(ambient + specular, 1);
 	// FragColor = vec4(light_pos, 1);

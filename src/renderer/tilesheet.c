@@ -35,7 +35,7 @@ TilesheetObject *NewTilesheet(TextureObject texture, int tile_w, int tile_h){
 }
 
 TilesheetObject *NewTilesheetFromFile(char *path, int format, int tile_w, int tile_h){
-    return NewTilesheet(LoadTexture(path, format), tile_w, tile_h);
+    return NewTilesheet(LoadTexture(path), tile_w, tile_h);
 }
 
 TilesheetObject *FindTilesheet(unsigned int id){

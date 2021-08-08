@@ -1,4 +1,15 @@
 // Starting off with declaring some possible functions in the library itself
+typedef struct ExposedUIObject{
+	char *name;
+	int type;
+	union{
+		void (*function)(void);
+		int _int;
+		float _float;
+		bool _bool;
+	};
+};
+
 ExposeUIFunction(UIFunc_t function, char *name); // Exposes a function with its corresponding name
 
 
@@ -6,8 +17,22 @@ ExposeUIFunction(UIFunc_t function, char *name); // Exposes a function with its 
 // Element types: 
 // button, checkbox, textbox, context menu, 
 // radio buttons, dropdown list, rectangle, text
+
 {
-	"scene" : {
-		
-	}
+	"scene" : [
+		"button" : {
+			"text" : "This is a button",
+			"onclick" : "function",
+			"position" : [x, y],
+			"size" : [w, h],
+			"color" : [r, g, b],
+		},
+		"dropdown" : [
+			{
+				"default" : true, // Defines whether or not this element should be the default selection
+				"text" : "Option 1",
+				
+			},
+		]
+	]
 }

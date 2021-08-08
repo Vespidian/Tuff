@@ -14,8 +14,10 @@ unsigned int current_texture_unit;
 
 TextureObject undefined_texture;
 
+static const char shader_path[] = "../shaders/";
+
 void InitGLUtils(){
-	undefined_texture = LoadTexture("../images/undefined.png", GL_RGBA);
+	undefined_texture = LoadTexture("../images/undefined.png");
 }
 
 void CheckGLErrors(const char *file, int line){
@@ -109,8 +111,6 @@ ShaderObject ParseShaderUniforms(char *name, unsigned int id, char *vertex, char
 	shader.num_uniforms = 0;
 	memset(shader.using_texture_slot, false, sizeof(bool) * 16);
 
-	printf("Shader: %s\n", name);
-
 	// --- CURRENTLY ONLY SCANS VERTEX STRING ---
 	char *uniform_ptr = vertex;
 	int num_samplers = 0;
@@ -166,8 +166,6 @@ ShaderObject ParseShaderUniforms(char *name, unsigned int id, char *vertex, char
 						break;
 				}
 				uniform_ptr += 1;
-				// printf("THIS: %d\n", shader.uniforms[shader.num_uniforms].type);
-
 			}else if(strncmp(uniform_ptr, "sampler", 7) == 0){
 				uniform_ptr += 7;
 				shader.using_texture_slot[num_samplers++] = true;
@@ -211,9 +209,9 @@ ShaderObject ParseShaderUniforms(char *name, unsigned int id, char *vertex, char
 
 			shader.uniforms[shader.num_uniforms].uniform = glGetUniformLocation(shader.id, shader.uniforms[shader.num_uniforms].name);
 
-			printf("uniform[%d].name = %s, .type = %d\n", shader.num_uniforms, shader.uniforms[shader.num_uniforms].name, shader.uniforms[shader.num_uniforms].type);
+			// printf("uniform[%d].name = %s, .type = %d\n", shader.num_uniforms, shader.uniforms[shader.num_uniforms].name, shader.uniforms[shader.num_uniforms].type);
 		
-			// Make sure this isnt a copy of a uniform from another shader type
+			// Make sure this isnt a copy of a uniform from another shader type within this shader program
 			bool found_copy = false;
 			for(int j = 0; j < shader.num_uniforms; j++){
 				if(strcmp(shader.uniforms[j].name, shader.uniforms[shader.num_uniforms].name) == 0){
@@ -222,7 +220,7 @@ ShaderObject ParseShaderUniforms(char *name, unsigned int id, char *vertex, char
 				}
 			}
 
-			// If there is a copy, remove the uniform we just created
+			// If this is a copy, remove it
 			if(found_copy){
 				free(shader.uniforms[shader.num_uniforms].name);
 				shader.uniforms = realloc(shader.uniforms, sizeof(ShaderUniformObject) * (shader.num_uniforms));
@@ -231,7 +229,7 @@ ShaderObject ParseShaderUniforms(char *name, unsigned int id, char *vertex, char
 			}
 
 		}
-		uniform_ptr = fragment;
+		uniform_ptr = fragment; // Do all that over again for the fragment shader
 	}
 	return shader;
 }
@@ -245,10 +243,15 @@ ShaderObject LoadShaderProgram(char *filename){
     unsigned int vertex, fragment;
 
     // Read shader source from file
-    shader_file = SDL_RWFromFile(filename, "rb");
+	char *path = malloc(sizeof(char) * (strlen(shader_path) + strlen(filename) + 1));
+	strcpy(path, shader_path);
+	strcat(path, filename);
+	path[strlen(shader_path) + strlen(filename)] = 0;
+	
+    shader_file = SDL_RWFromFile(path, "rb");
     if(shader_file == NULL){
-        DebugLog(D_ERR, "Shader loading error! Shader file: %s not found", filename);
-        printf("Shader loading error! Shader file: %s not found", filename);
+        DebugLog(D_ERR, "Shader loading error! Shader file: %s not found", path);
+        printf("Shader loading error! Shader file: %s not found", path);
 		// SHOULD EXIT THE FUNCTION HERE
     }
 
@@ -308,7 +311,7 @@ ShaderObject LoadShaderProgram(char *filename){
 				shader_strings[1][shader_end - header_offset - 1] = 0; // Null terminate the shader string
 
 			}else{
-				DebugLog(D_WARN, "Error unknown shader type '%s' specified in file '%s'", shader_type_string, filename);
+				DebugLog(D_WARN, "Error unknown shader type '%s' specified in file '%s'", shader_type_string, path);
 			}
 		// }
 
@@ -342,8 +345,8 @@ ShaderObject LoadShaderProgram(char *filename){
 		if(!success){
 			char info_log[1024];
 			GLCall(glGetShaderInfoLog(shaders[i], 1024, NULL, info_log));
-			DebugLog(D_ERR, "Shader: '%s' compilation failed: %s", filename, info_log);
-			printf("Shader: '%s' compilation failed: %s", filename, info_log);
+			DebugLog(D_ERR, "Shader: '%s' compilation failed: %s", path, info_log);
+			printf("Shader: '%s' compilation failed: %s", path, info_log);
 		}
 	}
 
@@ -374,6 +377,7 @@ ShaderObject LoadShaderProgram(char *filename){
 
 	shader_program = ParseShaderUniforms(filename, shader_program.id, shader_strings[0], shader_strings[1]);
 
+	free(path);
 	free(shader_strings[0]);
 	free(shader_strings[1]);
 
@@ -556,7 +560,7 @@ int InvertSurfaceVertical(SDL_Surface *surface)
     return 0;
 }
 
-TextureObject LoadTexture(const char *path, int format){
+TextureObject LoadTexture(const char *path){
     unsigned int texture;
     SDL_Surface *tmp_surface;
     
@@ -579,12 +583,29 @@ TextureObject LoadTexture(const char *path, int format){
 
     TextureObject tex_out = {texture, tmp_surface->w, tmp_surface->h};
     if(tmp_surface){
-		int internal = GL_RGBA8;
-		if(format == GL_RGB){
-			internal = GL_RGB8;
+
+		int internal_format;
+		int image_format;
+		if(SDL_ISPIXELFORMAT_ALPHA(tmp_surface->format->format)){
+			internal_format = GL_RGBA8;
+			image_format = GL_RGBA;
+		}else{
+			internal_format = GL_RGB8;
+			image_format = GL_RGB;
 		}
+		// switch(tmp_surface->format->format){
+		// 	case 
+		// }
+		// // if(format == GL_RGB){
+		// 	internal = GL_RGB8;
+		// // }
+		// printf("name: %s --- format: %s\n", path, SDL_GetPixelFormatName(tmp_surface->format->format));
+		// int internal = GL_RGBA8;
+		// if(format == GL_RGB){
+		// 	internal = GL_RGB8;
+		// }
         // GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tmp_surface->w, tmp_surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp_surface->pixels));
-        GLCall(glTexImage2D(GL_TEXTURE_2D, 0, internal, tmp_surface->w, tmp_surface->h, 0, format, GL_UNSIGNED_BYTE, tmp_surface->pixels));
+        GLCall(glTexImage2D(GL_TEXTURE_2D, 0, internal_format, tmp_surface->w, tmp_surface->h, 0, image_format, GL_UNSIGNED_BYTE, tmp_surface->pixels));
         GLCall(glGenerateMipmap(GL_TEXTURE_2D));
 		DebugLog(D_ACT, "Loaded texture: '%s'", path);
     }else{
@@ -595,6 +616,6 @@ TextureObject LoadTexture(const char *path, int format){
     return tex_out;
 }
 
-TilesheetObject LoadTilesheet(const char *path, int format, int tile_width, int tile_height){
-    return (TilesheetObject){0, LoadTexture(path, format), tile_width, tile_height};
+TilesheetObject LoadTilesheet(const char *path, int tile_width, int tile_height){
+    return (TilesheetObject){0, LoadTexture(path), tile_width, tile_height};
 }

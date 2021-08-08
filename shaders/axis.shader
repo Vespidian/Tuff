@@ -16,7 +16,7 @@ uniform mat4 model;
 
 void main(){
 	color_v = color_a;
-	gl_Position = projection * view * vec4(pos_a, 1);
+	gl_Position = projection * view * model * vec4(pos_a, 1);
 }
 
 @shader fragment
@@ -29,6 +29,5 @@ in vec3 color_v;
 void main(){
 
 	FragColor = vec4(color_v, 1);
-	// FragColor = vec4(1, 0, 0, 1);
 
 }
