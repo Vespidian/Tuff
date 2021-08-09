@@ -272,8 +272,8 @@ int InitGL(){
 	InitTransform(&origin_transform);
 
 	InitScene(&active_scene);
-	parent = NewModel("parent", NULL, NULL, 0, 0, 0, 0);
-	child = NewModel("child", parent, NULL, 0, 0, 0, 0);
+	parent = NewModel("parent", NULL, NULL, 0, 0, 0);
+	child = NewModel("child", parent, NULL, 0, 0, 0);
     GLCall;
     return 0;
 }
@@ -347,7 +347,7 @@ void RenderUI(){
 	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 2, size, origin2, 6).x, VerticalRectList_vec(num_elements, 2, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_pos: ");
 	// RenderSlider(&mesh_transform.position.z		, -1.5, 1.5, VerticalRectList_vec(num_elements, 2, size, origin, 6));
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 0, size, origin2, 6).x, VerticalRectList_vec(num_elements, 0, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_parent_pos: ");
-	RenderSlider(&parent->transform.position.x		, -1.5, 1.5, VerticalRectList_vec(num_elements, 0, size, origin, 6));
+	RenderSlider(&parent->transform.rotation_e.z		, -1.5, 1.5, VerticalRectList_vec(num_elements, 0, size, origin, 6));
 	
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 1, size, origin2, 6).x, VerticalRectList_vec(num_elements, 1, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y_parent_pos: ");
 	RenderSlider(&parent->transform.position.y		, -1.5, 1.5, VerticalRectList_vec(num_elements, 1, size, origin, 6));
@@ -375,7 +375,7 @@ void RenderUI(){
 	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 8, size, origin2, 6).x, VerticalRectList_vec(num_elements, 8, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_scale: ");
 	// RenderSlider(&mesh_transform.scale.z		, 0.5, 3, VerticalRectList_vec(num_elements, 8, size, origin, 6));
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 6, size, origin2, 6).x, VerticalRectList_vec(num_elements, 6, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_child_pos: ");
-	RenderSlider(&child->transform.position.x		, -1.5, 1.5, VerticalRectList_vec(num_elements, 6, size, origin, 6));
+	RenderSlider(&child->transform.rotation_e.z		, -1.5, 1.5, VerticalRectList_vec(num_elements, 6, size, origin, 6));
 	
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 7, size, origin2, 6).x, VerticalRectList_vec(num_elements, 7, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y_child_pos: ");
 	RenderSlider(&child->transform.position.y		, -1.5, 1.5, VerticalRectList_vec(num_elements, 7, size, origin, 6));
@@ -483,17 +483,18 @@ void RenderGL(){
 
 	// parent axis
 	SetVAO(mesh_vao);
+	child->transform.rotation_e.z = -child->parent->transform.rotation_e.z;
 	CalculateModelTransform(parent);
 	// CalculateTransform(&parent->transform);
-    UniformSetMat4(&mesh_shader, "model", parent->transform.result);
-	PassShaderUniforms(&mesh_shader);
+    UniformSetMat4(&axis_shader, "model", parent->transform.result);
+	PassShaderUniforms(&axis_shader);
 	glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
 	// child axis
 	SetVAO(mesh_vao);
-	CalculateModelTransform(child);
+	// CalculateModelTransform(child);
 	// CalculateTransform(&child->transform);
-    UniformSetMat4(&mesh_shader, "model", child->transform.result);
-	PassShaderUniforms(&mesh_shader);
+    UniformSetMat4(&axis_shader, "model", child->transform.result);
+	PassShaderUniforms(&axis_shader);
 	glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
 
 	SetVAO(grid_vao);

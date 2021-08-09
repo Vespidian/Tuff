@@ -37,6 +37,7 @@ typedef struct MaterialObject{
 	unsigned int shader;
 	unsigned int textures[16];
 	Vector3 color;
+	// Will be adding more material related parameters later on
 }MaterialObject;
 
 typedef struct TransformObject{
@@ -55,8 +56,9 @@ typedef struct ModelObject{
 	TransformObject transform;		// Transform for this and all child models
 	unsigned int mesh_file;
 	unsigned int mesh_index;
-	unsigned int shader;
-	unsigned int textures[16];
+	// unsigned int shader;
+	// unsigned int textures[16];
+	unsigned int material;
 	// -- TODO --
 	// physics
 }ModelObject;
@@ -82,6 +84,9 @@ typedef struct SceneObject{
 	ShaderObject *shaders;
 	unsigned int num_shaders;
 
+	MaterialObject *materials;
+	unsigned int num_materials;
+
 	ModelObject *models;
 	unsigned int num_models;
 
@@ -99,6 +104,6 @@ extern SceneObject active_scene;
 
 void InitScene(SceneObject *scene);
 
-ModelObject *NewModel(char *name, ModelObject *parent, TransformObject *transform, unsigned int mesh_file, unsigned int mesh_index, unsigned int shader, unsigned int textures[16]);
+ModelObject *NewModel(char *name, ModelObject *parent, TransformObject *transform, unsigned int mesh_file, unsigned int mesh_index, unsigned int material);
 
 #endif

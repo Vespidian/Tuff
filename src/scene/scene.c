@@ -5,9 +5,9 @@
 SceneObject active_scene;
 
 void InitTransform(TransformObject *transform){
-	transform->position = (Vector3){0};
-	transform->rotation_e = (Vector3){0};
-	transform->rotation_q = (Vector4){0};
+	transform->position = (Vector3){0, 0, 0};
+	transform->rotation_e = (Vector3){0, 0, 0};
+	transform->rotation_q = (Vector4){0, 0, 0};
 	transform->scale = (Vector3){1, 1, 1};
 	glm_mat4_identity(transform->result);
 }
@@ -19,7 +19,7 @@ void CalculateTransform(TransformObject *transform){
 	mat4 scale;
 
 	glm_mat4_identity(translation);
-	glm_mat4_identity(rotation);
+	// glm_mat4_identity(rotation);
 	glm_mat4_identity(scale);
 	glm_mat4_identity(transform->result);
 
@@ -33,7 +33,8 @@ void CalculateTransform(TransformObject *transform){
 
 void UpdateTransformChildren(ModelObject *model, mat4 transform){
 	// Add the parent's transform
-	glm_mul(model->transform.result, transform, model->transform.result);
+	CalculateTransform(&model->transform);
+	glm_mul(transform, model->transform.result, model->transform.result);
 
 	// Loop through children and add this model's transform to them
 	for(int i = 0; i < model->num_children; i++){
@@ -41,25 +42,27 @@ void UpdateTransformChildren(ModelObject *model, mat4 transform){
 	}
 }
 
+// Should be called once for every root object at scene initialization as well as whenever an object transform is updated
 void CalculateModelTransform(ModelObject *model){
-	ModelObject *parent = model;
-
 	// Calculate this model's raw transformation
 	CalculateTransform(&model->transform);
 
-	// Add all parent transformations to this model's transformation matrix
-	while((parent = parent->parent) != NULL){
-		CalculateTransform(&parent->transform);
-		glm_mul(model->transform.result, parent->transform.result, model->transform.result);
+	// Take the parents transformation matrix and multiply it by this child object's matrix (The parent's matrix includes all grandparent transformations)
+	if(model->parent != NULL){
+		glm_mul(model->parent->transform.result, model->transform.result, model->transform.result);
 	}
 
 	// Recursively applies this model's transform to every child
-	UpdateTransformChildren(model, model->transform.result);
+	mat4 empty_mat;
+	glm_mat4_identity(empty_mat);
+	UpdateTransformChildren(model, empty_mat);
 }
 
-ModelObject *NewModel(char *name, ModelObject *parent, TransformObject *transform, unsigned int mesh_file, unsigned int mesh_index, unsigned int shader, unsigned int textures[16]){
+ModelObject *NewModel(char *name, ModelObject *parent, TransformObject *transform, unsigned int mesh_file, unsigned int mesh_index, unsigned int material){
 	// Model
 	ModelObject *model;
+
+	// If parent is null, this model has no parents and thus is a root node
 	if(parent == NULL){
 		active_scene.models = realloc(active_scene.models, sizeof(ModelObject) * (active_scene.num_models + 1));
 		model = &active_scene.models[active_scene.num_models++];
@@ -73,45 +76,69 @@ ModelObject *NewModel(char *name, ModelObject *parent, TransformObject *transfor
 	model->name = malloc(sizeof(char) * strlen(name));
 	strcpy(model->name, name);
 
+	// Children array
 	model->num_children = 0;
 	model->children = malloc(sizeof(ModelObject) * (model->num_children + 1));
+	
 	// Transformation
-	if(transform == NULL){
-		InitTransform(&model->transform);
+	if(parent == NULL){
+		if(transform == NULL){
+			// No parent, no transform.. Initialize default transform
+			InitTransform(&model->transform);
+		}else{
+			// No parent, yes transform.. set model transform to specified transform
+			model->transform = *transform;
+		}
 	}else{
-		model->transform = *transform;
+		if(transform == NULL){
+			// Yes parent, no transform.. set model transform to parent transform
+			model->transform = parent->transform;
+		}else{
+			// Yes parent, yes transform.. multiply model by parent transform
+			glm_mul(parent->transform.result, model->transform.result, model->transform.result);
+		}
 	}
 
 	model->mesh_file = mesh_file;
 	model->mesh_index = mesh_index;
-	model->shader = shader;
-	// memcpy(model->textures, textures, sizeof(int) * 16);
-
+	model->material = material;
 
 	return model;
 }
 
 void InitScene(SceneObject *scene){
-	// Allocate space for each thing in the scene
+	// Allocate space for each data type in the scene
 
 	// Name
-
+	scene->name = malloc(sizeof(char));
 
 	// Mesh files
-
+	scene->num_mesh_files = 0;
+	scene->mesh_files = malloc(sizeof(cgltf_data));
 
 	// Seperate meshes
-
+	scene->num_meshes = 0;
+	scene->meshes = malloc(sizeof(MeshObject));
 
 	// Textures
-
+	scene->num_textures = 0;
+	scene->textures = malloc(sizeof(TextureObject));
 
 	// Shaders
+	scene->num_shaders = 0;
+	scene->shaders = malloc(sizeof(ShaderObject));
 
+	// Materials
+	scene->num_materials = 0;
+	scene->materials = malloc(sizeof(MaterialObject));
 
 	// Models
 	scene->num_models = 0;
 	scene->models = malloc(sizeof(ModelObject));
+
+}
+
+void LoadScene(char *name, char *path, SceneObject *scene){
 
 }
 
