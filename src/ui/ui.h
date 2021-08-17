@@ -26,4 +26,7 @@ void LoopUI();
  */
 extern bool ui_hovered;
 
+
+extern bool ui_selected;
+
 #endif

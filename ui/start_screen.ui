@@ -10,6 +10,67 @@ typedef struct ExposedUIObject{
 	};
 };
 
+typedef struct{
+	char *name;
+	
+	Vector4 transform; // Transforms the element relative to its already set position
+	
+	Vector4 color;
+	Vector4 border_color;
+
+	Vector4 border;
+	Vector4 padding;
+	Vector4 margin;
+
+	Vector4 radius;
+	
+	int transition; // Defines the length of property transitions in ms, 0 = instant
+	enum ease{/* Define all types of easings in here : https://easings.net */}
+}UIClass;
+
+typedef struct{
+	char *name; // Possibly not needed
+	enum type{/* Define interaction types here: none, onhover, onclick, etc.. */}
+	union{
+		void (*onhover)(void);
+		void (*onclick)(void);
+		// etc..
+	};
+	UIClass *classes;
+}UIAction;
+
+typedef struct{
+	char *name;
+
+	struct UIElement *parent;
+	struct UIElement *children;
+
+	bool active;
+	FontObject *font;
+	char *text;
+	TextureObject *image;
+
+	union{
+		struct{Vector2 position, Vector2 scale};
+		Vector4 transform;
+	}; // Sets this element's position relative to parent object
+
+	Vector4 color;
+	Vector4 border_color;
+	
+	Vector4 border;
+	Vector4 padding;
+	Vector4 margin;
+
+	Vector4 radius;
+
+	UIClass *classes;
+	
+	UIAction actions[/* Number of actions to be determined */];
+	
+	
+}UIElement;
+	
 ExposeUIFunction(UIFunc_t function, char *name); // Exposes a function with its corresponding name
 
 
@@ -18,21 +79,116 @@ ExposeUIFunction(UIFunc_t function, char *name); // Exposes a function with its 
 // button, checkbox, textbox, context menu, 
 // radio buttons, dropdown list, rectangle, text
 
+// If certain properties are not included, they are set to predetermined defaults
+// If properties are included in an element which doesnt support them, ignore them (e.g. position for the scene element)
+
+// For dynamic text like displaying a changing number you will have to edit the text directly from the c or c# api
+
 {
-	"scene" : [
-		"button" : {
-			"text" : "This is a button",
-			"onclick" : "function",
-			"position" : [x, y],
-			"size" : [w, h],
-			"color" : [r, g, b],
-		},
-		"dropdown" : [
-			{
-				"default" : true, // Defines whether or not this element should be the default selection
-				"text" : "Option 1",
+	classes : [ // Classes are always read first. Whenever an element references a class, that element gets added to that class' users
+		"class_name" : {
+			
+			color : [r, g, b],
+
+		}
+	]
+	scene : [
+		button : {
+			text : "This is a button",
+			onclick : {
+				call : "function",
+			},
+			onhover : {
+				hide : "button1_class",
+			}
+			onhold : {
+				call : "slider_drag",
+			}
+			class : "button1_class", // If an undefined class is used, the class is created empty and the element gets added to it's users
+			style : {
+				position : [x, y],
+				color : [r, g, b],
+				class : "class_name",
+				// If a property is defined after a class is referenced, that property overides the class' value
+				// If a property is not defined within the class, the current value is kept
+				// e.g. since position is not defined within the class, it remains as previously set. But color gets overridden
+				size : [w, h],
+				border : 1,
+				padding : 0,
+				margin : 0,
 				
 			},
-		]
+		},
+		dropdown : {
+			options : [
+				{
+					default : true, // Defines whether or not this element should be the default selection
+					text : "Option 1",
+					
+				},
+			]
+		},
+		vertical_list : {
+			
+			elements : [ // Any elements positioned within another element are positioned using relative position and scale, unless otherwise specified
+				
+			],
+		}
 	]
 }
+
+// --------------------------------------------- //
+// List of properties and specifiers
+
+/* -- ROOT SPECIFIERS -- */
+classes 	// 
+scene 		// 
+
+// Elements (possibly being removed)
+button 		// 
+slider 		// 
+dropdown 	// 
+
+/* -- STYLE -- */
+position	// Supports inputs in either '%' ( Percent of parent element ) or 'px' ( Pixel offset relative to parent element )
+	left
+	right
+	top
+	bottom
+
+size		// Supports the same inputs as 'position'
+	width
+	height
+
+padding		// Supports 1 or 4 values
+margin 		// Supports 1 or 4 values
+border 		// Supports either 1 value or 4 values, 1 value makes the border equal on all sides
+radius		// Supports either 1 value or 4 values, 1 value makes the radius equal on all sides
+color 		// Support multiple color input types:
+/**
+ * Hex: 	#123abe
+ * rgb: 	[18, 58, 190]
+ * rgb_0-1: [0.07, 0.23, 0.74] // Possibly dont support this one
+ */
+
+opacity 	// Value between 1.0 - 0.0, 1.0 being fully opaque and 0.0 fully transparent
+image 		// 
+transform 	// Transforms position and scale relative to the current position of the element
+	position
+	scale
+
+transition	// Transitions from previous style properties to the new ones that this transition's class defines
+	duration // Transition is applied over 'duration' seconds
+	ease // Defines transition function : https://easings.net/
+
+/* -- MOUSE EVENTS -- */
+// Classes set in interaction events will be set when the event occurs and reverted when it ends
+onclick 	// 
+onhover 	// 
+onhold 		// 
+onleave 	// 
+
+// Optional property ideas
+onshow 		// 
+onhide 		// 
+

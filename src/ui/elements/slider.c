@@ -19,21 +19,30 @@ float map(float x, float in_min, float in_max, float out_min, float out_max){
 int padding = 6;
 
 void RenderSlider(float *current, float max, float min, Vector4_i transform){
-	SDL_Rect handle = {map(*current, min, max, transform.x, transform.x + transform.z) - 6, transform.y + transform.w / 8, 12, transform.w - transform.w / 4};
 	SDL_Rect rect;
-	if(handle.x - (transform.x - padding) > 6){
-		rect = (SDL_Rect){transform.x + padding, transform.y + padding, handle.x - transform.x, transform.w - padding * 2};
-		ResizableRect(ui_tilesheet, rect, 13, 6, RNDR_UI + 1, (Vector4){0.69, 0.83, 0.93, 1});
-	}
 	rect = (SDL_Rect){transform.x - padding, transform.y, transform.z + padding * 2, transform.w};
 	RenderText(&default_font, 1, transform.x + transform.z / 2, transform.y + transform.w / 4, TEXT_ALIGN_CENTER, "%.2f", *current);
-	ResizableRect(ui_tilesheet, handle, 13, 6, RNDR_UI + 2, (Vector4){1, 1, 1, 1});
 	ResizableRect(ui_tilesheet, rect, 13, 6, RNDR_UI, (Vector4){0, 0, 0, 1});
 
 	rect = (SDL_Rect){transform.x, transform.y, transform.z, transform.w};
-	if(SDL_PointInRect(&mouse_pos, &rect) && mouse_held){
+
+	if(SDL_PointInRect(&mouse_pos, &rect)){
 		ui_hovered = true;
-		handle.x = mouse_pos.x;
-		*current = map(handle.x, transform.x + transform.z, transform.x, max, min);
+		if(mouse_clicked){
+			mouse_pos.x = (transform.x + transform.z / 2.0);
+		}
+		// SDL_SetRelativeMouseMode(SDL_TRUE);
+		// 	SDL_SetWindowGrab(window, SDL_TRUE);
+		// SDL_SetHintWithPriority(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1", SDL_HINT_OVERRIDE);
+		if(mouse_held && !mouse_clicked){
+			ui_selected = true;
+			SDL_WarpMouseInWindow(window, transform.x + transform.z / 2, transform.y + transform.w / 2);
+			*current += ((transform.x + transform.z / 2.0) - mouse_pos.x) / 40;
+		}
+		*current += scroll_value * ((max - min) / 20.0);
+	}
+	if(mouse_lifted){
+		ui_selected = false;
+		SDL_SetRelativeMouseMode(SDL_FALSE);
 	}
 }

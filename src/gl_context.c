@@ -332,7 +332,7 @@ void RenderUI(){
 	UniformSetVec3(&mesh_shader, "view_position", tmp.v);
 
 	static float normal_intense;
-	Vector2 size = {200, 20};
+	Vector2 size = {80, 22};
 	int num_elements = 9;
 	Vector2 origin = {SCREEN_WIDTH - size.x / 2 - 10, size.y * ((num_elements + 6) / 2)};
 	Vector2 origin2 = {SCREEN_WIDTH - size.x / 2 - 10, size.y * ((num_elements + 6) / 2)};
@@ -347,23 +347,23 @@ void RenderUI(){
 	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 2, size, origin2, 6).x, VerticalRectList_vec(num_elements, 2, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_pos: ");
 	// RenderSlider(&mesh_transform.position.z		, -1.5, 1.5, VerticalRectList_vec(num_elements, 2, size, origin, 6));
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 0, size, origin2, 6).x, VerticalRectList_vec(num_elements, 0, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_parent_pos: ");
-	RenderSlider(&parent->transform.rotation_e.z		, -1.5, 1.5, VerticalRectList_vec(num_elements, 0, size, origin, 6));
+	RenderSlider(&parent->transform.rotation_e.z		, 1.5, -1.5, VerticalRectList_vec(num_elements, 0, size, origin, 6));
 	
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 1, size, origin2, 6).x, VerticalRectList_vec(num_elements, 1, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y_parent_pos: ");
-	RenderSlider(&parent->transform.position.y		, -1.5, 1.5, VerticalRectList_vec(num_elements, 1, size, origin, 6));
+	RenderSlider(&parent->transform.position.y		, 1.5, -1.5, VerticalRectList_vec(num_elements, 1, size, origin, 6));
 	
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 2, size, origin2, 6).x, VerticalRectList_vec(num_elements, 2, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_parent_pos: ");
-	RenderSlider(&parent->transform.position.z		, -1.5, 1.5, VerticalRectList_vec(num_elements, 2, size, origin, 6));
+	RenderSlider(&parent->transform.position.z		, 1.5, -1.5, VerticalRectList_vec(num_elements, 2, size, origin, 6));
 	
 	
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 3, size, origin2, 6).x, VerticalRectList_vec(num_elements, 3, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_rot: ");
-	RenderSlider(&mesh_transform.rotation_e.x	, -1.5, 1.5, VerticalRectList_vec(num_elements, 3, size, origin, 6));
+	RenderSlider(&mesh_transform.rotation_e.x	, 1.5, -1.5, VerticalRectList_vec(num_elements, 3, size, origin, 6));
 	
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 4, size, origin2, 6).x, VerticalRectList_vec(num_elements, 4, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y_rot: ");
-	RenderSlider(&mesh_transform.rotation_e.y	, -1.5, 1.5, VerticalRectList_vec(num_elements, 4, size, origin, 6));
+	RenderSlider(&mesh_transform.rotation_e.y	, 1.5, -1.5, VerticalRectList_vec(num_elements, 4, size, origin, 6));
 	
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 5, size, origin2, 6).x, VerticalRectList_vec(num_elements, 5, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_rot: ");
-	RenderSlider(&mesh_transform.rotation_e.z	, -1.5, 1.5, VerticalRectList_vec(num_elements, 5, size, origin, 6));
+	RenderSlider(&mesh_transform.rotation_e.z	, 1.5, -1.5, VerticalRectList_vec(num_elements, 5, size, origin, 6));
 	
 	
 	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 6, size, origin2, 6).x, VerticalRectList_vec(num_elements, 6, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_scale: ");
@@ -375,13 +375,13 @@ void RenderUI(){
 	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 8, size, origin2, 6).x, VerticalRectList_vec(num_elements, 8, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_scale: ");
 	// RenderSlider(&mesh_transform.scale.z		, 0.5, 3, VerticalRectList_vec(num_elements, 8, size, origin, 6));
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 6, size, origin2, 6).x, VerticalRectList_vec(num_elements, 6, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_child_pos: ");
-	RenderSlider(&child->transform.rotation_e.z		, -1.5, 1.5, VerticalRectList_vec(num_elements, 6, size, origin, 6));
+	RenderSlider(&child->transform.rotation_e.z		, 1.5, -1.5, VerticalRectList_vec(num_elements, 6, size, origin, 6));
 	
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 7, size, origin2, 6).x, VerticalRectList_vec(num_elements, 7, size, origin2, 6).y, (Vector4){0, 1, 0, 1}, TEXT_ALIGN_RIGHT, -1, "y_child_pos: ");
-	RenderSlider(&child->transform.position.y		, -1.5, 1.5, VerticalRectList_vec(num_elements, 7, size, origin, 6));
+	RenderSlider(&child->transform.position.y		, 1.5, -1.5, VerticalRectList_vec(num_elements, 7, size, origin, 6));
 	
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 8, size, origin2, 6).x, VerticalRectList_vec(num_elements, 8, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_child_pos: ");
-	RenderSlider(&child->transform.position.z		, -1.5, 1.5, VerticalRectList_vec(num_elements, 8, size, origin, 6));
+	RenderSlider(&child->transform.position.z		, 1.5, -1.5, VerticalRectList_vec(num_elements, 8, size, origin, 6));
 
 
 	UniformSetFloat(&mesh_shader, "normal_map_intensity", normal_intense);
@@ -483,7 +483,7 @@ void RenderGL(){
 
 	// parent axis
 	SetVAO(mesh_vao);
-	child->transform.rotation_e.z = -child->parent->transform.rotation_e.z;
+	// child->transform.rotation_e.z = -child->parent->transform.rotation_e.z; // Cancels object rotation inherited from its parent on the z axis
 	CalculateModelTransform(parent);
 	// CalculateTransform(&parent->transform);
     UniformSetMat4(&axis_shader, "model", parent->transform.result);
@@ -502,16 +502,21 @@ void RenderGL(){
 	glDrawArrays(GL_LINES, 0, grid_vertex_count);
 	glDisable(GL_MULTISAMPLE);
 	glDisable(GL_LINE_SMOOTH);
+
+	// SDL_Rect mouse = {mouse_pos.x, mouse_pos.y, 16, 16};
+	// RenderTilesheet(ui_tilesheet, 5, &mouse, RNDR_UI + 20, (Vector4){1, 1, 1, 1});
 }
 
 float movement_speed = 0.01f;
 float rotation_speed = 0.3f;
 float zoom_speed = 0.075f;
 static void Zoom(EventData event){
-	if(event.e->wheel.y > 0){
-		view_distance -= zoom_speed * view_distance;
-	}else if(event.e->wheel.y < 0){
-		view_distance += zoom_speed * view_distance;
+	if(!ui_hovered){
+		if(event.e->wheel.y > 0){
+			view_distance -= zoom_speed * view_distance;
+		}else if(event.e->wheel.y < 0){
+			view_distance += zoom_speed * view_distance;
+		}
 	}
 }
 
@@ -569,10 +574,13 @@ static void MouseEvent(EventData event){
 	}
 
 	// if(*event.mouseState & SDL_BUTTON(SDL_BUTTON_MIDDLE)){
-		if(mouse_held && !ui_hovered){
+		if(mouse_held && !ui_hovered && !ui_selected){
+
 			SDL_SetWindowGrab(window, SDL_TRUE);
 			Vector2 difference;
 			glm_vec2_sub(current_pos.v, last_pos.v, difference.v);
+
+			// parent->transform.rotation_e = (Vector3){-pitch, -yaw, 0};
 
 			if(event.keyStates[SDL_SCANCODE_LSHIFT]){
 				Vector3 tmp = {-difference.x * move_sensitivity * view_distance, -difference.y * move_sensitivity * view_distance, 0};
@@ -606,22 +614,22 @@ static void MouseEvent(EventData event){
 			}
 
 			if(mouse_pos.x <= 10){
-				SDL_WarpMouseInWindow(window, SCREEN_WIDTH - 11, current_pos.y);
+				// SDL_WarpMouseInWindow(window, SCREEN_WIDTH - 11, current_pos.y);
 				SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
 				current_pos = (Vector2){mouse_pos.x, mouse_pos.y};
 			}
 			if(mouse_pos.x >= SCREEN_WIDTH - 10){
-				SDL_WarpMouseInWindow(window, 11, current_pos.y);
+				// SDL_WarpMouseInWindow(window, 11, current_pos.y);
 				SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
 				current_pos = (Vector2){mouse_pos.x, mouse_pos.y};
 			}
 			if(mouse_pos.y <= 10){
-				SDL_WarpMouseInWindow(window, current_pos.x, SCREEN_HEIGHT - 11);
+				// SDL_WarpMouseInWindow(window, current_pos.x, SCREEN_HEIGHT - 11);
 				SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
 				current_pos = (Vector2){mouse_pos.x, mouse_pos.y};
 			}
 			if(mouse_pos.y >= SCREEN_HEIGHT - 10){
-				SDL_WarpMouseInWindow(window, current_pos.x, 11);
+				// SDL_WarpMouseInWindow(window, current_pos.x, 11);
 				SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
 				current_pos = (Vector2){mouse_pos.x, mouse_pos.y};
 			}

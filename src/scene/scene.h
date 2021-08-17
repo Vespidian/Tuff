@@ -102,8 +102,30 @@ void CalculateModelTransform(ModelObject *model);
 
 extern SceneObject active_scene;
 
+/**
+ *  @brief Initialize an empty scene
+ *  @param scene Reference to scene variable to be used. If NULL is specified 'active_scene' is used
+ */
 void InitScene(SceneObject *scene);
 
+/**
+ *  @brief Initialize a ModelObject and return it's pointer
+ *  @param name The name of the model
+ *  @param parent Model to specify as the new model's parent. If NULL is specified, this object is created at scene root
+ *  @param transform Starting transform (translation, rotation, scale). If NULL is specified default / empty transform is used
+ *  @param mesh_file Index of raw mesh geometry in scene buffer
+ *  @param mesh_index Index of processed mesh geometry in scene buffer
+ *  @param material Index of material in scene buffer
+ *  @return Pointer to newly created ModelObject
+ */
 ModelObject *NewModel(char *name, ModelObject *parent, TransformObject *transform, unsigned int mesh_file, unsigned int mesh_index, unsigned int material);
+
+/**
+ *  @brief Search for a model in the active scene
+ *  @param name Model name of the object to find
+ *  @param start Model location / parent to start searching in, NULL specifies scene root
+ *  @return Pointer to found ModelObject or NULL if model does not exist
+ */
+ModelObject *FindModel(char *name, ModelObject *start);
 
 #endif

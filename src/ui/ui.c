@@ -9,6 +9,7 @@
 #include "ui.h"
 
 bool ui_hovered = false;
+bool ui_selected = false;
 TilesheetObject ui_tilesheet;
 
 void InitUI(){

@@ -7,6 +7,7 @@
 
 SDL_Event e;
 SDL_Point mouse_pos = {0, 0};
+SDL_Point mouse_pos_previous = {0, 0};
 
 InputEvent *events;
 int num_events = 0;
@@ -15,10 +16,14 @@ bool enable_input = true;
 
 bool mouse_held = false;
 bool mouse_clicked = false;
+bool mouse_lifted = false;
+int scroll_value = 0;
 Vector2 mouse = {0, 0};
 
 //Event predefinitions
 static void MouseClicked();
+static void MouseUp();
+static void Scroll(EventData event);
 void KeyEvents_quick();
 void WindowResize();
 
@@ -30,6 +35,8 @@ void InitEvents(){
 		BindKeyEvent(Quit, 0x1B, SDL_KEYDOWN);//escape
 	#endif
 	BindEvent(EV_ACCURATE, SDL_MOUSEBUTTONDOWN, MouseClicked);
+	BindEvent(EV_ACCURATE, SDL_MOUSEBUTTONUP, MouseUp);
+	BindEvent(EV_ACCURATE, SDL_MOUSEWHEEL, Scroll);
 	BindEvent(EV_ACCURATE, SDL_WINDOWEVENT, WindowResize);
 	BindEvent(EV_ACCURATE, SDL_QUIT, Quit);
 
@@ -45,6 +52,7 @@ void BindEvent(int pollType, Uint32 eventType, EV_Function function){
 
 void PollEvents(){
 	const Uint8 *keyStates = SDL_GetKeyboardState(NULL);
+	mouse_pos_previous = mouse_pos;
 	const Uint32 mouseState = SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
 	if(mouseState){
 		mouse_held = true;
@@ -83,6 +91,8 @@ void PollEvents(){
 void EventListener(){
 	mouse_clicked = false;
 	mouse_held = false;
+	mouse_lifted = false;
+	scroll_value = 0;
 
 	if(enable_input){
 		PollEvents();
@@ -107,6 +117,18 @@ void BindKeyEvent(EV_Function function, char keyCode, Uint32 keyPressType){
 static void MouseClicked(EventData event){
 	if(event.e->key.state == SDL_RELEASED){
 		mouse_clicked = true;
+	}
+}
+static void MouseUp(EventData event){
+	if(event.e->key.state == SDL_RELEASED){
+		mouse_lifted = true;
+	}
+}
+static void Scroll(EventData event){
+	if(event.e->wheel.y > 0){
+		scroll_value = 1;
+	}else if(event.e->wheel.y < 0){
+		scroll_value = -1;
 	}
 }
 

@@ -25,9 +25,12 @@ void BindKeyEvent(EV_Function function, char key, Uint32 keyPressType);
 
 extern SDL_Event e;
 extern SDL_Point mouse_pos;
+extern SDL_Point mouse_pos_previous;
 extern bool enable_input;
 extern bool mouse_held;
 extern bool mouse_clicked;
+extern bool mouse_lifted;
+extern int scroll_value;
 
 void InitEvents();
 void FastEvents();

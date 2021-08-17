@@ -106,6 +106,28 @@ ModelObject *NewModel(char *name, ModelObject *parent, TransformObject *transfor
 	return model;
 }
 
+ModelObject *FindModel(char *name, ModelObject *start){
+	ModelObject *model = NULL;
+	if(start == NULL){
+		for(int i = 0; i < active_scene.num_models; i++){
+			if(strcmp(name, active_scene.models[i].name) == 0){
+				model = &active_scene.models[i];
+			}else{
+				model = FindModel(name, &active_scene.models[i]);
+			}
+		}
+	}else{
+		for(int i = 0; i < start->num_children; i++){
+			if(strcmp(name, start->children[i].name) == 0){
+				model = &start->children[i];
+			}else{
+				model = FindModel(name, &start->children[i]);
+			}
+		}
+	}
+	return model;
+}
+
 void InitScene(SceneObject *scene){
 	// Allocate space for each data type in the scene
 
