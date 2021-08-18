@@ -18,7 +18,7 @@ flat out vec4 texture_src_f;
 
 
 void main(){
-	gl_Position = projection * model_a * vec4(pos_a.xyz, 1);
+	gl_Position = projection * model_a * vec4(pos_a, 1);
     
     int quadVert = gl_VertexID % 4;
     tex_coordinate_v = vec2(tex_coordinates[quadVert][0], tex_coordinates[quadVert][1]);
