@@ -13,8 +13,8 @@ AttribArray quad_vao;
 void SetQuadProjection();
 
 void InitQuadRender(){
-	quad_vao = NewVAO(3, ATTR_MAT4, ATTR_VEC4, ATTR_VEC4);
 
+	quad_vao = NewVAO(3, ATTR_MAT4, ATTR_VEC4, ATTR_VEC4);
     quad_shader = LoadShaderProgram("quad_default.shader");
 	UniformSetSampler2D(&quad_shader, "src_texture", 0);
 	UniformSetMat4(&quad_shader, "tex_coordinates", default_texture_coordinates);
@@ -28,7 +28,6 @@ void SetQuadProjection(){
 }
 
 void RenderQuad(TextureObject texture, SDL_Rect *src, SDL_Rect *dst, int zpos, Vector4 color, float rot){
-
 	// NULL to fill entire viewport
 	if(dst == NULL){
 		dst = &(SDL_Rect){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};

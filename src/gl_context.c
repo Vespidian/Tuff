@@ -181,13 +181,14 @@ int InitGL(){
 
 	glGenBuffers(1, &uniform_buffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(float) * (16 * 2 + 1), NULL, GL_STATIC_DRAW);
+	// glBufferData(GL_UNIFORM_BUFFER, sizeof(float) * (16 * 2 + 1), NULL, GL_STATIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(float) * (16 * 3 + 4), NULL, GL_STATIC_DRAW);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniform_buffer);
 
-	glUniformBlockBinding(mesh_shader.id, glGetUniformBlockIndex(mesh_shader.id, "Matrices"), 0);
-	glUniformBlockBinding(axis_shader.id, glGetUniformBlockIndex(axis_shader.id, "Matrices"), 0);
-	glUniformBlockBinding(grid_shader.id, glGetUniformBlockIndex(grid_shader.id, "Matrices"), 0);
-
+	glUniformBlockBinding(mesh_shader.id, glGetUniformBlockIndex(mesh_shader.id, "ShaderGlobals"), 0);
+	glUniformBlockBinding(axis_shader.id, glGetUniformBlockIndex(axis_shader.id, "ShaderGlobals"), 0);
+	glUniformBlockBinding(grid_shader.id, glGetUniformBlockIndex(grid_shader.id, "ShaderGlobals"), 0);
+	// glUniformBlockBinding(ui_shader.id, glGetUniformBlockIndex(ui_shader.id, "ShaderGlobals"), 0);
 
 	glGenVertexArrays(1, &axis_vao);
 	glBindVertexArray(axis_vao);
@@ -265,6 +266,7 @@ int InitGL(){
 
 
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float) * 16, &perspective_projection);
+	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 16, sizeof(float) * 16, &orthographic_projection);
 
     DebugLog(D_ACT, "Initialized OpenGL");
 
@@ -320,8 +322,10 @@ static Vector3 view_position = {0, 0, 0};
 // static Vector3 light_position = {1, 0.6, 1.2};
 static float view_distance = 2;
 static float yaw, pitch = 0.25;
+static float normal_intense = 1;
 #include "ui/elements/slider.h"
 void RenderUI(){
+	DrawUIElement();
 	DisplayShaderUniforms(&mesh_shader);
 	Vector3 tmp = {0, 0, view_distance};
 	glm_vec3_rotate(tmp.v, -pitch * 2, (vec3){1, 0, 0});
@@ -331,13 +335,13 @@ void RenderUI(){
 	// UniformSetVec3(mesh_shader, "view_position", tmp.v);
 	UniformSetVec3(&mesh_shader, "view_position", tmp.v);
 
-	static float normal_intense;
 	Vector2 size = {80, 22};
 	int num_elements = 9;
 	Vector2 origin = {SCREEN_WIDTH - size.x / 2 - 10, size.y * ((num_elements + 6) / 2)};
 	Vector2 origin2 = {SCREEN_WIDTH - size.x / 2 - 10, size.y * ((num_elements + 6) / 2)};
 
-
+	// ResizableRect(ui_tilesheet, (SDL_Rect){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT}, 0, 6, 100, (Vector4){0, 0, 0, 1});
+	// RenderTilesheet(ui_tilesheet, 0, NULL, 100, (Vector4){0, 0, 0, 1});
 	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 0, size, origin2, 6).x, VerticalRectList_vec(num_elements, 0, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_pos: ");
 	// RenderSlider(&mesh_transform.position.x		, -1.5, 1.5, VerticalRectList_vec(num_elements, 0, size, origin, 6));
 	
@@ -363,7 +367,8 @@ void RenderUI(){
 	RenderSlider(&mesh_transform.rotation_e.y	, 1.5, -1.5, VerticalRectList_vec(num_elements, 4, size, origin, 6));
 	
 	RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 5, size, origin2, 6).x, VerticalRectList_vec(num_elements, 5, size, origin2, 6).y, (Vector4){0, 0, 1, 1}, TEXT_ALIGN_RIGHT, -1, "z_rot: ");
-	RenderSlider(&mesh_transform.rotation_e.z	, 1.5, -1.5, VerticalRectList_vec(num_elements, 5, size, origin, 6));
+	// RenderSlider(&mesh_transform.rotation_e.z	, 1.5, -1.5, VerticalRectList_vec(num_elements, 5, size, origin, 6));
+	RenderSlider(&normal_intense	, 0, 1, VerticalRectList_vec(num_elements, 5, size, origin, 6));
 	
 	
 	// RenderTextEx(&default_font, 1, VerticalRectList_vec(num_elements, 6, size, origin2, 6).x, VerticalRectList_vec(num_elements, 6, size, origin2, 6).y, (Vector4){1, 0, 0, 1}, TEXT_ALIGN_RIGHT, -1, "x_scale: ");
@@ -395,17 +400,17 @@ void RenderUI(){
 	glm_rotate(view_matrix, yaw, (vec3){0, 1, 0});
 	glm_translate(view_matrix, view_position.v);
 	
-
 	// UniformSetMat4(mesh_shader, "view", view_matrix);
 	// UniformSetMat4(unlit_shader, "view", view_matrix);
 	// UniformSetMat4(grid_shader, "view", view_matrix);
 	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
-	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 16, sizeof(float) * 16, &view_matrix);
+	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 16 * 2, sizeof(float) * 16, &view_matrix);
 
 	// Set the time uniform
-	int time = SDL_GetTicks();
+	float time = SDL_GetTicks() / 1000.0;
 	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
-	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 16 * 2, sizeof(float), &time);
+	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 16 * 3, sizeof(float) * 4, &time);
+
 
     // glm_translate(mesh_matrix, mesh_position.v);
 	// glm_scale_uni(mesh_matrix, 0.5f);
@@ -560,6 +565,7 @@ static void WindowResize(EventData event){
 		glm_perspective(glm_rad(90), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.01, 100, perspective_projection);
 		glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float) * 16, &perspective_projection);
+		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 16, sizeof(float) * 16, &orthographic_projection);
 	}
 }
 

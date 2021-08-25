@@ -56,6 +56,8 @@ void InitSDL(){
 
 void InitRenderers(){
 	InitQuadRender();
+	InitUI();
+	
 }
 
 void Setup(){
@@ -68,13 +70,8 @@ void Setup(){
 
 	InitTextures();
 	InitTilesheets();
-	// InitItems();
-	// InitBlocks();
 	InitFonts();
-	// InitSandboxes();
-	InitUI();
 	LoadScreenInit();
-	// InitAutotile();
 
 
 	LoadBuiltinResources();
@@ -131,8 +128,6 @@ int main(int argc, char *argv[]){
 		EventListener();
 		if(window_active){
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-			LoopUI();
 
 			RenderGL();
 			// if(main_menu){

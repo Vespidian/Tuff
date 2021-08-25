@@ -20,6 +20,9 @@ extern unsigned int default_shader;
 
 extern int z_depth;
 
+void InitRenderers();
+extern unsigned int uniform_buffer;
+
 //tmp
 #include "gl_utils.h"
 

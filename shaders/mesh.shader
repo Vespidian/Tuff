@@ -1,5 +1,6 @@
 @shader vertex
 #version 140
+#extension GL_ARB_uniform_buffer_object : enable
 #extension GL_ARB_explicit_attrib_location : enable
 
 layout (location = 0) in vec3 pos_a;
@@ -7,10 +8,11 @@ layout (location = 1) in vec3 normal_a;
 layout (location = 2) in vec2 texture_a;
 layout (location = 3) in vec3 tangent_a;
 
-layout (std140) uniform Matrices{
-	mat4 projection;
+layout (std140) uniform ShaderGlobals{
+	mat4 projection_persp;
+	mat4 projection_ortho;
 	mat4 view;
-	int time;
+	float time;
 };
 
 uniform mat4 model;
@@ -40,7 +42,7 @@ void main(){
 	texture_v = texture_a;
 	// float value = time * gold_noise(pos_a.xz, 502);
 	// gl_Position = projection * view * model * vec4(pos_a + vec3(sin(value / 300.0) / 2), 1);
-	gl_Position = projection * view * model * vec4(pos_a, 1);
+	gl_Position = projection_persp * view * model * vec4(pos_a, 1);
 	// gl_Position = projection * view * model * vec4(normal_a, 1);
 	// gl_Position = projection * view * model * vec4(texture_a, 1);
 	frag_pos_v = vec3(model * vec4(pos_a, 1));

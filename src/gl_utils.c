@@ -66,7 +66,7 @@ void PassShaderUniforms(ShaderObject *shader){
 				glUniform1i(shader->uniforms[i].uniform, (int)shader->uniforms[i]._int);
 				break;
 			case UNI_FLOAT:
-				glUniform1i(shader->uniforms[i].uniform, (int)shader->uniforms[i]._float);
+				glUniform1f(shader->uniforms[i].uniform, shader->uniforms[i]._float);
 				break;
 
 			case UNI_VEC2:
@@ -115,7 +115,7 @@ ShaderObject ParseShaderUniforms(char *name, unsigned int id, char *vertex, char
 	char *uniform_ptr = vertex;
 	int num_samplers = 0;
 	for(int i = 0; i < 2; i++){
-		while((uniform_ptr = strstr(uniform_ptr, "uniform")) != NULL){
+		while((uniform_ptr = strstr(uniform_ptr, "uniform ")) != NULL){
 			if(strchr(uniform_ptr, '{') < strchr(uniform_ptr, ';')){
 				uniform_ptr += 8; // Increment by length of "uniform "
 				continue;
@@ -404,7 +404,7 @@ int SearchShaderUniformNames(ShaderObject *shader, char *name){
 			return i;
 		}
 	}
-	printf("couldnt find shader uniforms: %s\n", shader->name);
+	printf("Couldn't find uniform '%s' in shader: '%s'\n", name, shader->name);
 	return -1;
 }
 

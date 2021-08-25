@@ -29,4 +29,8 @@ extern bool ui_hovered;
 
 extern bool ui_selected;
 
+
+extern ShaderObject ui_shader;
+void DrawUIElement();
+
 #endif

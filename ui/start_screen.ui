@@ -1,8 +1,6 @@
 /* -- C API -- */
-typedef struct{
+typedef struct UIClass{
 	char *name;
-	
-	bool is_active;
 
 	Vector4 transform_relative; // Transforms the element relative to its current position
 	Vector4 transform; // Transforms the element relative to its parent's position
@@ -21,11 +19,12 @@ typedef struct{
 	
 	int transition; // Defines the length of property transitions in ms, 0 = instant
 	enum ease{/* Define all types of easings in here : https://easings.net */};
+	bool is_active;
 
-	struct UIAction actions[];
+	struct UIAction actions[/* Number of actions to be determined */];
 }UIClass;
 
-typedef struct{
+typedef struct UIAction{
 	char *name; // Possibly not needed
 	enum type{/* Define interaction types here: none, onhover, onclick, etc.. */};
 	union{
@@ -36,20 +35,12 @@ typedef struct{
 	UIClass *classes; // If this action is called form a class it cant be its own class, possibly limit the number of nests too
 }UIAction;
 
-typedef struct{
+typedef struct UIElement{
 	char *name;
 
 	struct UIElement *parent;
 	struct UIElement *children;
 
-	bool is_active;
-
-
-	char *text;
-	Vector4 text_color;
-	FontObject *font;
-	float text_size;
-	
 
 	TextureObject *image;
 
@@ -69,14 +60,21 @@ typedef struct{
 	Vector4 padding;
 
 
+	char *text;
+	Vector4 text_color;
+	FontObject *font;
+	float text_size;
+
+
 	UIClass *classes;
 	
 	UIAction actions[/* Number of actions to be determined */];
 	
+	bool is_active;
 	
 }UIElement;
 
-typedef struct{
+typedef struct UIScene{
 	unsigned int num_classes;
 	UIClass *classes;
 	UIElement body;
@@ -88,6 +86,7 @@ typedef struct{
 // If properties are included in an element which doesnt support them, ignore them (e.g. position for the scene element)
 // For dynamic text like displaying a changing number you will have to edit the text directly from the scripting api
 
+/* -- EXAMPLE SCENE -- */
 {
 	classes : [ // Classes are always read first. Whenever an element references a class, that element gets added to that class' users
 		"class_name" : {
@@ -169,6 +168,8 @@ size				// Supports the same inputs as 'position'
 	width		
 	height		
 
+rotation			// Supports input as degrees or percent, clockwise is positive and counter clockwise is negative
+
 padding				// Supports either 1 value or 4 values, 1 value makes the padding equal on all sides
 margin 				// Supports 1 or 4 values
 
@@ -189,7 +190,8 @@ color 				// Support multiple color input types:
 
 transform 			// Transforms position and scale relative to the current position of the element
 	position		
-	scale		
+	scale	
+	rotation	
 
 // TEXT
 // Text itself cannot be modified from within a class, but its style can
