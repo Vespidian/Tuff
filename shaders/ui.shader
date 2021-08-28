@@ -122,7 +122,14 @@ void main(){
 	
 
 
-	float border = (border_v.x * 2) / min(pixel_scale_f.x, pixel_scale_f.y);
+	// float border = (border_v.x * 2) / min(pixel_scale_f.x, pixel_scale_f.y);
+	// vec4 border = vec4(10, 2, 0, 0);
+	vec4 border = (border_v * 2) / min(pixel_scale_f.x, pixel_scale_f.y);
+	// border = (border * 2) / min(pixel_scale_f.x, pixel_scale_f.y);
+	// vec2 rxoffset = ((border.x > border.w) ? vec2(border.w - border.x, 0) : vec2(0, border.x - border.w));
+	// vec2 ryoffset = ((border.x > border.y) ? vec2(border.y - border.x, 0) : vec2(0, border.x - border.y));
+	// vec2 rzoffset = ((border.y > border.z) ? vec2(border.z - border.y, 0) : vec2(0, border.y - border.z));
+	// vec2 rwoffset = ((border.z > border.w) ? vec2(border.w - border.z, 0) : vec2(0, border.z - border.w));
 
 	vec4 radiuses = radius_v;
 	radiuses = (radiuses * 2) / vec4(min(pixel_scale_f.x, pixel_scale_f.y));
@@ -149,10 +156,14 @@ void main(){
 	pixel_type = bool(circle(tex_coord, radiuses.w, bottom_left)) ? vec4(1, 0, 0, 0) : pixel_type; // Bottom Left
 
 	// Inner radius
-	pixel_type = bool(circle(tex_coord, radiuses.x - border, top_left)) ? vec4(0, 1, 0, 1) : pixel_type; // Top Left
-	pixel_type = bool(circle(tex_coord, radiuses.y - border, top_right)) ? vec4(0, 1, 0, 1) : pixel_type; // Top Right
-	pixel_type = bool(circle(tex_coord, radiuses.z - border, bottom_right)) ? vec4(0, 1, 0, 1) : pixel_type; // Bottom Right
-	pixel_type = bool(circle(tex_coord, radiuses.w - border, bottom_left)) ? vec4(0, 1, 0, 1) : pixel_type; // Bottom Left
+	// pixel_type = bool(circle(tex_coord, radiuses.x - border, top_left)) ? vec4(0, 1, 0, 1) : pixel_type; // Top Left
+	// pixel_type = bool(circle(tex_coord, radiuses.y - border, top_right)) ? vec4(0, 1, 0, 1) : pixel_type; // Top Right
+	// pixel_type = bool(circle(tex_coord, radiuses.z - border, bottom_right)) ? vec4(0, 1, 0, 1) : pixel_type; // Bottom Right
+	// pixel_type = bool(circle(tex_coord, radiuses.w - border, bottom_left)) ? vec4(0, 1, 0, 1) : pixel_type; // Bottom Left
+	pixel_type = bool(circle(tex_coord, radiuses.x - max(border.x, border.w), top_left)) ? vec4(0, 1, 0, 1) : pixel_type; // Top Left
+	pixel_type = bool(circle(tex_coord, radiuses.y - max(border.x, border.y), top_right)) ? vec4(0, 1, 0, 1) : pixel_type; // Top Right
+	pixel_type = bool(circle(tex_coord, radiuses.z - max(border.y, border.z), bottom_right)) ? vec4(0, 1, 0, 1) : pixel_type; // Bottom Right
+	pixel_type = bool(circle(tex_coord, radiuses.w - max(border.z, border.w), bottom_left)) ? vec4(0, 1, 0, 1) : pixel_type; // Bottom Left
 
 	// Inner area
 	pixel_type = bool(rectangle(tex_coord, vec2(aspect_ratio.x * 2 - radiuses.x - radiuses.y, aspect_ratio.y - aspect_ratio.y + max(radiuses.x, radiuses.y)), vec2(radiuses.x - aspect_ratio.x, aspect_ratio.y - max(radiuses.x, radiuses.y)))) ? vec4(0, 0, 0, 1) : pixel_type; // Top
@@ -161,10 +172,10 @@ void main(){
 	pixel_type = bool(rectangle(tex_coord, vec2(aspect_ratio.x + aspect_ratio.x - max(radiuses.y, radiuses.z), aspect_ratio.y * 2 - radiuses.x - radiuses.w), vec2(-aspect_ratio.x, radiuses.w - aspect_ratio.y))) ? vec4(0, 0, 0, 1) : pixel_type; // Left
 
 	// Linear borders
-	pixel_type = bool(rectangle(tex_coord, vec2(aspect_ratio.x * 2 - radiuses.x - radiuses.y, border), vec2(radiuses.x - aspect_ratio.x, aspect_ratio.y - border))) ? vec4(1, 0, 0, 0) : pixel_type; // Top
-	pixel_type = bool(rectangle(tex_coord, vec2(aspect_ratio.x * 2 - radiuses.z - radiuses.w, border), vec2(radiuses.w - aspect_ratio.x, -aspect_ratio.y))) ? vec4(1, 0, 0, 0) : pixel_type; // Bottom
-	pixel_type = bool(rectangle(tex_coord, vec2(border, aspect_ratio.y * 2 - radiuses.x - radiuses.w), vec2(-aspect_ratio.x, radiuses.w - aspect_ratio.y))) ? vec4(1, 0, 0, 0) : pixel_type; // Left
-	pixel_type = bool(rectangle(tex_coord, vec2(border, aspect_ratio.y * 2 - radiuses.y - radiuses.z), vec2(aspect_ratio.x - border, radiuses.z - aspect_ratio.y))) ? vec4(1, 0, 0, 0) : pixel_type; // Right
+	pixel_type = bool(rectangle(tex_coord, vec2(aspect_ratio.x * 2 - radiuses.x - radiuses.y, border.x), vec2(radiuses.x - aspect_ratio.x, aspect_ratio.y - border.x))) ? vec4(1, 0, 0, 0) : pixel_type; // Top
+	pixel_type = bool(rectangle(tex_coord, vec2(aspect_ratio.x * 2 - radiuses.z - radiuses.w, border.z), vec2(radiuses.w - aspect_ratio.x, -aspect_ratio.y))) ? vec4(1, 0, 0, 0) : pixel_type; // Bottom
+	pixel_type = bool(rectangle(tex_coord, vec2(border.w, aspect_ratio.y * 2 - radiuses.x - radiuses.w), vec2(-aspect_ratio.x, radiuses.w - aspect_ratio.y))) ? vec4(1, 0, 0, 0) : pixel_type; // Left
+	pixel_type = bool(rectangle(tex_coord, vec2(border.y, aspect_ratio.y * 2 - radiuses.y - radiuses.z), vec2(aspect_ratio.x - border.y, radiuses.z - aspect_ratio.y))) ? vec4(1, 0, 0, 0) : pixel_type; // Right
 	// FragColor += rectangle(tex_coord, vec2(), vec2());
 	
 	FragColor = (pixel_type.r == 1) ? border_color_v : FragColor;

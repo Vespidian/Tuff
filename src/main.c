@@ -13,14 +13,6 @@
 #include "renderer/materials/mask.h"
 
 #include "ui/ui.h"
-#include "ui/start_screen.h"
-#include "ui/load_screen.h"
-#include "ui/elements/button.h"
-#include "ui/resizable_rect.h"
-
-
-#include "ui/load_screen.h"
-
 
 
 
@@ -71,7 +63,6 @@ void Setup(){
 	InitTextures();
 	InitTilesheets();
 	InitFonts();
-	LoadScreenInit();
 
 
 	LoadBuiltinResources();
