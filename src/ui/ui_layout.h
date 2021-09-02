@@ -10,7 +10,7 @@ void InitUI();
 #include "../renderer/render_text.h"
 
 typedef enum UI_Action_et{UI_ACT_HOVER, UI_ACT_CLICK, UI_ACT_ENTER, UI_ACT_LEAVE, UI_ACT_HOLD}UI_Action_et;
-typedef enum UI_EaseType_et{UI_EASE_LINEAR}UI_EaseType_et; // https://www.easings.net
+typedef enum UI_EaseType_et{UI_EASE_UNDEFINED, UI_EASE_LINEAR}UI_EaseType_et; // https://www.easings.net
 typedef enum UI_StyleType_et{
 	UI_PIXELS,						// Specifies length in pixels
 	UI_PERCENT,						// Specified length as a percentage of parent element
@@ -18,11 +18,17 @@ typedef enum UI_StyleType_et{
 	UI_TRANSFORM_PIXELS_INVERTED,	// Position in pixels relative to the opposite side of the parent (does not apply to scale)
 									// i.e. if the x position is 5px and 'UI_TRANSFORM_INVERTED_POSITION' is applied
 									// the actual x position will be 5 pixels from the right edge of the parent element
-	UI_STYLE_INHERIT				// Specified length equal to the parent element's
+	UI_STYLE_INHERIT,				// Specified length equal to the parent element's
+	UI_UNDEFINED,					// Specifies value as default if a property is undefined
 }UI_StyleType_et;
 
-typedef enum UI_OriginType_et{
-	UI_ORIGIN_TOP_LEFT = 0,
+typedef union{
+	struct{int x, y, z, w;};
+	UI_StyleType_et v[4];
+}UI_Property;
+
+typedef enum UI_OriginType{
+	UI_ORIGIN_TOP_LEFT,
 	UI_ORIGIN_TOP_MIDDLE,
 	UI_ORIGIN_TOP_RIGHT,
 	UI_ORIGIN_CENTER,
@@ -31,44 +37,60 @@ typedef enum UI_OriginType_et{
 	UI_ORIGIN_BOTTOM_LEFT,
 	UI_ORIGIN_BOTTOM_MIDDLE,
 	UI_ORIGIN_BOTTOM_RIGHT,
-}UI_OriginType_et;
+}UI_OriginType;
 
-typedef enum UI_Align_et{
+typedef enum UI_Align{
 	UI_ALIGN_HORIZONTAL,
 	UI_ALIGN_VERTICAL
-}UI_Align_et;
+}UI_Align;
 
 typedef struct UIClass{
 	char *name;
 
-	Vector4_i transform_type;
-	Vector4 transform; // Transforms the element relative to its parent's position
-	Vector4 transform_relative; // Transforms the element relative to its current position
+	bool font_defined;
+	FontObject *font;
 
+	bool text_size_defined;
+	float text_size;
+	
+
+	bool color_defined;
 	Vector4 color;
+
+	bool border_color_defined;
 	Vector4 border_color;
+
+	bool text_color_defined;
 	Vector4 text_color;
 
-	FontObject *font;
-	float text_size;
+	UI_Align align;
 
-	Vector4_i margin_type;
+	UI_OriginType origin;
+
+	UI_Property transform_type;
+	Vector4 transform; // Transforms the element relative to its parent's position
+
+	UI_Property transform_relative_type;
+	Vector4 transform_relative; // Transforms the element relative to its current position
+
+	UI_Property margin_type;
 	Vector4 margin;
 
-	Vector4_i border_type;
+	UI_Property border_type;
 	Vector4 border;
 
-	Vector4_i padding_type;
+	UI_Property padding_type;
 	Vector4 padding;
 
-	Vector4_i radius_type;
+	UI_Property radius_type;
 	Vector4 radius;
 
-
+	bool transition_defined;
 	unsigned int transition_length; // Defines the length of property transitions in ms, 0 = instant
 	UI_EaseType_et ease;
 
 	struct UIAction *actions;
+	unsigned int num_actions;
 }UIClass;
 
 typedef struct UIAction{
@@ -92,46 +114,25 @@ typedef struct UIElement{
 
 	TextureObject *image;
 
-	Vector4 color;
-	Vector4 border_color;
-	Vector4 text_color;
-
 	char *text;
 	FontObject *font;
 	float text_size;
 
-	bool origin_set;
-	UI_OriginType_et origin;
+	Vector4 color;
+	Vector4 border_color;
+	Vector4 text_color;
 
-	Vector4_i transform_type;
-	Vector4 transform; 			// Transforms the element relative to the parent's position
-	Vector4 transform_absolute; // Calculated value inherited from all parent elements (or simply the transform if absolute positioning is used)
-	Vector4 transform_calculated;
-
-	UI_Align_et align;
-
-	// For the below style properties the format is:
-	// up, right, down, left
-	Vector4_i margin_type;
+	// Values to be used for rendering (Calculated from classes or default values)
+	Vector4 transform;
 	Vector4 margin;
-	Vector4 margin_calculated;
-
-	Vector4_i border_type;
 	Vector4 border;
-	Vector4 border_calculated;
-
-	Vector4_i padding_type;
 	Vector4 padding;
-	Vector4 padding_calculated;
-
-	// Format / order:
-	// top_left, top_right, bottom_right, bottom_left
-	Vector4_i radius_type;
 	Vector4 radius;
 
 
-	float ease_position;
-	UIClass *classes; // Array of all classes applied to this element
+	float ease_position; // Value between 0 and 1 defining the current transition state
+	UIClass **classes; // Array of all classes applied to this element
+	unsigned int num_classes;
 
 	// UIAction actions[NUM_UI_ACTIONS];
 	UIAction *actions; // Array of actions that this element triggers

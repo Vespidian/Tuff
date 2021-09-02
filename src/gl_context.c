@@ -6,7 +6,7 @@
 #include "debug.h"
 #include "renderer/renderer.h"
 #include "renderer/quad.h"
-#include "ui/ui.h"
+#include "ui/ui_layout.h"
 
 #include "gl_context.h"
 #include "scene/scene.h"
@@ -14,6 +14,7 @@
 
 // #include "scene/obj_loader.h"
 #include "scene/gltf_loader.h"
+#include "gyro/gyro.h"
 
 SDL_GLContext gl_context;
 
@@ -306,7 +307,7 @@ int InitGL(){
     return 0;
 }
 
-#include "ui/ui.h"
+#include "ui/ui_layout.h"
 #include "renderer/render_text.h"
 
 // static float value = 0;
@@ -432,6 +433,8 @@ void RenderGL(){
 	// parent axis
 	SetVAO(mesh_vao);
 	// child->transform.rotation_e.z = -child->parent->transform.rotation_e.z; // Cancels object rotation inherited from its parent on the z axis
+	child->transform.position.y = 1;
+	child->transform.rotation_e = rot;
 	CalculateModelTransform(parent);
 	// CalculateTransform(&parent->transform);
     UniformSetMat4(&axis_shader, "model", parent->transform.result);

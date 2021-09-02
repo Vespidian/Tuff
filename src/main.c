@@ -12,9 +12,10 @@
 #include "renderer/quad.h"
 #include "renderer/materials/mask.h"
 
-#include "ui/ui.h"
+#include "ui/ui_layout.h"
 
 
+#include "gyro/gyro.h"
 
 
 int loop_start_ticks = 0;
@@ -66,6 +67,9 @@ void Setup(){
 
 
 	LoadBuiltinResources();
+
+
+	InitGyro();
 }
 
 void Quit(){
@@ -121,6 +125,7 @@ int main(int argc, char *argv[]){
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			RenderGL();
+			LoopGyro();
 			// if(main_menu){
 				// RenderStartScreen();
 			// }else{
