@@ -5,9 +5,10 @@
 #include "../renderer/renderer.h"
 
 //UI Elements
-
-#include "ui_layout.h"
 #include "../gl_context.h"
+
+#include "ui_interact.h"
+#include "ui_layout.h"
 
 bool ui_hovered = false;
 bool ui_selected = false;
@@ -131,7 +132,7 @@ UIElement *UI_NewElement(UIElement *parent){
 	return &parent->children[parent->num_children - 1];
 }
 
-Vector4 CalculatePadding(UIElement *element, UIClass *class){
+static Vector4 CalculatePadding(UIElement *element, UIClass *class){
 	int axis = 0; // Axis (0 = x axis, 1 = y axis)
 	Vector4 padding;
 	for(int i = 0; i < 4; i++){
@@ -158,7 +159,7 @@ Vector4 CalculatePadding(UIElement *element, UIClass *class){
 	return padding;
 }
 
-Vector4 CalculateBorder(UIElement *element, UIClass *class){
+static Vector4 CalculateBorder(UIElement *element, UIClass *class){
 	int axis = 0; // Axis (0 = x axis, 1 = y axis)
 	Vector4 border;
 	for(int i = 0; i < 4; i++){
@@ -185,7 +186,7 @@ Vector4 CalculateBorder(UIElement *element, UIClass *class){
 	return border;
 }
 
-Vector2 CalculateScale(UIElement *element, UIClass *class){
+static Vector2 CalculateScale(UIElement *element, UIClass *class){
 	Vector2 scale;
 	// Vector4 border = CalculateBorder(element, element->border_type, element->border);
 	// Vector4 padding = CalculatePadding(element, element->padding_type, element->padding);
@@ -216,7 +217,7 @@ Vector2 CalculateScale(UIElement *element, UIClass *class){
 	return scale;
 }
 
-Vector4 CalculateMargin(UIElement *element, UIClass *class){
+static Vector4 CalculateMargin(UIElement *element, UIClass *class){
 	int axis = 0; // Axis (0 = x axis, 1 = y axis)
 	Vector4 margin;
 	for(int i = 0; i < 4; i++){
@@ -243,7 +244,7 @@ Vector4 CalculateMargin(UIElement *element, UIClass *class){
 	return margin;
 }
 
-Vector2 CalculatePosition_relative(UIElement *element, UIClass *class){
+static Vector2 CalculatePosition_relative(UIElement *element, UIClass *class){
 	Vector2 position;
 	// Vector4 margin = CalculateMargin(element, element->margin_type, element->margin);
 	Vector4 margin = element->margin;
@@ -251,7 +252,7 @@ Vector2 CalculatePosition_relative(UIElement *element, UIClass *class){
 		bool type_defined = true;
 		switch(class->transform_type.v[i]){
 			case UI_PERCENT:
-				position.v[i] = element->transform.v[i + 2] * class->transform.v[i];
+				position.v[i] = element->parent->transform.v[i + 2] * class->transform.v[i];
 				break;
 			case UI_TRANSFORM_PIXELS_INVERTED:
 				position.v[i] = element->parent->transform.v[i + 2] - class->transform.v[i];
@@ -270,7 +271,7 @@ Vector2 CalculatePosition_relative(UIElement *element, UIClass *class){
 		// Add margin to position
 		if(class->transform_type.v[i] == UI_TRANSFORM_PIXELS_INVERTED){ // bottom / right
 			position.v[i] += -margin.v[i + 1];
-		}else{ // top / left
+		}else if(class->transform_type.v[i] != UI_PERCENT){ // top / left
 			position.v[i] += margin.v[!i * 3];
 		}
 
@@ -281,7 +282,7 @@ Vector2 CalculatePosition_relative(UIElement *element, UIClass *class){
 	return position;
 }
 
-UI_OriginType CalculateOriginType(UIElement *element, UIClass *class){
+static UI_OriginType CalculateOriginType(UIElement *element, UIClass *class){
 	UI_OriginType origin = class->origin;
 	if(origin != UI_ORIGIN_TOP_LEFT){
 		bool o1 = class->transform_type.x && UI_TRANSFORM_PIXELS_INVERTED;
@@ -298,7 +299,7 @@ UI_OriginType CalculateOriginType(UIElement *element, UIClass *class){
 	return origin;
 }
 
-Vector2 CalculateOriginOffset(UIElement *element, UIClass *class){
+static Vector2 CalculateOriginOffset(UIElement *element, UIClass *class){
 	Vector2 origin_offset = {0, 0};
 	UI_OriginType origin = CalculateOriginType(element, class);
 	// Vector2 scale = CalculateScale(element, element->transform_type, element->transform);
@@ -339,7 +340,7 @@ Vector2 CalculateOriginOffset(UIElement *element, UIClass *class){
 	return origin_offset;
 }
 
-void CalculateRadius(UIElement *element, UIClass *class){
+static void CalculateRadius(UIElement *element, UIClass *class){
 	for(int i = 0; i < 4; i++){
 		switch(class->radius_type.v[i]){
 			case UI_PIXELS:
@@ -351,7 +352,7 @@ void CalculateRadius(UIElement *element, UIClass *class){
 	}
 }
 
-void SetValues(UIElement *element, UIClass *class){
+static void SetValues(UIElement *element, UIClass *class){
 	if(class->color_defined){
 		element->color = class->color;
 	}
@@ -378,63 +379,31 @@ void SetValues(UIElement *element, UIClass *class){
 
 // float Transition(int start, int current, int end, int time_period);
 
-void CalculatePropertyPixelValue(UIElement *element){
-	// Apply default properties to begin with, and only if a class interacts wsith that property will it get changed
-	// for(int i = 0; i < element->num_classes; i++){
-	// 	if(!element->classes[i].applied_first){
-	// 		continue;
-	// 	}
+void ApplyClass(UIElement *element, UIClass *class){
+	if(class != NULL){
+		// --- STYLE APPLICATION ORDER ---
+		// Apply defaults (Done once when the element is created)
+		// Loop through children to adapt scale (only if scale isnt explicitly set)
+		// Loop through classes applying their properties
+		CalculateBorder(element, class);
+		CalculatePadding(element, class);
+		CalculateScale(element, class);
+		CalculateMargin(element, class);
+		CalculatePosition_relative(element, class);
+		CalculateOriginOffset(element, class);
+		CalculateRadius(element, class);
+		// Calculate transform_relative
+		SetValues(element, class);
 
-		
-
-	// }
-	// --- STYLE APPLICATION ORDER ---
-	// Apply defaults
-	// Loop through children to adapt scale
-	// Loop through classes applying their properties
-	CalculateBorder(element, element->classes[0]);
-	CalculatePadding(element, element->classes[0]);
-	CalculateScale(element, element->classes[0]);
-	CalculateMargin(element, element->classes[0]);
-	CalculatePosition_relative(element, element->classes[0]);
-	CalculateOriginOffset(element, element->classes[0]);
-	CalculateRadius(element, element->classes[0]);
-	// Calculate radiuses
-	// Calculate transform_relative
-	SetValues(element, element->classes[0]);
-
-	// Vector2 scale = CalculateScale(element, element->transform_type, element->transform);
-
-	// Vector2 position = CalculatePosition_relative(element);
-
-	// Vector2 origin_offset = CalculateOriginOffset(element);
-	// Vector2 origin_offset = {0, 0};
-	
-
-	// if(element->parent->align == UI_ALIGN_VERTICAL){
-	// 	axis = 1;
-	// }else{
-	// 	axis = 0;
-	// }
-
-	// position.x -= origin_offset.x;
-	// position.y -= origin_offset.y;
-	// element->transform_calculated.x = position.x;
-	// element->transform_calculated.y = position.y;
-
-
-	// element->transform_absolute.x = element->parent->transform_absolute.x + position.x;
-	// element->transform_absolute.y = element->parent->transform_absolute.y + position.y;
-	// element->transform_absolute.z = scale.x;
-	// element->transform_absolute.w = scale.y;
-
-	// element->margin_calculated = CalculateMargin(element, element->margin_type, element->margin);
-	// element->padding_calculated = CalculateMargin(element, element->padding_type, element->padding);
-	// element->border_calculated = CalculateMargin(element, element->border_type, element->border);
+	}
 }
 
 void CalculateChildren(UIElement *element){
-	CalculatePropertyPixelValue(element);
+	// CalculateElement(element);
+	for(int i = 0; i < element->num_classes; i++){
+		ApplyClass(element, element->classes[i]);
+	}
+	CheckInteractions(element);
 
 	if(element->children != NULL){
 		for(int i = 0; i < element->num_children; i++){
@@ -466,6 +435,12 @@ void RenderUIInstance(UIScene *scene){
 	for(int i = 0; i < scene->body.num_children; i++){
 		RenderChildren(&scene->body.children[i]);
 	}
+	scene->body.transform = (Vector4){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+
+}
+
+void tmp(){
+	printf("whayo!\n");
 }
 
 UIScene *uiLoadFile(UIScene *scene){
@@ -492,8 +467,8 @@ UIScene *uiLoadFile(UIScene *scene){
 
 	// tmp_class->transform = (Vector4){20, 20, 0.5, 500};
 	// tmp_class->transform_type = (UI_Property){UI_TRANSFORM_PIXELS_INVERTED, UI_PIXELS, UI_PERCENT, UI_PIXELS};
-	tmp_class->transform = (Vector4){20, 20, 500, 500};
-	tmp_class->transform_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
+	tmp_class->transform = (Vector4){0.5, 0.5, 60, 60};
+	tmp_class->transform_type = (UI_Property){UI_PERCENT, UI_PERCENT, UI_PIXELS, UI_PIXELS};
 	
 	tmp_class->margin = (Vector4){80, 0, 0, 0};
 	tmp_class->margin_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
@@ -514,7 +489,8 @@ UIScene *uiLoadFile(UIScene *scene){
 	tmp_class->border_color = (Vector4){0, 0, 0.5, 1};
 	tmp_class->border_color_defined = true;
 
-	tmp_class->origin = UI_ORIGIN_TOP_LEFT;
+	tmp_class->origin = UI_ORIGIN_BOTTOM_RIGHT;
+	// tmp_class->origin = UI_ORIGIN_TOP_LEFT;
 	// test->origin_set = true;
 
 	// tmp_class->color = (Vector4){0.75, 0.1, 0.5, 1};
@@ -526,6 +502,17 @@ UIScene *uiLoadFile(UIScene *scene){
 	tmp_class->text_color = (Vector4){1, 1, 1, 1};
 	tmp_class->text_color_defined = true;
 
+	tmp_class->actions[0].num_classes = 0;
+	tmp_class->actions[1].num_classes = 0;
+	tmp_class->actions[2].num_classes = 0;
+	tmp_class->actions[3].num_classes = 0;
+	tmp_class->actions[4].num_classes = 0;
+	tmp_class->actions[0].function = NULL;
+	tmp_class->actions[1].function = NULL;
+	tmp_class->actions[2].function = NULL;
+	tmp_class->actions[3].function = NULL;
+	tmp_class->actions[4].function = NULL;
+	tmp_class->actions[UI_ACT_ENTER].function = tmp;
 
 
 	UIElement *test = UI_NewElement(&scene->body);
@@ -547,9 +534,9 @@ UIScene *uiLoadFile(UIScene *scene){
 	
 
 	test->num_classes = 0;
-	// test->classes = realloc(test->classes, sizeof(UIClass) * (test->num_classes + 1));
-	test->classes = malloc(sizeof(UIClass) * (1));
-	test->classes[0] = tmp_class;
+	test->classes = malloc(sizeof(UIClass) * (test->num_classes + 1));
+	test->classes[test->num_classes++] = tmp_class;
+	test->classes = realloc(test->classes, sizeof(UIClass) * (test->num_classes + 1));
 	test->is_active = true;
 
 	// test->text = NULL;

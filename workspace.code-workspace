@@ -44,7 +44,8 @@
 			"type_traits": "c",
 			"*.ui": "c",
 			"serial.h": "c",
-			"gltf_loader.h": "c"
+			"gltf_loader.h": "c",
+			"stdbool.h": "c"
 		}
 	}
 }

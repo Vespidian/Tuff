@@ -9,8 +9,15 @@ void InitUI();
 
 #include "../renderer/render_text.h"
 
-typedef enum UI_Action_et{UI_ACT_HOVER, UI_ACT_CLICK, UI_ACT_ENTER, UI_ACT_LEAVE, UI_ACT_HOLD}UI_Action_et;
-typedef enum UI_EaseType_et{UI_EASE_UNDEFINED, UI_EASE_LINEAR}UI_EaseType_et; // https://www.easings.net
+typedef enum UI_Action{
+	UI_ACT_HOVER = 0, 
+	UI_ACT_ENTER, 
+	UI_ACT_LEAVE, 
+	UI_ACT_CLICK, 
+	UI_ACT_HOLD
+}UI_Action;
+
+typedef enum UI_EaseType{UI_EASE_UNDEFINED, UI_EASE_LINEAR}UI_EaseType; // https://www.easings.net
 typedef enum UI_StyleType_et{
 	UI_PIXELS,						// Specifies length in pixels
 	UI_PERCENT,						// Specified length as a percentage of parent element
@@ -43,6 +50,20 @@ typedef enum UI_Align{
 	UI_ALIGN_HORIZONTAL,
 	UI_ALIGN_VERTICAL
 }UI_Align;
+typedef struct UIClass UIClass;
+typedef struct UIAction{
+	// UI_Action_et type;
+	// union{
+	// 	void (*hover)(void);
+	// 	void (*enter)(void);
+	// 	void (*leave)(void);
+	// 	void (*click)(void);
+	// 	void (*hold)(void);
+	// };
+	void (*function)(void);
+	UIClass *classes; // If this action is called from a class, that class cannot also be nested in the action
+	unsigned int num_classes;
+}UIAction;
 
 typedef struct UIClass{
 	char *name;
@@ -87,23 +108,10 @@ typedef struct UIClass{
 
 	bool transition_defined;
 	unsigned int transition_length; // Defines the length of property transitions in ms, 0 = instant
-	UI_EaseType_et ease;
+	UI_EaseType ease;
 
-	struct UIAction *actions;
-	unsigned int num_actions;
+	UIAction actions[5];
 }UIClass;
-
-typedef struct UIAction{
-	UI_Action_et type;
-	union{
-		void (*hover)(void);
-		void (*click)(void);
-		void (*enter)(void);
-		void (*leave)(void);
-		void (*hold)(void);
-	};
-	UIClass *classes; // If this action is called from a class, that class cannot also be nested in the action
-}UIAction;
 
 typedef struct UIElement{
 	char *name;
@@ -135,7 +143,7 @@ typedef struct UIElement{
 	unsigned int num_classes;
 
 	// UIAction actions[NUM_UI_ACTIONS];
-	UIAction *actions; // Array of actions that this element triggers
+	// UIAction *actions; // Array of actions that this element triggers
 
 	bool is_active; // Element visibility
 
@@ -150,6 +158,7 @@ typedef struct UIScene{
 	UIElement body; // Root element (similar to 'body' in html)
 }UIScene;
 
+void ApplyClass(UIElement *element, UIClass *class);
 
 UIScene *uiLoadFile(UIScene *scene);
 void RenderUIInstance(UIScene *scene);

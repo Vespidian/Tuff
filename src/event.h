@@ -24,8 +24,8 @@ void BindQuickKeyEvent(EV_Function function, Uint8 scanCode);
 void BindKeyEvent(EV_Function function, char key, Uint32 keyPressType);
 
 extern SDL_Event e;
-extern SDL_Point mouse_pos;
-extern SDL_Point mouse_pos_previous;
+extern Vector2_i mouse_pos;
+extern Vector2_i mouse_pos_previous;
 extern bool enable_input;
 extern bool mouse_held;
 extern bool mouse_clicked;
