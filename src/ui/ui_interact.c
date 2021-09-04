@@ -38,12 +38,21 @@ void CheckInteractions(UIElement *element){
 			}
 			if(mouse_clicked){ // ONCLICK
 				ApplyAction(element, element->classes[i], UI_ACT_CLICK);
+				element->is_selected = true;
 
 			}
 		}else{
 			// Check if mouse was over the element in the previous frame
 			if(PointInBounds(mouse_pos_previous, element->transform)){ // ONLEAVE
 				ApplyAction(element, element->classes[i], UI_ACT_LEAVE);
+
+			}
+		}
+		if(mouse_lifted){
+			// If the element was previously selected and the mouse was released, deselect the element
+			if(element->is_selected){ // ONRELEASE
+				ApplyAction(element, element->classes[i], UI_ACT_RELEASE);
+				element->is_selected = false;
 
 			}
 		}

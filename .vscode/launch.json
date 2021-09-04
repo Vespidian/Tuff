@@ -9,7 +9,10 @@
             "request": "launch",
             "name": "Launch(gdb)",
             "program": "${workspaceFolder}/bin/foXandbox.exe",
-            "cwd": "${workspaceRoot}/bin"
+            "cwd": "${workspaceRoot}/bin",
+			"internalConsoleOptions": "neverOpen",
+			"debug.internalConsoleOptions": "neverOpen",
+			"console": "externalTerminal",
         },
 
         
@@ -20,9 +23,9 @@
             "program": "${workspaceFolder}/bin/foXandbox.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false,
+            "externalConsole": true,
             "MIMode": "gdb",
             "miDebuggerPath": "C:/MinGW/bin/gdb.exe",
             "setupCommands": [

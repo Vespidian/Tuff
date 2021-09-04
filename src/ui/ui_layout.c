@@ -121,6 +121,10 @@ UIClass *UI_NewClass(UIScene *scene){
 	class->padding_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
 	class->radius_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
 
+	for(int i = 0; i < UI_NUM_ACTIONS; i++){
+		class->actions[i].num_classes = 0;
+		class->actions[i].function = NULL;
+	}
 
 	return &scene->classes[scene->num_classes++];
 }
@@ -439,8 +443,20 @@ void RenderUIInstance(UIScene *scene){
 
 }
 
-void tmp(){
-	printf("whayo!\n");
+void tmp_enter(){
+	printf("enter!\n");
+}
+void tmp_leave(){
+	printf("leave!\n");
+}
+void tmp_click(){
+	printf("click!\n");
+}
+void tmp_release(){
+	printf("released!\n");
+}
+void tmp_hold(){
+	printf("hold!\n");
 }
 
 UIScene *uiLoadFile(UIScene *scene){
@@ -502,17 +518,11 @@ UIScene *uiLoadFile(UIScene *scene){
 	tmp_class->text_color = (Vector4){1, 1, 1, 1};
 	tmp_class->text_color_defined = true;
 
-	tmp_class->actions[0].num_classes = 0;
-	tmp_class->actions[1].num_classes = 0;
-	tmp_class->actions[2].num_classes = 0;
-	tmp_class->actions[3].num_classes = 0;
-	tmp_class->actions[4].num_classes = 0;
-	tmp_class->actions[0].function = NULL;
-	tmp_class->actions[1].function = NULL;
-	tmp_class->actions[2].function = NULL;
-	tmp_class->actions[3].function = NULL;
-	tmp_class->actions[4].function = NULL;
-	tmp_class->actions[UI_ACT_ENTER].function = tmp;
+	tmp_class->actions[UI_ACT_ENTER].function = tmp_enter;
+	tmp_class->actions[UI_ACT_LEAVE].function = tmp_leave;
+	tmp_class->actions[UI_ACT_CLICK].function = tmp_click;
+	tmp_class->actions[UI_ACT_RELEASE].function = tmp_release;
+	tmp_class->actions[UI_ACT_HOLD].function = tmp_hold;
 
 
 	UIElement *test = UI_NewElement(&scene->body);
@@ -538,6 +548,7 @@ UIScene *uiLoadFile(UIScene *scene){
 	test->classes[test->num_classes++] = tmp_class;
 	test->classes = realloc(test->classes, sizeof(UIClass) * (test->num_classes + 1));
 	test->is_active = true;
+	test->is_selected = false;
 
 	// test->text = NULL;
 

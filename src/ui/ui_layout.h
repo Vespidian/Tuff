@@ -9,12 +9,14 @@ void InitUI();
 
 #include "../renderer/render_text.h"
 
+#define UI_NUM_ACTIONS 6
 typedef enum UI_Action{
 	UI_ACT_HOVER = 0, 
 	UI_ACT_ENTER, 
 	UI_ACT_LEAVE, 
+	UI_ACT_HOLD,
 	UI_ACT_CLICK, 
-	UI_ACT_HOLD
+	UI_ACT_RELEASE, 
 }UI_Action;
 
 typedef enum UI_EaseType{UI_EASE_UNDEFINED, UI_EASE_LINEAR}UI_EaseType; // https://www.easings.net
@@ -110,7 +112,7 @@ typedef struct UIClass{
 	unsigned int transition_length; // Defines the length of property transitions in ms, 0 = instant
 	UI_EaseType ease;
 
-	UIAction actions[5];
+	UIAction actions[6];
 }UIClass;
 
 typedef struct UIElement{
@@ -137,6 +139,7 @@ typedef struct UIElement{
 	Vector4 padding;
 	Vector4 radius;
 
+	bool is_selected;
 
 	float ease_position; // Value between 0 and 1 defining the current transition state
 	UIClass **classes; // Array of all classes applied to this element
