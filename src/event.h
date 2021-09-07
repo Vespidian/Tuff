@@ -1,7 +1,7 @@
 #ifndef EVENT_H_
 #define EVENT_H_
 
-enum EventPollType {EV_QUICK = 0, EV_ACCURATE = 1};
+typedef enum EventPollType_e{EV_POLL_QUICK = 0, EV_POLL_ACCURATE = 1}EventPollType_et;
 
 typedef struct EventData{
 	SDL_Event *e;
@@ -11,7 +11,7 @@ typedef struct EventData{
 
 typedef void (*EV_Function)(EventData event);
 typedef struct InputEvent{
-	int pollType;
+	EventPollType_et pollType;
 	Uint32 eventType;
 	EV_Function function;
 	bool isKeyPress;
@@ -19,7 +19,7 @@ typedef struct InputEvent{
 	Uint8 scanCode;
 }InputEvent;
 
-void BindEvent(int pollType, Uint32 eventType, EV_Function function);
+void BindEvent(EventPollType_et pollType, Uint32 eventType, EV_Function function);
 void BindQuickKeyEvent(EV_Function function, Uint8 scanCode);
 void BindKeyEvent(EV_Function function, char key, Uint32 keyPressType);
 

@@ -20,7 +20,7 @@ void InitQuadRender(){
 	UniformSetMat4(&quad_shader, "tex_coordinates", default_texture_coordinates);
     UniformSetMat4(&quad_shader, "projection", orthographic_projection);
 
-	BindEvent(EV_ACCURATE, SDL_WINDOWEVENT, SetQuadProjection);
+	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, SetQuadProjection);
 }
 
 void SetQuadProjection(){

@@ -1,0 +1,18 @@
+{
+	classes: [
+		"class1": {
+			position: [10px, 20px],
+			color: #ff11ff,
+		},
+	],
+	body: [
+		"element1": {
+			class: "class1",
+			onclick: {
+				call: "function1",
+				class: "class2",
+			},
+		},
+	],
+	thingy: "boop",
+}

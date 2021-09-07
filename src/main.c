@@ -12,7 +12,9 @@
 #include "renderer/quad.h"
 #include "renderer/materials/mask.h"
 
+#include "ui/ui.h"
 #include "ui/ui_layout.h"
+#include "ui/ui_parser.h"
 
 
 #include "gyro/gyro.h"
@@ -65,6 +67,8 @@ void Setup(){
 	InitTilesheets();
 	InitFonts();
 
+	// NewScene("../ui/barebones.uiss");
+	NewScene("../ui/test.ui");
 
 	LoadBuiltinResources();
 
@@ -114,7 +118,7 @@ int main(int argc, char *argv[]){
 	Setup();
 	// startupTime.x = SDL_GetTicks();
 	BindKeyEvent(ToggleWireframe, 'z', SDL_KEYDOWN);
-	BindEvent(EV_ACCURATE, SDL_WINDOWEVENT, CheckWindowActive);
+	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, CheckWindowActive);
 
 	// LoadObj("../models/cube.obj");
 

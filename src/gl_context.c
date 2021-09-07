@@ -6,7 +6,7 @@
 #include "debug.h"
 #include "renderer/renderer.h"
 #include "renderer/quad.h"
-#include "ui/ui_layout.h"
+#include "ui/ui.h"
 
 #include "gl_context.h"
 #include "scene/scene.h"
@@ -181,11 +181,11 @@ int InitGL(){
 	glClearColor(0.258, 0.258, 0.258, 1);
 	glm_ortho(0.0, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0, -z_depth / 2, z_depth / 2, orthographic_projection);
 
-	BindEvent(EV_ACCURATE, SDL_WINDOWEVENT, WindowResize);
-    BindEvent(EV_QUICK, SDL_KEYDOWN, KeyPresses);
-    BindEvent(EV_ACCURATE, SDL_MOUSEWHEEL, Zoom);
-    BindEvent(EV_ACCURATE, SDL_MOUSEMOTION, MouseEvent);
-    BindEvent(EV_ACCURATE, SDL_MOUSEBUTTONDOWN, MouseEvent);
+	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, WindowResize);
+    BindEvent(EV_POLL_QUICK, SDL_KEYDOWN, KeyPresses);
+    BindEvent(EV_POLL_ACCURATE, SDL_MOUSEWHEEL, Zoom);
+    BindEvent(EV_POLL_ACCURATE, SDL_MOUSEMOTION, MouseEvent);
+    BindEvent(EV_POLL_ACCURATE, SDL_MOUSEBUTTONDOWN, MouseEvent);
 
 	InitGLUtils();
 
@@ -300,14 +300,13 @@ int InitGL(){
 	child = NewModel("child", parent, NULL, 0, 0, 0);
     GLCall;
 
-	PrintShaderUniforms(&mesh_shader);
+	// PrintShaderUniforms(&mesh_shader);
 
-	uiLoadFile(&ui_scene);
+	// uiLoadFile(&ui_scene);
 
     return 0;
 }
 
-#include "ui/ui_layout.h"
 #include "renderer/render_text.h"
 
 // static float value = 0;
@@ -322,7 +321,7 @@ static float view_distance = 2;
 static float yaw, pitch = 0.25;
 static float normal_intense = 1;
 void RenderUI(){
-	RenderUIInstance(&ui_scene);
+	// RenderUIInstance(&ui_scene);
 	// RenderText(&default_font, 1, 0, 0, TEXT_ALIGN_LEFT, "TESTING TEXT!");
 	Vector3 tmp = {0, 0, view_distance};
 	glm_vec3_rotate(tmp.v, -pitch * 2, (vec3){1, 0, 0});

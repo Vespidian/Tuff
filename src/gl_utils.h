@@ -4,6 +4,7 @@
 void InitGLUtils();
 
 #include "vectorlib.h"
+#include "include/cglm/cglm.h"
 
 enum ShaderTypes { UNI_BOOL = 0, UNI_INT, UNI_FLOAT, UNI_VEC2, UNI_VEC3, UNI_VEC4, UNI_MAT2, UNI_MAT3, UNI_MAT4, UNI_SAMPLER1D, UNI_SAMPLER2D, UNI_SAMPLER3D };
 typedef struct ShaderUniformObject{

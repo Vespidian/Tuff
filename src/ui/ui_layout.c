@@ -1,140 +1,10 @@
 #include "../global.h"
 #include "../debug.h"
-#include "../gl_utils.h"
-#include "../renderer/quad.h"
-#include "../renderer/renderer.h"
 
 //UI Elements
-#include "../gl_context.h"
-
+#include "ui.h"
 #include "ui_interact.h"
 #include "ui_layout.h"
-
-bool ui_hovered = false;
-bool ui_selected = false;
-TilesheetObject ui_tilesheet;
-
-ShaderObject ui_shader;
-AttribArray ui_vao;
-
-
-void InitUI(){
-	ui_tilesheet = LoadTilesheet("../images/ui/ui.png", 16, 16);
-
-
-	ui_vao = NewVAO(5, ATTR_MAT4, ATTR_VEC4, ATTR_VEC4, ATTR_VEC4, ATTR_VEC4);
-	ui_shader = LoadShaderProgram("ui.shader");
-	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
-	glUniformBlockBinding(ui_shader.id, glGetUniformBlockIndex(ui_shader.id, "ShaderGlobals"), 0);
-	UniformSetMat4(&ui_shader, "tex_coordinates", default_texture_coordinates);
-
-
-	DebugLog(D_ACT, "Initialized UI subsystem");
-}
-
-void CalculateRadiusLimit(float length, float *r1, float *r2){
-	if(length - *r1 - *r2 < 0){
-		float scale_factor = length / (*r1 + *r2);
-		*r1 *= scale_factor;
-		*r2 *= scale_factor;
-	}
-	if(*r1 * 2 > length){
-		*r1 = length * 0.5f;
-	}
-	if(*r2 * 2 > length){
-		*r2 = length * 0.5f;
-	}
-}
-
-void RenderUIElement(UIElement *element){
-	if(element->text != NULL){
-		RenderTextEx(
-			element->font, 
-			element->text_size, 
-			10,
-			// element->padding_calculated.w + element->border_calculated.w + element->transform.x,
-			element->transform.w / 2,
-			// 0,
-			// 0,
-			element->text_color,
-			TEXT_ALIGN_LEFT,
-			-1,
-			element->text
-		);
-	}
-	/*
-	mat3 model_a;
-	vec4 border_a;
-	vec4 radius_a;
-	vec4 color_a;
-	vec4 border_color_a;
-	*/
-	Vector4 transform = element->transform;
-	mat4 matrix;
-	glm_mat4_identity(matrix);
-	glm_translate(matrix, (vec3){transform.x, transform.y, 100});
-	glm_scale(matrix, (vec2){transform.z, transform.w});
-
-	Vector4 radius = element->radius;
-	/**
-	 * Limiting corner radiuses
-	 * 4 ifs needed:
-	 * x against y
-	 * x against w
-	 * 
-	 * z against y
-	 * z against w
-	 */
-	CalculateRadiusLimit(transform.z, &radius.z, &radius.w);
-	CalculateRadiusLimit(transform.w, &radius.y, &radius.z);
-	CalculateRadiusLimit(transform.w, &radius.w, &radius.x);
-	CalculateRadiusLimit(transform.z, &radius.x, &radius.y);
-
-	float data[64];
-	memcpy(&data[0], matrix, sizeof(mat4));
-	memcpy(&data[16], element->border.v, sizeof(vec4));
-	memcpy(&data[20], radius.v, sizeof(vec4));
-	memcpy(&data[24], element->color.v, sizeof(vec4));
-	memcpy(&data[28], element->border_color.v, sizeof(vec4));
-
-	TextureObject texture_array[16] = {1};
-	AppendInstance(ui_vao, data, &ui_shader, 1, texture_array);
-}
-
-UIClass *UI_NewClass(UIScene *scene){
-	scene->classes = realloc(scene->classes, sizeof(UIClass) * (scene->num_classes + 1));
-
-	UIClass *class = &scene->classes[scene->num_classes];
-
-	class->border_color_defined = false;
-	class->color_defined = false;
-	class->font_defined = false;
-	class->text_color_defined = false;
-	class->text_size_defined = false;
-	class->transition_defined = false;
-	class->origin = UI_ORIGIN_TOP_LEFT;
-
-	class->transform_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
-	class->transform_relative_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
-	class->margin_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
-	class->border_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
-	class->padding_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
-	class->radius_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
-
-	for(int i = 0; i < UI_NUM_ACTIONS; i++){
-		class->actions[i].num_classes = 0;
-		class->actions[i].function = NULL;
-	}
-
-	return &scene->classes[scene->num_classes++];
-}
-
-UIElement *UI_NewElement(UIElement *parent){
-	// parent->children[parent->num_children] = realloc(parent->children[parent->num_children], sizeof(UIElement) * ++parent->num_children);
-	parent->children = realloc(parent->children, sizeof(UIElement) * ++parent->num_children);
-	parent->children[parent->num_children - 1].parent = parent;
-	return &parent->children[parent->num_children - 1];
-}
 
 static Vector4 CalculatePadding(UIElement *element, UIClass *class){
 	int axis = 0; // Axis (0 = x axis, 1 = y axis)
@@ -192,8 +62,6 @@ static Vector4 CalculateBorder(UIElement *element, UIClass *class){
 
 static Vector2 CalculateScale(UIElement *element, UIClass *class){
 	Vector2 scale;
-	// Vector4 border = CalculateBorder(element, element->border_type, element->border);
-	// Vector4 padding = CalculatePadding(element, element->padding_type, element->padding);
 	Vector4 border = element->border;
 	Vector4 padding = element->padding;
 	for(int i = 2; i <= 3; i++){
@@ -250,7 +118,6 @@ static Vector4 CalculateMargin(UIElement *element, UIClass *class){
 
 static Vector2 CalculatePosition_relative(UIElement *element, UIClass *class){
 	Vector2 position;
-	// Vector4 margin = CalculateMargin(element, element->margin_type, element->margin);
 	Vector4 margin = element->margin;
 	for(int i = 0; i <= 1; i++){
 		bool type_defined = true;
@@ -306,7 +173,6 @@ static UI_OriginType CalculateOriginType(UIElement *element, UIClass *class){
 static Vector2 CalculateOriginOffset(UIElement *element, UIClass *class){
 	Vector2 origin_offset = {0, 0};
 	UI_OriginType origin = CalculateOriginType(element, class);
-	// Vector2 scale = CalculateScale(element, element->transform_type, element->transform);
 	Vector2 scale = (Vector2){element->transform.v[2], element->transform.v[3]};
 	switch(origin){
 		default: // UI_ORIGIN_TOP_LEFT or UI_UNDEFINED
@@ -344,7 +210,21 @@ static Vector2 CalculateOriginOffset(UIElement *element, UIClass *class){
 	return origin_offset;
 }
 
-static void CalculateRadius(UIElement *element, UIClass *class){
+static void CalculateRadiusLimit(float length, float *r1, float *r2){
+	if(length - *r1 - *r2 < 0){
+		float scale_factor = length / (*r1 + *r2);
+		*r1 *= scale_factor;
+		*r2 *= scale_factor;
+	}
+	if(*r1 * 2 > length){
+		*r1 = length * 0.5f;
+	}
+	if(*r2 * 2 > length){
+		*r2 = length * 0.5f;
+	}
+}
+
+static void CalculateRadius(UIElement *element, UIClass *class){ // TODO: Add percent and inherit cases for radius
 	for(int i = 0; i < 4; i++){
 		switch(class->radius_type.v[i]){
 			case UI_PIXELS:
@@ -354,6 +234,10 @@ static void CalculateRadius(UIElement *element, UIClass *class){
 				break;
 		}
 	}
+	CalculateRadiusLimit(element->transform.z, &element->radius.z, &element->radius.w);
+	CalculateRadiusLimit(element->transform.w, &element->radius.y, &element->radius.z);
+	CalculateRadiusLimit(element->transform.w, &element->radius.w, &element->radius.x);
+	CalculateRadiusLimit(element->transform.z, &element->radius.x, &element->radius.y);
 }
 
 static void SetValues(UIElement *element, UIClass *class){
@@ -377,11 +261,7 @@ static void SetValues(UIElement *element, UIClass *class){
 	// }
 }
 
-// Vector4 CalculateCoverage(UIElement *element){
-	
-// }
-
-// float Transition(int start, int current, int end, int time_period);
+// float Transition(int start, int current, int end, int time_period); // TODO: Implement transition animations / easings for classes
 
 void ApplyClass(UIElement *element, UIClass *class){
 	if(class != NULL){
@@ -395,15 +275,16 @@ void ApplyClass(UIElement *element, UIClass *class){
 		CalculateMargin(element, class);
 		CalculatePosition_relative(element, class);
 		CalculateOriginOffset(element, class);
+		
 		CalculateRadius(element, class);
+
 		// Calculate transform_relative
 		SetValues(element, class);
 
 	}
 }
 
-void CalculateChildren(UIElement *element){
-	// CalculateElement(element);
+void RecursiveApplyElementClasses(UIElement *element){
 	for(int i = 0; i < element->num_classes; i++){
 		ApplyClass(element, element->classes[i]);
 	}
@@ -411,152 +292,125 @@ void CalculateChildren(UIElement *element){
 
 	if(element->children != NULL){
 		for(int i = 0; i < element->num_children; i++){
-			CalculateChildren(&element->children[i]);
+			RecursiveApplyElementClasses(&element->children[i]);
 		}
 	}
 }
 
-void RenderChildren(UIElement *element){
-	if(element->is_active){
-		RenderUIElement(element);
-	}
+// void tmp_enter(){
+// 	printf("enter!\n");
+// }
+// void tmp_leave(){
+// 	printf("leave!\n");
+// }
+// void tmp_click(){
+// 	printf("click!\n");
+// }
+// void tmp_release(){
+// 	printf("released!\n");
+// }
+// void tmp_hold(){
+// 	printf("hold!\n");
+// }
 
-	if(element->children != NULL){
-		for(int i = 0; i < element->num_children; i++){
-			RenderChildren(&element->children[i]);
-		}
-	}
-}
-
-void RenderUIInstance(UIScene *scene){
-	// if(scene->needs_update){
-	// 	CalculateChildren(&scene->body);
-	// }
-	for(int i = 0; i < scene->body.num_children; i++){
-		CalculateChildren(&scene->body.children[i]);
-	}
-
-	for(int i = 0; i < scene->body.num_children; i++){
-		RenderChildren(&scene->body.children[i]);
-	}
-	scene->body.transform = (Vector4){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-
-}
-
-void tmp_enter(){
-	printf("enter!\n");
-}
-void tmp_leave(){
-	printf("leave!\n");
-}
-void tmp_click(){
-	printf("click!\n");
-}
-void tmp_release(){
-	printf("released!\n");
-}
-void tmp_hold(){
-	printf("hold!\n");
-}
-
-UIScene *uiLoadFile(UIScene *scene){
+// UIScene *uiLoadFile(UIScene *scene){
 	
-	scene->num_classes = 0;
+	// scene->num_classes = 0;
 
-	scene->dynamic = false; // Scenes are static by default
+	// scene->dynamic = false; // Scenes are static by default
 
-	scene->needs_update = true;
+	// scene->needs_update = true;
 
-	scene->body.name = malloc(sizeof(char) * 5);
-	strcpy(scene->body.name, "body");
+	// scene->body.name = malloc(sizeof(char) * 5);
+	// strcpy(scene->body.name, "body");
 
-	scene->body.transform = (Vector4){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-	// scene->body.transform = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
+	// scene->body.transform = (Vector4){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+	// // scene->body.transform = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
 	
-	scene->body.color = (Vector4){1, 0.5, 0.75, 1};
-	scene->body.is_active = true;
-	scene->body.parent = NULL;
-	scene->body.num_children = 0;
+	// scene->body.color = (Vector4){1, 0.5, 0.75, 1};
+	// scene->body.is_active = true;
+	// scene->body.parent = NULL;
+	// scene->body.num_children = 0;
 
 
-	UIClass *tmp_class = UI_NewClass(scene);
+	// UIClass *tmp_class = UI_NewClass(scene);
 
-	// tmp_class->transform = (Vector4){20, 20, 0.5, 500};
-	// tmp_class->transform_type = (UI_Property){UI_TRANSFORM_PIXELS_INVERTED, UI_PIXELS, UI_PERCENT, UI_PIXELS};
-	tmp_class->transform = (Vector4){0.5, 0.5, 60, 60};
-	tmp_class->transform_type = (UI_Property){UI_PERCENT, UI_PERCENT, UI_PIXELS, UI_PIXELS};
+	// // tmp_class->transform = (Vector4){20, 20, 0.5, 500};
+	// // tmp_class->transform_type = (UI_Property){UI_TRANSFORM_PIXELS_INVERTED, UI_PIXELS, UI_PERCENT, UI_PIXELS};
+	// tmp_class->transform = (Vector4){0.5, 0.5, 60, 60};
+	// tmp_class->transform_type = (UI_Property){UI_PERCENT, UI_PERCENT, UI_PIXELS, UI_PIXELS};
 	
-	tmp_class->margin = (Vector4){80, 0, 0, 0};
-	tmp_class->margin_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
+	// tmp_class->margin = (Vector4){80, 0, 0, 0};
+	// tmp_class->margin_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
 	
-	tmp_class->padding = (Vector4){0, 0, 0, 0};
-	tmp_class->padding_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
+	// tmp_class->padding = (Vector4){0, 0, 0, 0};
+	// tmp_class->padding_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
 	
-	// tmp_class->border = (Vector4){2, 0.1, 0, 0};
-	// tmp_class->border_type = (UI_Property){UI_PIXELS, UI_PERCENT, UI_PIXELS, UI_PIXELS};
-	tmp_class->border = (Vector4){2, 0, 0, 0};
-	tmp_class->border_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
+	// // tmp_class->border = (Vector4){2, 0.1, 0, 0};
+	// // tmp_class->border_type = (UI_Property){UI_PIXELS, UI_PERCENT, UI_PIXELS, UI_PIXELS};
+	// tmp_class->border = (Vector4){2, 0, 0, 0};
+	// tmp_class->border_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
 	
-	tmp_class->radius = (Vector4){50, 5, 50, 10};
-	tmp_class->radius_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
+	// tmp_class->radius = (Vector4){50, 5, 50, 10};
+	// tmp_class->radius_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
 
-	tmp_class->color = (Vector4){0, 1, 0.5, 1};
-	tmp_class->color_defined = true;
-	tmp_class->border_color = (Vector4){0, 0, 0.5, 1};
-	tmp_class->border_color_defined = true;
+	// tmp_class->color = (Vector4){0, 1, 0.5, 1};
+	// tmp_class->color_defined = true;
+	// tmp_class->border_color = (Vector4){0, 0, 0.5, 1};
+	// tmp_class->border_color_defined = true;
 
-	tmp_class->origin = UI_ORIGIN_BOTTOM_RIGHT;
-	// tmp_class->origin = UI_ORIGIN_TOP_LEFT;
-	// test->origin_set = true;
+	// tmp_class->origin = UI_ORIGIN_BOTTOM_RIGHT;
+	// // tmp_class->origin = UI_ORIGIN_TOP_LEFT;
+	// // test->origin_set = true;
 
-	// tmp_class->color = (Vector4){0.75, 0.1, 0.5, 1};
+	// // tmp_class->color = (Vector4){0.75, 0.1, 0.5, 1};
 
-	tmp_class->font = &default_font;
-	tmp_class->font_defined = true;
-	tmp_class->text_size = 1;
-	tmp_class->text_size_defined = true;
-	tmp_class->text_color = (Vector4){1, 1, 1, 1};
-	tmp_class->text_color_defined = true;
+	// tmp_class->font = &default_font;
+	// tmp_class->font_defined = true;
+	// tmp_class->text_size = 1;
+	// tmp_class->text_size_defined = true;
+	// tmp_class->text_color = (Vector4){1, 1, 1, 1};
+	// tmp_class->text_color_defined = true;
 
-	tmp_class->actions[UI_ACT_ENTER].function = tmp_enter;
-	tmp_class->actions[UI_ACT_LEAVE].function = tmp_leave;
-	tmp_class->actions[UI_ACT_CLICK].function = tmp_click;
-	tmp_class->actions[UI_ACT_RELEASE].function = tmp_release;
-	tmp_class->actions[UI_ACT_HOLD].function = tmp_hold;
+	// tmp_class->actions[UI_ACT_ENTER].function = tmp_enter;
+	// tmp_class->actions[UI_ACT_LEAVE].function = tmp_leave;
+	// tmp_class->actions[UI_ACT_CLICK].function = tmp_click;
+	// tmp_class->actions[UI_ACT_RELEASE].function = tmp_release;
+	// tmp_class->actions[UI_ACT_HOLD].function = tmp_hold;
 
 
-	UIElement *test = UI_NewElement(&scene->body);
-	test->children = NULL;
-	test->parent = &scene->body;
-	test->text = malloc(sizeof(char) * 6);
-	test->text_size = 1;
-	test->font = &default_font;
+	// UIElement *test = UI_NewElement(&scene->body);
+	// test->children = NULL;
+	// test->parent = &scene->body;
+	// test->text = malloc(sizeof(char) * 6);
+	// test->text_size = 1;
+	// test->font = &default_font;
 
-	test->color = (Vector4){1, 1, 1, 1};
-	test->border_color = (Vector4){0, 0, 0, 1};
-	test->text_color = (Vector4){1, 1, 1, 1};
+	// test->color = (Vector4){1, 1, 1, 1};
+	// test->border_color = (Vector4){0, 0, 0, 1};
+	// test->text_color = (Vector4){1, 1, 1, 1};
 
-	test->transform = (Vector4){0, 0, 20, 20};
+	// test->transform = (Vector4){0, 0, 20, 20};
 
-	strcpy(test->text, "test;");
-	test->text[5] = 0;
+	// strcpy(test->text, "test;");
+	// test->text[5] = 0;
 
 	
 
-	test->num_classes = 0;
-	test->classes = malloc(sizeof(UIClass) * (test->num_classes + 1));
-	test->classes[test->num_classes++] = tmp_class;
-	test->classes = realloc(test->classes, sizeof(UIClass) * (test->num_classes + 1));
-	test->is_active = true;
-	test->is_selected = false;
+	// test->num_classes = 0;
+	// test->classes = malloc(sizeof(UIClass) * (test->num_classes + 1));
+	// test->classes[test->num_classes++] = tmp_class;
+	// test->classes = realloc(test->classes, sizeof(UIClass) * (test->num_classes + 1));
+	// test->is_active = true;
+	// test->is_selected = false;
 
 	// test->text = NULL;
 
 
 
-	for(int i = 0; i < scene->body.num_children; i++){
-		CalculateChildren(&scene->body.children[i]);
-	}
+// 	for(int i = 0; i < scene->body.num_children; i++){
+// 		RecursiveApplyElementClasses(&scene->body.children[i]);
+// 	}
 
-	return NULL;
-}
+// 	return NULL;
+// }

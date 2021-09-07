@@ -45,7 +45,14 @@
 			"*.ui": "c",
 			"serial.h": "c",
 			"gltf_loader.h": "c",
-			"stdbool.h": "c"
+			"stdbool.h": "c",
+			"ui_parser.h": "c",
+			"ui_interact.h": "c",
+			"ui.h": "c",
+			"cglm.h": "c",
+			"vectorlib.h": "c",
+			"jsmn.h": "c",
+			"sdl.h": "c"
 		}
 	}
 }

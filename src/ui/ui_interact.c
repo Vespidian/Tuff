@@ -2,6 +2,7 @@
 #include "../debug.h"
 #include "../event.h"
 
+#include "ui.h"
 #include "ui_layout.h"
 #include "ui_interact.h"
 

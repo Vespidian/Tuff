@@ -23,7 +23,7 @@ void InitMaskedRender(){
 
 	autotile_mask_sheet = LoadTilesheet("../images/autotile_mask.png", 16, 16);
 	UniformSetMat4(&mask_shader, "orthographic_projection", orthographic_projection);
-	BindEvent(EV_ACCURATE, SDL_WINDOWEVENT, WindowResize);
+	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, WindowResize);
 }
 
 void MaskedRender(TilesheetObject top_sheet, unsigned int top_index, TilesheetObject bottom_sheet, unsigned int bottom_index, unsigned int mask_index, SDL_Rect dest, int zpos, SDL_Color color){

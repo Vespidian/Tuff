@@ -160,9 +160,9 @@ void InitScene(SceneObject *scene){
 
 }
 
-void LoadScene(char *name, char *path, SceneObject *scene){
+// void LoadScene(char *name, char *path, SceneObject *scene){
 
-}
+// }
 
 void RenderScene(){
 
