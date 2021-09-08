@@ -1,7 +1,7 @@
 {
 	classes: [
 		"class1": {
-			position: [10px, 20px],
+			top: 20%,
 			color: #ff11ff,
 		},
 	],

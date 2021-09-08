@@ -148,6 +148,22 @@ void InitializeScene(UIScene *scene){
 	scene->body.is_active = true;
 }
 
+static int strntol(char *string, unsigned int length){
+	int result = 0;
+	int decimal_place = 1;
+	for(int i = 0; i < length; i++){
+		if(string[length - 1 - i] >= '0' && string[length - 1 - i] <= '9'){
+			result += (string[length - 1 - i] - '0') * decimal_place;
+			decimal_place *= 10;
+		}
+	}
+	if(string[0] == '-'){
+		result *= -1;
+	}
+
+	return result;
+}
+
 static bool CompareToken(jsmntok_t *token, char *json_string, char *string){
 	bool result = false;
 	int num_equal = 0;
@@ -165,6 +181,53 @@ static bool CompareToken(jsmntok_t *token, char *json_string, char *string){
 	return result;
 }
 
+static unsigned int GetTokenLength(JSONObject_t json, unsigned int token){
+	return json.tokens[token].end - json.tokens[token].start;
+}
+
+static UI_StyleType_et GetPropertyType(JSONObject_t json, unsigned int token){
+	// px, %, inherit
+	UI_StyleType_et value_type = UI_UNDEFINED;
+	if(strncmp(json.json_string + json.tokens[token].end - 2, "px", 2) == 0){
+		value_type = UI_PIXELS;
+	}else if(json.json_string[json.tokens[token].end - 1] == '%'){
+		value_type = UI_PERCENT;
+	}else if(strncmp(json.json_string + json.tokens[token].end - 7, "inherit", 7) == 0){
+		value_type = UI_STYLE_INHERIT;
+	}
+
+	return value_type;
+}
+
+static float GetPropertyValue(JSONObject_t json, unsigned int token){
+	UI_StyleType_et type =  GetPropertyType(json, token);
+	unsigned int num_length = GetTokenLength(json, token);
+	float value = 0;
+	switch(type){
+		case UI_PIXELS:
+			num_length -= 2; // px
+			value = strntol(json.json_string + json.tokens[token].start, num_length);
+			break;
+		case UI_PERCENT:
+			num_length -= 1; // %
+			value = strntol(json.json_string + json.tokens[token].start, num_length) / 100.0;
+			break;
+		default:
+			// Either we dont know what it is or it is 'inherit'
+			break;
+	}
+	return value;
+}
+
+static UIClass *FindClass(UIScene *scene, char *name, unsigned int length){
+	for(int i = 0; i < scene->num_classes; i++){
+		if(strncmp(scene->classes[i].name, name, length) == 0){
+			return &scene->classes[i];
+		}
+	}
+	return NULL;
+}
+
 static int SkipToken(JSONObject_t json, unsigned int token){
 	// 'token' indexes the name of a property or element
 	// 'token + 1' is the data of this property or element
@@ -179,8 +242,8 @@ static int SkipToken(JSONObject_t json, unsigned int token){
 
 static void LogUnkownToken(JSONObject_t json, unsigned int token, UIScene *scene){
 	char *unkown_property = malloc(sizeof(char) * (json.tokens[token].size + 1));
-	strncpy(unkown_property, json.json_string + json.tokens[token].start, json.tokens[token].end - json.tokens[token].start);
-	unkown_property[json.tokens[token].end - json.tokens[token].start] = 0;
+	strncpy(unkown_property, json.json_string + json.tokens[token].start, GetTokenLength(json, token));
+	unkown_property[GetTokenLength(json, token)] = 0;
 	// printf("UISS: Unknown property (): %s\n", unkown_property);
 	printf("%s:%d Unknown property '%s'\n", scene->path, json.tokens[token].start, unkown_property);
 	// DebugLog(D_WARN, "UISS: Unknown property: %s", unkown_property);
@@ -189,22 +252,35 @@ static void LogUnkownToken(JSONObject_t json, unsigned int token, UIScene *scene
 }
 
 static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UIClass *class){
-	int name_length = json.tokens[token].end - json.tokens[token].start;
+	int name_length = GetTokenLength(json, token);
 	class->name = malloc(sizeof(char) * (name_length + 1));
 	strncpy(class->name, json.json_string + json.tokens[token].start, name_length);
 
 	// 'token' is the name of the class and 'token + 2' is the first property within the class
 	int current_token = token + 2;
+
+	// bool absolute_position[2] = {false, false};
+
 	for(int i = 0; i < json.tokens[token + 1].size; i++){
 		if(CompareToken(&json.tokens[current_token], json.json_string, "position")){
 			current_token += 4;
 			printf("class position, start: %d, end: %d\n", current_token - 4, current_token);
+
+		}else if(CompareToken(&json.tokens[current_token], json.json_string, "top")){
+			class->transform_type.y = GetPropertyType(json, current_token + 1);
+			class->transform.y = GetPropertyValue(json, current_token + 1);
+			printf("type: %d, value: %f\n", class->transform_type.y, class->transform.y);
+			current_token += 2;
+
 		}else if(CompareToken(&json.tokens[current_token], json.json_string, "onclick")){
 			// Set 'current_token' to whatever the 'LoopAction' function returns
 			printf("class onclick\n");
+			current_token = SkipToken(json, current_token);
+
 		}else{
 			LogUnkownToken(json, current_token, scene);
 			current_token = SkipToken(json, current_token);
+
 		}
 	}
 
@@ -226,7 +302,7 @@ static int LoopClassBuffer(JSONObject_t json, unsigned int token, UIScene *scene
 
 // Returns the position of the next element or -1 if there is no next element
 static int LoopElement(JSONObject_t json, unsigned int token, UIScene *scene, UIElement *element){
-	int name_length = json.tokens[token].end - json.tokens[token].start;
+	int name_length = GetTokenLength(json, token);
 	element->name = malloc(sizeof(char) * (name_length + 1));
 	strncpy(element->name, json.json_string + json.tokens[token].start, name_length);
 
@@ -234,12 +310,16 @@ static int LoopElement(JSONObject_t json, unsigned int token, UIScene *scene, UI
 	int current_token = token + 2;
 	for(int i = 0; i < json.tokens[token + 1].size; i++){
 		if(CompareToken(&json.tokens[current_token], json.json_string, "class")){
-			current_token += 2;
+			element->classes = realloc(element->classes, sizeof(UIClass) * (element->num_classes + 1));
+			element->classes[element->num_classes] = FindClass(scene, json.json_string + json.tokens[current_token + 1].start, GetTokenLength(json, current_token + 1));
 			printf("element class\n");
+			current_token += 2;
+			
 		}else if(CompareToken(&json.tokens[current_token], json.json_string, "onclick")){
 			// Set 'current_token' to whatever the 'LoopAction' function returns
 			current_token = SkipToken(json, current_token);
 			printf("element onclick\n");
+
 		}else if(CompareToken(&json.tokens[current_token], json.json_string, "elements")){
 			element->num_children = json.tokens[current_token + 1].size;
 			element->children = malloc(sizeof(UIElement) * (element->num_children + 1));
@@ -247,9 +327,11 @@ static int LoopElement(JSONObject_t json, unsigned int token, UIScene *scene, UI
 			for(int i = 0; i < element->num_children; i++){
 				current_token = LoopElement(json, current_token, scene, &element->children[i]);
 			}
+
 		}else{
 			LogUnkownToken(json, current_token, scene);
 			current_token = SkipToken(json, current_token);
+
 		}
 	}
 
