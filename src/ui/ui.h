@@ -56,7 +56,7 @@ typedef enum UI_Align{
 typedef struct UIClass UIClass;
 typedef struct UIAction{
 	void (*function)(void);
-	UIClass *classes; // If this action is called from a class, that class cannot also be nested in the action
+	UIClass **classes; // If this action is called from a class, that class cannot also be nested in the action
 	unsigned int num_classes;
 }UIAction;
 
@@ -126,11 +126,15 @@ typedef struct UIElement{
 	Vector4 text_color;
 
 	// Values to be used for rendering (Calculated from classes or default values)
+	Vector2 base_position;
+	Vector2 base_scale;
 	Vector4 transform;
 	Vector4 margin;
 	Vector4 border;
 	Vector4 padding;
 	Vector4 radius;
+
+	bool full_screen;
 
 	bool is_selected;
 
@@ -156,8 +160,8 @@ typedef struct UIScene{
 }UIScene;
 
 // TMP
-UIScene *NewScene(char *path);
-UIScene *uiLoadFile(UIScene *scene);
+extern UIScene *scene_stack;
+UIScene *UI_LoadScene(char *path);
 void UI_RenderScene(UIScene *scene);
 
 

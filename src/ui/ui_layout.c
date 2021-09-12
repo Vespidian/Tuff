@@ -61,7 +61,7 @@ static Vector4 CalculateBorder(UIElement *element, UIClass *class){
 }
 
 static Vector2 CalculateScale(UIElement *element, UIClass *class){
-	Vector2 scale;
+	Vector2 scale = element->base_scale;
 	Vector4 border = element->border;
 	Vector4 padding = element->padding;
 	for(int i = 2; i <= 3; i++){
@@ -77,14 +77,15 @@ static Vector2 CalculateScale(UIElement *element, UIClass *class){
 				type_defined = false;
 				break;
 		}
+		if(type_defined){
+			element->base_scale.v[i - 2] = scale.v[i - 2];
+		}
 		if(i == 2){
 			scale.v[i - 2] += (border.v[i - 1] + border.v[i + 1]) + (padding.v[i - 1] + padding.v[i + 1]);
 		}else{
 			scale.v[i - 2] += (border.v[i - 1] + border.v[i - 3]) + (padding.v[i - 1] + padding.v[i - 3]);
 		}
-		if(type_defined){
-			element->transform.v[i] = scale.v[i - 2];
-		}
+		element->transform.v[i] = scale.v[i - 2];
 	}
 	return scale;
 }
@@ -117,7 +118,7 @@ static Vector4 CalculateMargin(UIElement *element, UIClass *class){
 }
 
 static Vector2 CalculatePosition_relative(UIElement *element, UIClass *class){
-	Vector2 position;
+	Vector2 position = element->base_position;
 	Vector4 margin = element->margin;
 	for(int i = 0; i <= 1; i++){
 		bool type_defined = true;
@@ -139,33 +140,33 @@ static Vector2 CalculatePosition_relative(UIElement *element, UIClass *class){
 				break;
 		}
 
+		if(type_defined){
+			element->base_position.v[i] = position.v[i];
+		}
+
 		// Add margin to position
 		if(class->transform_type.v[i] == UI_TRANSFORM_PIXELS_INVERTED){ // bottom / right
 			position.v[i] += -margin.v[i + 1];
-		}else if(class->transform_type.v[i] != UI_PERCENT){ // top / left
+		}else if(class->transform_type.v[i] == UI_UNDEFINED){ // top / left
 			position.v[i] += margin.v[!i * 3];
 		}
 
-		if(type_defined){
-			element->transform.v[i] = position.v[i];
-		}
+		element->transform.v[i] = position.v[i];
 	}
 	return position;
 }
 
 static UI_OriginType CalculateOriginType(UIElement *element, UIClass *class){
 	UI_OriginType origin = class->origin;
-	if(origin != UI_ORIGIN_TOP_LEFT){
-		bool o1 = class->transform_type.x && UI_TRANSFORM_PIXELS_INVERTED;
-		bool o2 = class->transform_type.y && UI_TRANSFORM_PIXELS_INVERTED;
+	bool o1 = class->transform_type.x == UI_TRANSFORM_PIXELS_INVERTED;
+	bool o2 = class->transform_type.y == UI_TRANSFORM_PIXELS_INVERTED;
 
-		if(o1 && o2){
-			origin = UI_ORIGIN_BOTTOM_RIGHT;
-		}else if(o1){
-			origin = UI_ORIGIN_TOP_RIGHT;
-		}else if(o2){
-			origin = UI_ORIGIN_BOTTOM_LEFT;
-		}
+	if(o1 && o2){
+		origin = UI_ORIGIN_BOTTOM_RIGHT;
+	}else if(o1){
+		origin = UI_ORIGIN_TOP_RIGHT;
+	}else if(o2){
+		origin = UI_ORIGIN_BOTTOM_LEFT;
 	}
 	return origin;
 }
@@ -296,121 +297,3 @@ void RecursiveApplyElementClasses(UIElement *element){
 		}
 	}
 }
-
-// void tmp_enter(){
-// 	printf("enter!\n");
-// }
-// void tmp_leave(){
-// 	printf("leave!\n");
-// }
-// void tmp_click(){
-// 	printf("click!\n");
-// }
-// void tmp_release(){
-// 	printf("released!\n");
-// }
-// void tmp_hold(){
-// 	printf("hold!\n");
-// }
-
-// UIScene *uiLoadFile(UIScene *scene){
-	
-	// scene->num_classes = 0;
-
-	// scene->dynamic = false; // Scenes are static by default
-
-	// scene->needs_update = true;
-
-	// scene->body.name = malloc(sizeof(char) * 5);
-	// strcpy(scene->body.name, "body");
-
-	// scene->body.transform = (Vector4){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-	// // scene->body.transform = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
-	
-	// scene->body.color = (Vector4){1, 0.5, 0.75, 1};
-	// scene->body.is_active = true;
-	// scene->body.parent = NULL;
-	// scene->body.num_children = 0;
-
-
-	// UIClass *tmp_class = UI_NewClass(scene);
-
-	// // tmp_class->transform = (Vector4){20, 20, 0.5, 500};
-	// // tmp_class->transform_type = (UI_Property){UI_TRANSFORM_PIXELS_INVERTED, UI_PIXELS, UI_PERCENT, UI_PIXELS};
-	// tmp_class->transform = (Vector4){0.5, 0.5, 60, 60};
-	// tmp_class->transform_type = (UI_Property){UI_PERCENT, UI_PERCENT, UI_PIXELS, UI_PIXELS};
-	
-	// tmp_class->margin = (Vector4){80, 0, 0, 0};
-	// tmp_class->margin_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
-	
-	// tmp_class->padding = (Vector4){0, 0, 0, 0};
-	// tmp_class->padding_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
-	
-	// // tmp_class->border = (Vector4){2, 0.1, 0, 0};
-	// // tmp_class->border_type = (UI_Property){UI_PIXELS, UI_PERCENT, UI_PIXELS, UI_PIXELS};
-	// tmp_class->border = (Vector4){2, 0, 0, 0};
-	// tmp_class->border_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
-	
-	// tmp_class->radius = (Vector4){50, 5, 50, 10};
-	// tmp_class->radius_type = (UI_Property){UI_PIXELS, UI_PIXELS, UI_PIXELS, UI_PIXELS};
-
-	// tmp_class->color = (Vector4){0, 1, 0.5, 1};
-	// tmp_class->color_defined = true;
-	// tmp_class->border_color = (Vector4){0, 0, 0.5, 1};
-	// tmp_class->border_color_defined = true;
-
-	// tmp_class->origin = UI_ORIGIN_BOTTOM_RIGHT;
-	// // tmp_class->origin = UI_ORIGIN_TOP_LEFT;
-	// // test->origin_set = true;
-
-	// // tmp_class->color = (Vector4){0.75, 0.1, 0.5, 1};
-
-	// tmp_class->font = &default_font;
-	// tmp_class->font_defined = true;
-	// tmp_class->text_size = 1;
-	// tmp_class->text_size_defined = true;
-	// tmp_class->text_color = (Vector4){1, 1, 1, 1};
-	// tmp_class->text_color_defined = true;
-
-	// tmp_class->actions[UI_ACT_ENTER].function = tmp_enter;
-	// tmp_class->actions[UI_ACT_LEAVE].function = tmp_leave;
-	// tmp_class->actions[UI_ACT_CLICK].function = tmp_click;
-	// tmp_class->actions[UI_ACT_RELEASE].function = tmp_release;
-	// tmp_class->actions[UI_ACT_HOLD].function = tmp_hold;
-
-
-	// UIElement *test = UI_NewElement(&scene->body);
-	// test->children = NULL;
-	// test->parent = &scene->body;
-	// test->text = malloc(sizeof(char) * 6);
-	// test->text_size = 1;
-	// test->font = &default_font;
-
-	// test->color = (Vector4){1, 1, 1, 1};
-	// test->border_color = (Vector4){0, 0, 0, 1};
-	// test->text_color = (Vector4){1, 1, 1, 1};
-
-	// test->transform = (Vector4){0, 0, 20, 20};
-
-	// strcpy(test->text, "test;");
-	// test->text[5] = 0;
-
-	
-
-	// test->num_classes = 0;
-	// test->classes = malloc(sizeof(UIClass) * (test->num_classes + 1));
-	// test->classes[test->num_classes++] = tmp_class;
-	// test->classes = realloc(test->classes, sizeof(UIClass) * (test->num_classes + 1));
-	// test->is_active = true;
-	// test->is_selected = false;
-
-	// test->text = NULL;
-
-
-
-// 	for(int i = 0; i < scene->body.num_children; i++){
-// 		RecursiveApplyElementClasses(&scene->body.children[i]);
-// 	}
-
-// 	return NULL;
-// }

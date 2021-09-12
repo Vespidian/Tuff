@@ -302,8 +302,6 @@ int InitGL(){
 
 	// PrintShaderUniforms(&mesh_shader);
 
-	// uiLoadFile(&ui_scene);
-
     return 0;
 }
 

@@ -26,10 +26,12 @@ FontObject *NewFont(char *name, TilesheetObject *tilesheet, Vector2 char_size, V
     font_stack = realloc(font_stack, sizeof(FontObject) * (num_fonts + 1));
 
 	// Allocate memory for font name
-    font_stack[num_fonts].name = malloc(sizeof(char) * strlen(name));
+    font_stack[num_fonts].name = malloc(sizeof(char) * (strlen(name) + 1));
+	strcpy(font_stack[num_fonts].name, name);
+	font_stack[num_fonts].name[strlen(name)] = 0;
 
 	// Copy data to font
-    font_stack[num_fonts] = (FontObject){name, nextID, *tilesheet, char_size, padding};
+    font_stack[num_fonts] = (FontObject){.id = nextID, *tilesheet, char_size, padding};
     DebugLog(D_ACT, "Created font id '%d' name '%s'", nextID, name);
 
 	// Increment stack counters

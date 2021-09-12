@@ -67,8 +67,8 @@ void Setup(){
 	InitTilesheets();
 	InitFonts();
 
-	// NewScene("../ui/barebones.uiss");
-	NewScene("../ui/test.ui");
+	UI_LoadScene("../ui/test.uiss");
+
 
 	LoadBuiltinResources();
 
@@ -135,6 +135,8 @@ int main(int argc, char *argv[]){
 			// }else{
 			// 	GameLoop();
 			// }
+			UI_RenderScene(&scene_stack[0]);
+
 			PushRender();
 			SDL_GL_SwapWindow(window);
 		}

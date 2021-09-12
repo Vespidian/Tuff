@@ -204,6 +204,7 @@ void EmptyRenderBuffer(){
 		instance_buffer[i].count = 0;
 		free(instance_buffer[i].buffer);
 	}
+	free(instance_buffer);
 	instance_buffer = malloc(sizeof(InstanceBuffer) * 2);
 	num_instances = 0;
 	num_append_instance_calls = 0;

@@ -16,8 +16,15 @@ AttribArray ui_vao;
 UIScene *scene_stack;
 unsigned int num_scenes = 0;
 
-static void WindowResized(){
-	
+static void WindowResize(EventData event){
+	if(event.e->window.event == SDL_WINDOWEVENT_RESIZED){
+		for(int i = 0; i < num_scenes; i++){
+			if(scene_stack[i].body.full_screen){
+				scene_stack[i].body.transform.z = SCREEN_WIDTH;
+				scene_stack[i].body.transform.w = SCREEN_WIDTH;
+			}
+		}
+	}
 }
 
 void InitUI(){
@@ -30,7 +37,7 @@ void InitUI(){
 	glUniformBlockBinding(ui_shader.id, glGetUniformBlockIndex(ui_shader.id, "ShaderGlobals"), 0);
 	UniformSetMat4(&ui_shader, "tex_coordinates", default_texture_coordinates);
 
-	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT_RESIZED, WindowResized);
+	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, WindowResize);
 
 	DebugLog(D_ACT, "Initialized UI subsystem");
 }
@@ -64,12 +71,12 @@ void RenderUIElement(UIElement *element){
 	glm_translate(matrix, (vec3){transform.x, transform.y, 100});
 	glm_scale(matrix, (vec2){transform.z, transform.w});
 
-	float data[64];
+	float data[64] = {0};
 	memcpy(&data[0], matrix, sizeof(mat4));
-	memcpy(&data[16], element->border.v, sizeof(vec4));
-	memcpy(&data[20], element->radius.v, sizeof(vec4));
-	memcpy(&data[24], element->color.v, sizeof(vec4));
-	memcpy(&data[28], element->border_color.v, sizeof(vec4));
+	memcpy(&data[16], element->border.v, sizeof(Vector4_i));
+	memcpy(&data[20], element->radius.v, sizeof(Vector4_i));
+	memcpy(&data[24], element->color.v, sizeof(Vector4_i));
+	memcpy(&data[28], element->border_color.v, sizeof(Vector4_i));
 
 	TextureObject texture_array[16] = {1};
 	AppendInstance(ui_vao, data, &ui_shader, 1, texture_array);
@@ -101,10 +108,40 @@ void UI_RenderScene(UIScene *scene){
 	}
 }
 
-UIScene *NewScene(char *path){
+UIScene *UI_LoadScene(char *path){
 	scene_stack = realloc(scene_stack, sizeof(UIScene) * (num_scenes + 1));
+	
+	InitializeScene(&scene_stack[num_scenes]);
 
 	LoadScene(path, &scene_stack[num_scenes]);
 
 	return &scene_stack[num_scenes++];
+}
+
+void FreeClass(UIClass *class){
+	free(class->name);
+	for(int i = 0; i < UI_NUM_ACTIONS; i++){
+		free(class->actions[i].classes);
+	}
+}
+
+void RecursiveFreeElement(UIElement *element){
+	for(int i = 0; i < element->num_children; i++){
+		RecursiveFreeElement(&element->children[i]);
+	}
+	free(element->name);
+	free(element->children);
+	free(element->text);
+	free(element->classes);
+}
+
+void UI_FreeScene(UIScene *scene){
+	RecursiveFreeElement(&scene->body);
+
+	for(int i = 0; i < scene->num_classes; i++){
+		FreeClass(&scene->classes[i]);
+	}
+	free(scene->classes);
+
+	free(scene->path);
 }

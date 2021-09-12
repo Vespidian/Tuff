@@ -16,8 +16,8 @@ static void ApplyAction(UIElement *element, UIClass *class, UI_Action action){
 		class->actions[action].function();
 	}
 	for(int i = 0; i < class->actions[action].num_classes; i++){
-		if(&class->actions[action].classes[i] != class){
-			ApplyClass(element, &class->actions[action].classes[i]);
+		if(&class->actions[action].classes[i] != &class){
+			ApplyClass(element, class->actions[action].classes[i]);
 		}
 	}
 }
