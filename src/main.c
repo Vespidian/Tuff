@@ -102,6 +102,11 @@ static void CheckWindowActive(EventData event){
 	}
 }
 
+static void ReloadUI(){
+	UI_FreeScene(&scene_stack[0]);
+	UI_LoadScene("../ui/test.uiss");
+}
+
 bool wireframe = false;
 static void ToggleWireframe(EventData event){
 	if(event.keyStates[SDL_SCANCODE_LSHIFT]){
@@ -118,6 +123,7 @@ int main(int argc, char *argv[]){
 	Setup();
 	// startupTime.x = SDL_GetTicks();
 	BindKeyEvent(ToggleWireframe, 'z', SDL_KEYDOWN);
+	BindKeyEvent(ReloadUI, 'i', SDL_KEYDOWN);
 	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, CheckWindowActive);
 
 	// LoadObj("../models/cube.obj");

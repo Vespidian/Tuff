@@ -71,13 +71,20 @@ typedef struct UIClass{
 	
 
 	bool color_defined;
-	Vector4 color;
+	Vector3 color;
+	bool opacity_defined;
+	float opacity;
+
 
 	bool border_color_defined;
-	Vector4 border_color;
+	Vector3 border_color;
+	bool border_opacity_defined;
+	float border_opacity;
 
 	bool text_color_defined;
-	Vector4 text_color;
+	Vector3 text_color;
+	bool text_opacity_defined;
+	float text_opacity;
 
 	UI_Align align;
 
@@ -163,6 +170,7 @@ typedef struct UIScene{
 extern UIScene *scene_stack;
 UIScene *UI_LoadScene(char *path);
 void UI_RenderScene(UIScene *scene);
+void UI_FreeScene(UIScene *scene);
 
 
 #endif

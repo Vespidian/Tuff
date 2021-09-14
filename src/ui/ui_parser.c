@@ -29,7 +29,7 @@ typedef enum CurrentObject_e{
 
 static char *active_path;
 
-const int num_properties = 43;
+const int num_properties = 45;
 const char *property_dict[] = {
 	"position",
 	"top",
@@ -69,7 +69,9 @@ const char *property_dict[] = {
 
 	"opacity",
 	"color",
+	"border-opacity",
 	"border-color",
+	"text-opacity",
 	"text-color",
 	"text-size",
 	"font",
@@ -102,8 +104,11 @@ UIClass *UI_NewClass(UIScene *scene){
 	class->font_defined = false;
 	class->text_size_defined = false;
 	class->color_defined = false;
+	class->opacity_defined = false;
 	class->border_color_defined = false;
+	class->border_opacity_defined = false;
 	class->text_color_defined = false;
+	class->text_opacity_defined = false;
 	class->transition_defined = false;
 	class->origin = UI_ORIGIN_TOP_LEFT;
 
@@ -222,6 +227,33 @@ static int strntol(char *string, unsigned int length){
 	}
 
 	return result;
+}
+
+static Vector3 HexToColor(char *hex){
+	if(hex[0] == '#'){
+		hex = hex + 1;
+	}
+	short v[3] = {0};
+	char o1, o2;
+	o1 = o2 = 0;
+	for(int i = 0; i < 3; i++){
+		if(hex[i * 2] <= '9'){
+			o1 = '0';
+		}else if(hex[i * 2] <= 'F'){
+			o1 = 'A' - 9;
+		}else if(hex[i * 2] <= 'f'){
+			o1 = 'a' - 9;
+		}
+		if(hex[i * 2 + 1] <= '9'){
+			o2 = '0';
+		}else if(hex[i * 2 + 1] <= 'F'){
+			o2 = 'A' - 9;
+		}else if(hex[i * 2 + 1] <= 'f'){
+			o2 = 'a' - 9;
+		}
+		v[i] = ((hex[i * 2] - o1) << 4) + (hex[i * 2 + 1] - o2);
+	}
+	return  (Vector3){v[0] / 256.0, v[1] / 256.0, v[2] / 256.0};
 }
 
 static bool CompareToken(JSONObject_t json, unsigned int token, const char *string){ // TODO: convert to these parameters
@@ -502,6 +534,37 @@ static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UICl
 				use_pointers = true;
 				break;
 
+			case 29: // opacity
+				class->opacity_defined = true;
+				value_pointer = &class->opacity;
+				type_pointer = NULL;
+				use_pointers = true;
+				break;
+			case 30: // color
+				class->color_defined = true;
+				class->color = HexToColor(json.json_string + json.tokens[current_token + 1].start);
+				break;
+
+			case 31: // border-opacity
+				class->border_opacity_defined = true;
+				value_pointer = &class->border_opacity;
+				type_pointer = NULL;
+				use_pointers = true;
+				break;
+			case 32: // border-color
+				class->border_color_defined = true;
+				class->border_color = HexToColor(json.json_string + json.tokens[current_token + 1].start);
+				break;
+			case 33: // text-opacity
+				class->text_opacity_defined = true;
+				value_pointer = &class->text_opacity;
+				type_pointer = NULL;
+				use_pointers = true;
+				break;
+			case 34: // text-color
+				class->text_color_defined = true;
+				class->text_color = HexToColor(json.json_string + json.tokens[current_token + 1].start);
+				break;
 
 			default:
 				LogUnkownToken(json, current_token, scene);
@@ -514,7 +577,9 @@ static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UICl
 			// 	*type_pointer = type_override;
 			// 	type_override = -1;
 			// }else{
-				*type_pointer = GetPropertyType(json, current_token + 1);
+				if(type_pointer != NULL){
+					*type_pointer = GetPropertyType(json, current_token + 1);
+				}
 			// }
 			use_pointers = false;
 		}
@@ -648,7 +713,6 @@ void LoadScene(char *path, UIScene *scene){
 
 
 
-
 	// char *new_string;
 	
 	// Allocate space for new string
@@ -696,47 +760,8 @@ void LoadScene(char *path, UIScene *scene){
 			current_token = SkipToken(json, current_token);
 		}
 
-		// switch(current_object){
-		// 	case UNKOWN_OBJECT:
-		// 		break;
-		// 	case CLASS_BUFFER_OBJECT:
-		// 		if(json.tokens[i].type == JSMN_STRING){
-		// 			current_object = CLASS_OBJECT;
-		// 		}
-		// 		break;
-		// 	case SCENE_OBJECT:
-		// 		if(json.tokens[i].type == JSMN_STRING){
-		// 			current_object = ELEMENT_OBJECT;
-		// 		}
-		// 		break;
-		// 	case CLASS_OBJECT:
-		// 		if(CompareToken(json.tokens[i], "position")){
-		// 			current_object = PROPERTY_OBJECT;
-		// 		}else if(CompareToken(json.tokens[i], "color")){
-		// 			current_object = PROPERTY_OBJECT;
-		// 		}
-		// 		break;
-		// 	case ELEMENT_OBJECT:
-		// 		if(CompareToken(json.tokens[i], "class")){
-		// 			current_object = CLASS_OBJECT;
-		// 		}else if(CompareToken(json.tokens[i], "onclick")){
-		// 			current_object = EVENT_OBJECT;
-		// 			current_action = UI_ACT_CLICK;
-		// 		}
-		// 		break;
-		// 	case PROPERTY_OBJECT:
-		// 		break;
-		// 	case EVENT_OBJECT:
-		// 		break;
-		// }
-
 	}
-printf("%d\n", GetPropertyHash(json, 5));
 
 	free(active_path);
-
-	// printf("%d\n", json.tokens[12].size);
-	// printf("%d tokens\n", json.num_tokens);
-	// printf("%d\n", json.tokens[3].size);
-
+	SDL_RWclose(fp);
 }

@@ -243,14 +243,25 @@ static void CalculateRadius(UIElement *element, UIClass *class){ // TODO: Add pe
 
 static void SetValues(UIElement *element, UIClass *class){
 	if(class->color_defined){
-		element->color = class->color;
+		element->color = (Vector4){class->color.x, class->color.y, class->color.z, element->color.w};
+	}
+	if(class->opacity_defined){
+		element->color.w = class->opacity;
 	}
 	if(class->border_color_defined){
-		element->border_color = class->border_color;
+		element->border_color = (Vector4){class->border_color.x, class->border_color.y, class->border_color.z, element->border_color.w};
+	}
+	if(class->border_opacity_defined){
+		element->border_color.w = class->border_opacity;
 	}
 	if(class->text_color_defined){
-		element->text_color = class->text_color;
+		element->text_color = (Vector4){class->text_color.x, class->text_color.y, class->text_color.z, element->text_color.w};
 	}
+	if(class->text_opacity_defined){
+		element->text_color.w = class->text_opacity;
+	}
+
+
 	if(class->text_size_defined){
 		element->text_size = class->text_size;
 	}

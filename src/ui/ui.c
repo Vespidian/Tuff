@@ -101,6 +101,7 @@ void UI_RenderScene(UIScene *scene){
 		for(int i = 0; i < scene->body.num_children; i++){
 			RecursiveApplyElementClasses(&scene->body.children[i]);
 		}
+		scene->needs_update = false;
 	}
 
 	for(int i = 0; i < scene->body.num_children; i++){
@@ -144,4 +145,13 @@ void UI_FreeScene(UIScene *scene){
 	free(scene->classes);
 
 	free(scene->path);
+
+	num_scenes--;
+	// scene_stack = NULL;
+	scene = NULL;
+	// TODO: decide whether we want to reload all ui scenes at once or individually
+	// Empty all:
+	// free the entire scene stack and set it to null. load the scene files
+	// Individual frees:
+	// set the specified scene to null, shift over all other scenes to fill the newly created gap
 }

@@ -1,13 +1,11 @@
 {
 	classes: [
 		"class1": {
-
 			width: 20px,
 			height: 20px,
-			//right: 20%,
-			//left: 20px,
 			border: 10px,
-			color: #ff11ff,
+			color: #2ECC71,
+			border-color: #27AE60,
 			padding-bottom: 30px,
 		},
 		"class2": {
@@ -15,22 +13,19 @@
 			border-left: 30px,
 			top: 20px,
 			radius-bottom-right: 40px,
+			color: #1ABC9C,
+			
 			top: 100px,
 		},
 	],
 	body: [
 		"element1": {
 			class: "class1",
-			//class: "class2",
-			onclick: {
-				call: "function1",
-				class: "class2",
-			},
 		},
 		"element2": {
 			class: "class1",
 			class: "class2",
 		},
 	],
-	thingy: "boop",
 }
+
