@@ -3,7 +3,6 @@
 
 //UI Elements
 #include "ui.h"
-#include "ui_interact.h"
 #include "ui_layout.h"
 
 static Vector4 CalculatePadding(UIElement *element, UIClass *class){
@@ -119,7 +118,7 @@ static Vector4 CalculateMargin(UIElement *element, UIClass *class){
 
 static Vector2 CalculatePosition_relative(UIElement *element, UIClass *class){
 	Vector2 position = element->base_position;
-	Vector4 margin = element->margin;
+	// Vector4 margin = element->margin;
 	for(int i = 0; i <= 1; i++){
 		bool type_defined = true;
 		switch(class->transform_type.v[i]){
@@ -142,16 +141,27 @@ static Vector2 CalculatePosition_relative(UIElement *element, UIClass *class){
 
 		if(type_defined){
 			element->base_position.v[i] = position.v[i];
+			// Add margin to position
+			if(class->transform_type.v[i] == UI_TRANSFORM_PIXELS_INVERTED){ // bottom / right
+				// position.v[i] += -margin.v[i + 1];
+				// Set up the current direction
+				element->origin |= 1 << (i + 1);
+				// Clear the opposite direction
+				element->origin &= ~(1 << (!i * 3));
+				if(strcmp(class->name, "huh") == 0){
+					printf("NOOO\n");
+				}
+			}
+			// else if(class->transform_type.v[i] == UI_UNDEFINED){ // top / left
+				// position.v[i] += margin.v[!i * 3];
+				// position.v[i] += element->parent->padding.v[i] + element->parent->border.v[i];
+			// }
+			element->transform.v[i] = element->parent->transform.v[i] + position.v[i];
 		}
 
-		// Add margin to position
-		if(class->transform_type.v[i] == UI_TRANSFORM_PIXELS_INVERTED){ // bottom / right
-			position.v[i] += -margin.v[i + 1];
-		}else if(class->transform_type.v[i] == UI_UNDEFINED){ // top / left
-			position.v[i] += margin.v[!i * 3];
-		}
 
-		element->transform.v[i] = position.v[i];
+		// TODO: depending on centering type, add different paddings of parent
+
 	}
 	return position;
 }
@@ -168,18 +178,37 @@ static UI_OriginType CalculateOriginType(UIElement *element, UIClass *class){
 	}else if(o2){
 		origin = UI_ORIGIN_BOTTOM_LEFT;
 	}
+	
 	return origin;
 }
 
-static Vector2 CalculateOriginOffset(UIElement *element, UIClass *class){
+static Vector2 CalculateOffset(UIElement *element, UIClass *class){
 	Vector2 origin_offset = {0, 0};
 	UI_OriginType origin = CalculateOriginType(element, class);
-	Vector2 scale = (Vector2){element->transform.v[2], element->transform.v[3]};
+	origin = element->origin;
+	// Vector2 scale = (Vector2){element->transform.v[2], element->transform.v[3]};
+	Vector2 scale = (Vector2){
+		element->base_scale.x + element->border.y + element->border.w + element->padding.y + element->padding.w,
+		element->base_scale.y + element->border.x + element->border.z + element->padding.x + element->padding.z
+	};
+	
+	// If the class has no definite origin, use the element's current origin
+	if(origin == UI_ORIGIN_UNDEFINED){
+		origin = element->origin;
+	}
+	if(strcmp(class->name, "huh") == 0){
+		printf("class origin: %d, element origin: %d\n", origin, element->origin);
+	}
+	// Vector2 tmp_offset = {border.l + border.r + padding.l + padding.r + scale.x}
+	// Vector2 tmp_offset = {border.y + border.w + padding.y + padding.w + scale.x}; // x axis
+	// Vector2 tmp_offset = {border.x + border.z + padding.x + padding.z + scale.x}; // y axis
+	// RETURN: stop offseting the position inside the position function, do it all here
+	// once that is done, possibly combine all property setting functions into 1
 	switch(origin){
 		default: // UI_ORIGIN_TOP_LEFT or UI_UNDEFINED
 			// By default the origin is in the top left corner, so no offset
 			break;
-		case UI_ORIGIN_TOP_MIDDLE:
+		case UI_ORIGIN_TOP:
 			origin_offset = (Vector2){scale.x / 2, 0};
 			break;
 		case UI_ORIGIN_TOP_RIGHT:
@@ -189,25 +218,25 @@ static Vector2 CalculateOriginOffset(UIElement *element, UIClass *class){
 		case UI_ORIGIN_CENTER:
 			origin_offset = (Vector2){scale.x / 2, scale.y / 2};
 			break;
-		case UI_ORIGIN_CENTER_LEFT:
+		case UI_ORIGIN_LEFT:
 			origin_offset = (Vector2){0, scale.y / 2};
 			break;
-		case UI_ORIGIN_CENTER_RIGHT:
+		case UI_ORIGIN_RIGHT:
 			origin_offset = (Vector2){scale.x, scale.y / 2};
 			break;
 
 		case UI_ORIGIN_BOTTOM_LEFT:
 			origin_offset = (Vector2){0, scale.y};
 			break;
-		case UI_ORIGIN_BOTTOM_MIDDLE:
+		case UI_ORIGIN_BOTTOM:
 			origin_offset = (Vector2){scale.x / 2, scale.y};
 			break;
 		case UI_ORIGIN_BOTTOM_RIGHT:
 			origin_offset = (Vector2){scale.x, scale.y};
 			break;
 	}
-	element->transform.x -= origin_offset.x;
-	element->transform.y -= origin_offset.y;
+	element->transform.x = element->parent->transform.x + element->base_position.x - origin_offset.x;
+	element->transform.y = element->parent->transform.y + element->base_position.y - origin_offset.y;
 	return origin_offset;
 }
 
@@ -271,12 +300,26 @@ static void SetValues(UIElement *element, UIClass *class){
 	// if(class->transition_defined){
 		// element-> = class->;
 	// }
+
+	element->is_active = class->is_active;
 }
 
 // float Transition(int start, int current, int end, int time_period); // TODO: Implement transition animations / easings for classes
 
+static void CalculateContentRect(UIElement *element){
+	element->content_rect = (Vector4){
+		// element->parent->transform.x + element->parent->border.x + element->parent->padding.x,
+		// element->parent->transform.y + element->parent->border.y + element->parent->padding.y,
+		element->transform.x + element->border.x + element->padding.x,
+		element->transform.y + element->border.y + element->padding.y,
+		element->transform.z,
+		element->transform.w,
+	};
+}
+
 void ApplyClass(UIElement *element, UIClass *class){
 	if(class != NULL){
+		// printf("namee: %s\n", class->name);
 		// --- STYLE APPLICATION ORDER ---
 		// Apply defaults (Done once when the element is created)
 		// Loop through children to adapt scale (only if scale isnt explicitly set)
@@ -286,21 +329,28 @@ void ApplyClass(UIElement *element, UIClass *class){
 		CalculateScale(element, class);
 		CalculateMargin(element, class);
 		CalculatePosition_relative(element, class);
-		CalculateOriginOffset(element, class);
+
+		// Anything that changes the quad's dimensions or position shall be before this function call
+		CalculateOffset(element, class);
 		
 		CalculateRadius(element, class);
 
 		// Calculate transform_relative
 		SetValues(element, class);
 
+		// if(strcmp(element->name, "child_ment") == 0){
+		// 	printf("b: %f, b: %f, b: %f, b: %f\n", element->border.x, element->border.y, element->border.z, element->border.w);
+		// }
+
 	}
 }
 
 void RecursiveApplyElementClasses(UIElement *element){
+	ResetElement(element);
 	for(int i = 0; i < element->num_classes; i++){
 		ApplyClass(element, element->classes[i]);
 	}
-	CheckInteractions(element);
+	CalculateContentRect(element);
 
 	if(element->children != NULL){
 		for(int i = 0; i < element->num_children; i++){

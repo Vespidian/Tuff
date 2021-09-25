@@ -7,6 +7,7 @@
 #include "ui.h"
 #include "ui_layout.h"
 #include "ui_parser.h"
+#include "ui_interact.h"
 
 TilesheetObject ui_tilesheet;
 
@@ -42,18 +43,20 @@ void InitUI(){
 	DebugLog(D_ACT, "Initialized UI subsystem");
 }
 
-void RenderUIElement(UIElement *element){
+void RenderUIElement(UIElement *element, unsigned int layer){
 	if(element->text != NULL){
 		RenderTextEx(
-			element->font, 
+			&default_font, 
 			element->text_size, 
-			10,
+			// 10,
+			element->content_rect.x,
 			// element->padding_calculated.w + element->border_calculated.w + element->transform.x,
-			element->transform.w / 2,
+			element->content_rect.y,
 			// 0,
 			// 0,
 			element->text_color,
 			TEXT_ALIGN_LEFT,
+			100 + layer,
 			-1,
 			element->text
 		);
@@ -68,7 +71,7 @@ void RenderUIElement(UIElement *element){
 	Vector4 transform = element->transform;
 	mat4 matrix;
 	glm_mat4_identity(matrix);
-	glm_translate(matrix, (vec3){transform.x, transform.y, 100});
+	glm_translate(matrix, (vec3){transform.x, transform.y, 100 + layer});
 	glm_scale(matrix, (vec2){transform.z, transform.w});
 
 	float data[64] = {0};
@@ -82,34 +85,34 @@ void RenderUIElement(UIElement *element){
 	AppendInstance(ui_vao, data, &ui_shader, 1, texture_array);
 }
 
-static void RecursiveRender(UIElement *element){
+static void RecursiveRender(UIElement *element, unsigned int layer){
 	if(element->is_active){
-		RenderUIElement(element);
+		CheckInteractions(element); // TODO: Get this it's own loop so it can be timed differently
+		RenderUIElement(element, layer);
 		if(element->children != NULL){
 			for(int i = 0; i < element->num_children; i++){
-				RecursiveRender(&element->children[i]);
+				RecursiveRender(&element->children[i], layer + 1);
 			}
 		}
 	}
 }
 
 void UI_RenderScene(UIScene *scene){
-	// if(scene->needs_update){
-	// 	CalculateChildren(&scene->body);
-	// }
 	if(scene->needs_update){
+		// printf("scene start\n");
 		for(int i = 0; i < scene->body.num_children; i++){
 			RecursiveApplyElementClasses(&scene->body.children[i]);
 		}
 		scene->needs_update = false;
 	}
 
+
 	for(int i = 0; i < scene->body.num_children; i++){
-		RecursiveRender(&scene->body.children[i]);
+		RecursiveRender(&scene->body.children[i], 0);
 	}
 }
 
-UIScene *UI_LoadScene(char *path){
+UIScene *UI_LoadScene(char *path){// TODO: Safeguard the reallocation of the scene_stack so that 'element.scene' can never point to garbage
 	scene_stack = realloc(scene_stack, sizeof(UIScene) * (num_scenes + 1));
 	
 	InitializeScene(&scene_stack[num_scenes]);

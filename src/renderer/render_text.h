@@ -82,6 +82,6 @@ void RenderText(FontObject *font, float font_size, int x_pos, int y_pos, int ali
  *  @param text formatted text to be rendered
  *  @param ... information to be placed in format specifiers
  */
-void RenderTextEx(FontObject *font, float font_size, int x_pos, int y_pos, Vector4 color, int alignment, int num_characters, char *text, ...);
+void RenderTextEx(FontObject *font, float font_size, int x_pos, int y_pos, Vector4 color, int alignment, int render_layer, int num_characters, char *text, ...);
 
 #endif

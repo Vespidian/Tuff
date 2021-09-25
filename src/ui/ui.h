@@ -38,25 +38,49 @@ typedef union{
 }UI_Property;
 
 typedef enum UI_OriginType{
-	UI_ORIGIN_TOP_LEFT,
-	UI_ORIGIN_TOP_MIDDLE,
-	UI_ORIGIN_TOP_RIGHT,
-	UI_ORIGIN_CENTER,
-	UI_ORIGIN_CENTER_LEFT,
-	UI_ORIGIN_CENTER_RIGHT,
-	UI_ORIGIN_BOTTOM_LEFT,
-	UI_ORIGIN_BOTTOM_MIDDLE,
-	UI_ORIGIN_BOTTOM_RIGHT,
+	/**
+	9  - 1  - 3
+	|         |
+	8  - 15 - 2
+	|         |
+	12 - 4  - 6
+	*/
+
+	UI_ORIGIN_UNDEFINED 	= 0b0000,
+	UI_ORIGIN_TOP 			= 0b0001,
+	UI_ORIGIN_RIGHT 		= 0b0010,
+	UI_ORIGIN_BOTTOM 		= 0b0100,
+	UI_ORIGIN_LEFT 			= 0b1000,
+
+	UI_ORIGIN_TOP_RIGHT 	= 0b0011,
+	UI_ORIGIN_BOTTOM_RIGHT 	= 0b0110,
+	UI_ORIGIN_BOTTOM_LEFT 	= 0b1100,
+	UI_ORIGIN_TOP_LEFT 		= 0b1001,
+
+	UI_ORIGIN_CENTER 		= 0b1111,
+	// UI_ORIGIN_UNDEFINED = 0b0000,
+	// UI_ORIGIN_TOP = 0b0001,
+	// UI_ORIGIN_RIGHT = 0b0010,
+	// UI_ORIGIN_BOTTOM_LEFT = 0b0011,
+	// UI_ORIGIN_BOTTOM = 0b0100,
+	// UI_ORIGIN_BOTTOM_RIGHT = 0b0110,
+	// UI_ORIGIN_LEFT = 0b1000,
+	// UI_ORIGIN_TOP_LEFT = 0b1001,
+	// UI_ORIGIN_TOP_RIGHT = 0b1100,
+	// UI_ORIGIN_CENTER = 0b1111,
+
 }UI_OriginType;
 
 typedef enum UI_Align{
 	UI_ALIGN_HORIZONTAL,
 	UI_ALIGN_VERTICAL
 }UI_Align;
+
 typedef struct UIClass UIClass;
 typedef struct UIAction{
+	bool enabled;
 	void (*function)(void);
-	UIClass **classes; // If this action is called from a class, that class cannot also be nested in the action
+	UIClass **classes; // 'classes' cannot contain the action's parent class
 	unsigned int num_classes;
 }UIAction;
 
@@ -108,46 +132,53 @@ typedef struct UIClass{
 	UI_Property radius_type;
 	Vector4 radius;
 
+	bool is_active;
+
 	bool transition_defined;
 	unsigned int transition_length; // Defines the length of property transitions in ms, 0 = instant
 	UI_EaseType ease;
 
-	UIAction actions[6];
+	UIAction actions[UI_NUM_ACTIONS];
 }UIClass;
 
 typedef struct UIElement{
 	char *name;
 
+	struct UIScene *scene;
+
 	struct UIElement *parent;
 	unsigned int num_children;
 	struct UIElement *children;
 
-	TextureObject *image;
+	unsigned int num_classes;
+	UIClass **classes; // Array of all classes applied to this element
 
 	char *text;
 	FontObject *font;
 	float text_size;
+
+	TextureObject *image;
 
 	Vector4 color;
 	Vector4 border_color;
 	Vector4 text_color;
 
 	// Values to be used for rendering (Calculated from classes or default values)
-	Vector2 base_position;
-	Vector2 base_scale;
-	Vector4 transform;
 	Vector4 margin;
 	Vector4 border;
 	Vector4 padding;
 	Vector4 radius;
+	Vector2 base_position;
+	Vector2 base_scale;
+	UI_OriginType origin;
+	Vector4 transform;
+	Vector4 content_rect;
 
 	bool full_screen;
 
 	bool is_selected;
 
 	float ease_position; // Value between 0 and 1 defining the current transition state
-	UIClass **classes; // Array of all classes applied to this element
-	unsigned int num_classes;
 
 	// UIAction actions[NUM_UI_ACTIONS];
 	// UIAction *actions; // Array of actions that this element triggers
@@ -171,6 +202,7 @@ extern UIScene *scene_stack;
 UIScene *UI_LoadScene(char *path);
 void UI_RenderScene(UIScene *scene);
 void UI_FreeScene(UIScene *scene);
+void ResetElement(UIElement *element);
 
 
 #endif
