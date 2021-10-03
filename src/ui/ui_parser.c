@@ -99,6 +99,7 @@ static int min(int a, int b){
 }
 
 UIClass *UI_NewClass(UIScene *scene){
+	// TODO: Add a 'global scene' to allow for external classes that can be accessed from any .uiss file
 	scene->classes = realloc(scene->classes, sizeof(UIClass) * ++scene->num_classes);
 	UIClass *class = &scene->classes[scene->num_classes - 1];
 
@@ -114,6 +115,7 @@ UIClass *UI_NewClass(UIScene *scene){
 	class->text_opacity_defined = false;
 	class->transition_defined = false;
 	class->is_active = true;
+	class->align = UI_ALIGN_UNDEFINED;
 	class->origin = UI_ORIGIN_UNDEFINED;
 
 	class->transform_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
@@ -147,18 +149,21 @@ void ResetElement(UIElement *element){
 
 	element->base_position= (Vector2){0, 0};
 	element->base_scale = (Vector2){0, 0};
+	element->scale_defined[0] = false;
+	element->scale_defined[1] = false;
 	element->transform 	= (Vector4){0, 0, 50, 50};
-	element->margin 	= (Vector4){10, 10, 10, 10};
+	element->margin 	= (Vector4){0, 0, 0, 0};
 	element->border 	= (Vector4){1, 1, 1, 1};
-	element->padding 	= (Vector4){10, 10, 10, 10};
+	element->padding 	= (Vector4){0, 0, 0, 0};
 	element->radius 	= (Vector4){0, 0, 0, 0};
 
+	element->align = UI_ALIGN_VERTICAL;
 	element->origin = UI_ORIGIN_TOP_LEFT;
 
-	element->ease_position = 0;
+	// element->ease_position = 0;
 
-	element->is_selected = false;
-	element->is_active = true;
+	// element->is_selected = false;
+	// element->is_active = true;
 }
 
 UIElement *UI_NewElement(UIElement *parent){
@@ -242,6 +247,7 @@ void InitializeScene(UIScene *scene){
 	scene->body.padding 	= (Vector4){10, 10, 10, 10};
 	scene->body.radius 		= (Vector4){0, 0, 0, 0};
 
+	scene->body.align = UI_ALIGN_HORIZONTAL;
 	scene->body.origin = UI_ORIGIN_TOP_LEFT;
 
 	scene->body.full_screen = true;
@@ -282,20 +288,20 @@ static Vector3 HexToColor(char *hex){
 		if(hex[i * 2] <= '9'){
 			o1 = '0';
 		}else if(hex[i * 2] <= 'F'){
-			o1 = 'A' - 9;
+			o1 = 'A' - 10;
 		}else if(hex[i * 2] <= 'f'){
-			o1 = 'a' - 9;
+			o1 = 'a' - 10;
 		}
 		if(hex[i * 2 + 1] <= '9'){
 			o2 = '0';
 		}else if(hex[i * 2 + 1] <= 'F'){
-			o2 = 'A' - 9;
+			o2 = 'A' - 10;
 		}else if(hex[i * 2 + 1] <= 'f'){
-			o2 = 'a' - 9;
+			o2 = 'a' - 10;
 		}
 		v[i] = ((hex[i * 2] - o1) << 4) + (hex[i * 2 + 1] - o2);
 	}
-	return  (Vector3){v[0] / 256.0, v[1] / 256.0, v[2] / 256.0};
+	return  (Vector3){v[0] / 255.0, v[1] / 255.0, v[2] / 255.0};
 }
 
 static bool CompareToken(JSONObject_t json, unsigned int token, const char *string){ // TODO: convert to these parameters
@@ -516,12 +522,24 @@ static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UICl
 				}
 				break;
 			case 10: // margin-top
+				value_pointer = &class->margin.x;
+				type_pointer = &class->margin_type.x;
+				use_pointers = true;
 				break;
 			case 11: // margin-right
+				value_pointer = &class->margin.y;
+				type_pointer = &class->margin_type.y;
+				use_pointers = true;
 				break;
 			case 12: // margin-bottom
+				value_pointer = &class->margin.z;
+				type_pointer = &class->margin_type.z;
+				use_pointers = true;
 				break;
 			case 13: // margin-left
+				value_pointer = &class->margin.w;
+				type_pointer = &class->margin_type.w;
+				use_pointers = true;
 				break;
 
 			case 14:;// border
@@ -685,6 +703,14 @@ static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UICl
 		}
 		current_token = SkipToken(json, current_token);
 	}
+
+	/*if(strcmp(class->name, "button") == 0){
+		class->actions[UI_ACT_CLICK].enabled = true;
+		class->actions[UI_ACT_CLICK].function = ;
+
+		class->actions[UI_ACT_RELEASE].enabled = true;
+		class->actions[UI_ACT_RELEASE].function = ;
+	}*/
 
 	// Return the token after the final token we found
 	return current_token;

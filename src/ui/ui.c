@@ -49,14 +49,16 @@ void RenderUIElement(UIElement *element, unsigned int layer){
 			&default_font, 
 			element->text_size, 
 			// 10,
-			element->content_rect.x,
+			// element->content_rect.x,
+			element->transform.x + element->border.w + element->padding.w,
 			// element->padding_calculated.w + element->border_calculated.w + element->transform.x,
-			element->content_rect.y,
+			// element->content_rect.y,
+			element->transform.y + element->border.x + element->padding.x,
 			// 0,
 			// 0,
 			element->text_color,
 			TEXT_ALIGN_LEFT,
-			100 + layer,
+			100 + layer + 1,
 			-1,
 			element->text
 		);
@@ -87,7 +89,6 @@ void RenderUIElement(UIElement *element, unsigned int layer){
 
 static void RecursiveRender(UIElement *element, unsigned int layer){
 	if(element->is_active){
-		CheckInteractions(element); // TODO: Get this it's own loop so it can be timed differently
 		RenderUIElement(element, layer);
 		if(element->children != NULL){
 			for(int i = 0; i < element->num_children; i++){
@@ -98,13 +99,17 @@ static void RecursiveRender(UIElement *element, unsigned int layer){
 }
 
 void UI_RenderScene(UIScene *scene){
-	if(scene->needs_update){
 		// printf("scene start\n");
+		// RecursiveCheckInteract(&scene->body);
 		for(int i = 0; i < scene->body.num_children; i++){
+			// if(scene->needs_update){
+			RecursiveApplyStaticClasses(&scene->body.children[i]);
 			RecursiveApplyElementClasses(&scene->body.children[i]);
+			RecursiveCheckInteract(&scene->body.children[i]);
+			RecursiveApplyElementClasses(&scene->body.children[i]);
+			// }
 		}
-		scene->needs_update = false;
-	}
+		// scene->needs_update = false;
 
 
 	for(int i = 0; i < scene->body.num_children; i++){

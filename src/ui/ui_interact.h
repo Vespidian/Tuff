@@ -4,5 +4,6 @@
 #include "ui_layout.h"
 
 void CheckInteractions(UIElement *element);
+void RecursiveCheckInteract(UIElement *element);
 
 #endif

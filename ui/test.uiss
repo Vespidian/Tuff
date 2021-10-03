@@ -11,11 +11,10 @@
 		"class2": {
 			border-top: 2px,
 			border-left: 30px,
-			top: 20px,
 			radius-bottom-right: 40px,
 			color: #1ABC9C,
 			
-			top: 200px,
+			top: 50%,
 			left: 20%,
 		},
 		"huh":{

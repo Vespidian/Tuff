@@ -72,6 +72,7 @@ typedef enum UI_OriginType{
 }UI_OriginType;
 
 typedef enum UI_Align{
+	UI_ALIGN_UNDEFINED,
 	UI_ALIGN_HORIZONTAL,
 	UI_ALIGN_VERTICAL
 }UI_Align;
@@ -111,7 +112,6 @@ typedef struct UIClass{
 	float text_opacity;
 
 	UI_Align align;
-
 	UI_OriginType origin;
 
 	UI_Property transform_type;
@@ -170,9 +170,13 @@ typedef struct UIElement{
 	Vector4 radius;
 	Vector2 base_position;
 	Vector2 base_scale;
-	UI_OriginType origin;
+	bool scale_defined[2];
 	Vector4 transform;
 	Vector4 content_rect;
+	Vector2 origin_offset;
+
+	UI_OriginType origin;
+	UI_Align align;
 
 	bool full_screen;
 

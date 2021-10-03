@@ -67,7 +67,7 @@ void Setup(){
 	InitTilesheets();
 	InitFonts();
 
-	UI_LoadScene("../ui/test.uiss");
+	UI_LoadScene("../ui/blenderish.uiss");
 
 
 	LoadBuiltinResources();
@@ -104,7 +104,7 @@ static void CheckWindowActive(EventData event){
 
 static void ReloadUI(){
 	UI_FreeScene(&scene_stack[0]);
-	UI_LoadScene("../ui/test.uiss");
+	UI_LoadScene("../ui/flexbox.uiss");
 }
 
 bool wireframe = false;
@@ -142,6 +142,7 @@ int main(int argc, char *argv[]){
 			// 	GameLoop();
 			// }
 			UI_RenderScene(&scene_stack[0]);
+
 
 			PushRender();
 			SDL_GL_SwapWindow(window);
