@@ -1,6 +1,5 @@
 #include "../global.h"
 #include "../debug.h"
-#include "../utility.h"
 #include "../gl_utils.h"
 #include "quad.h"
 

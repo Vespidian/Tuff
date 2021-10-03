@@ -28,7 +28,4 @@ extern int target_framerate;
 
 void Quit();
 
-//tmp
-extern TilesheetObject builtin_tilesheet;
-
 #endif

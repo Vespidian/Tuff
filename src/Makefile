@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Werror -Wall -lmingw32 -llua54 -lSDL2main -lSDL2 -lSDL2_image -lglew32 -lopengl32 -g
+CFLAGS = -Werror -Wall -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lglew32 -lopengl32 -g
 DISABLE_FLAGS = -Wno-missing-braces
 
 INCLUDE = -isystem C:/c_libs/include/ -LC:/c_libs/lib/

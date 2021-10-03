@@ -1,11 +1,7 @@
 #ifndef VECTORLIB_H_
 #define VECTORLIB_H_
 
-typedef struct Vector2_i{
-	int x, y;
-	int v[2];
-}Vector2_i;
-
+/* VECTOR 2 */
 typedef struct {
 	union{
 		struct {float x, y;};
@@ -13,6 +9,22 @@ typedef struct {
 	};
 }Vector2;
 
+typedef struct {
+	union{
+		struct {int x, y;};
+		int v[2];
+	};
+}iVector2;
+
+typedef struct {
+	union{
+		struct {bool x, y;};
+		bool v[2];
+	};
+}bVector2;
+
+
+/* VECTOR 3 */
 typedef struct {
 	union{
 		struct {float r, g, b;};
@@ -29,8 +41,19 @@ typedef struct {
 		struct {int s, t, p;};
 		int v[3];
 	};
-}Vector3_i;
+}iVector3;
 
+typedef struct {
+	union{
+		struct {bool r, g, b;};
+		struct {bool x, y, z;};
+		struct {bool s, t, p;};
+		bool v[3];
+	};
+}bVector3;
+
+
+/* VECTOR 4 */
 typedef struct {
 	union{
 		struct {float r, g, b, a;};
@@ -47,12 +70,15 @@ typedef struct {
 		struct {int s, t, p, q;};
 		int v[4];
 	};
-}Vector4_i;
+}iVector4;
 
-// typedef union{
-// 	Vector4_f f;
-// 	Vector4_i i;
-// 	Vector4_b b;
-// } Vector4;
+typedef struct {
+	union{
+		struct {bool r, g, b, a;};
+		struct {bool x, y, z, w;};
+		struct {bool s, t, p, q;};
+		bool v[4];
+	};
+}bVector4;
 
 #endif

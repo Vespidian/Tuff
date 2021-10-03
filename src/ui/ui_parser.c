@@ -183,27 +183,6 @@ UIElement *UI_NewElement(UIElement *parent){
 	element->num_classes = 0;
 	element->classes = NULL;
 
-	/*element->image = false;
-
-	element->font = &default_font;
-	element->text_size = 1;
-	element->text_color = (Vector4){1, 1, 1, 1};
-
-	element->color = (Vector4){1, 1, 1, 1};
-	element->border_color = (Vector4){0, 0, 0, 1};
-
-	element->base_position= (Vector2){0, 0};
-	element->base_scale = (Vector2){0, 0};
-	element->transform 	= (Vector4){0, 0, 50, 50};
-	element->margin 	= (Vector4){10, 10, 10, 10};
-	element->border 	= (Vector4){1, 1, 1, 1};
-	element->padding 	= (Vector4){10, 10, 10, 10};
-	element->radius 	= (Vector4){0, 0, 0, 0};
-
-	element->ease_position = 0;
-
-	element->is_selected = false;
-	element->is_active = true;*/
 	ResetElement(element);
 
 
@@ -691,26 +670,13 @@ static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UICl
 
 		if(use_pointers){
 			*value_pointer = GetPropertyValue(json, current_token + 1);
-			// if(type_override != -1){ // If the override is not -1 that means it is set
-			// 	*type_pointer = type_override;
-			// 	type_override = -1;
-			// }else{
-				if(type_pointer != NULL){
-					*type_pointer = GetPropertyType(json, current_token + 1);
-				}
-			// }
+			if(type_pointer != NULL){
+				*type_pointer = GetPropertyType(json, current_token + 1);
+			}
 			use_pointers = false;
 		}
 		current_token = SkipToken(json, current_token);
 	}
-
-	/*if(strcmp(class->name, "button") == 0){
-		class->actions[UI_ACT_CLICK].enabled = true;
-		class->actions[UI_ACT_CLICK].function = ;
-
-		class->actions[UI_ACT_RELEASE].enabled = true;
-		class->actions[UI_ACT_RELEASE].function = ;
-	}*/
 
 	// Return the token after the final token we found
 	return current_token;

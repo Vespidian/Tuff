@@ -17,9 +17,6 @@
 #include "ui/ui_parser.h"
 
 
-#include "gyro/gyro.h"
-
-
 int loop_start_ticks = 0;
 float deltatime = 0;
 int target_framerate = 120;
@@ -34,10 +31,10 @@ bool paused = false;
 bool main_menu = true;
 bool window_active = true;
 
-TilesheetObject builtin_tilesheet;
-void LoadBuiltinResources(){
-	builtin_tilesheet = LoadTilesheet("../images/builtin.png", 16, 16);
-}
+// TilesheetObject builtin_tilesheet;
+// void LoadBuiltinResources(){
+// 	builtin_tilesheet = LoadTilesheet("../images/builtin.png", 16, 16);
+// }
 
 void InitSDL(){
 	if(SDL_Init(SDL_INIT_EVERYTHING) < 0){
@@ -70,10 +67,7 @@ void Setup(){
 	UI_LoadScene("../ui/blenderish.uiss");
 
 
-	LoadBuiltinResources();
-
-
-	InitGyro();
+	// LoadBuiltinResources();
 }
 
 void Quit(){
@@ -118,7 +112,7 @@ static void ToggleWireframe(EventData event){
 		}
 	}
 }
-#include "scene/obj_loader.h"
+
 int main(int argc, char *argv[]){
 	Setup();
 	// startupTime.x = SDL_GetTicks();
@@ -135,12 +129,7 @@ int main(int argc, char *argv[]){
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			RenderGL();
-			LoopGyro();
-			// if(main_menu){
-				// RenderStartScreen();
-			// }else{
-			// 	GameLoop();
-			// }
+
 			UI_RenderScene(&scene_stack[0]);
 
 

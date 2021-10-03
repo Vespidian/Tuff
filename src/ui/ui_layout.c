@@ -143,50 +143,21 @@ static Vector2 CalculatePosition(UIElement *element, UIClass *class){
 
 		if(type_defined){
 			element->base_position.v[i] = position.v[i];
-			// Add margin to position
 			if(class->transform_type.v[i] == UI_TRANSFORM_PIXELS_INVERTED){ // bottom / right
-				// position.v[i] += -margin.v[i + 1];
 				// Set up the current direction
 				element->origin |= 1 << (i + 1);
 				// Clear the opposite direction
 				element->origin &= ~(1 << (!i * 3));
 			}
-			// else if(class->transform_type.v[i] == UI_UNDEFINED){ // top / left
-				// position.v[i] += margin.v[!i * 3];
-				// position.v[i] += element->parent->padding.v[i] + element->parent->border.v[i];
-			// }
-			// element->transform.v[i] = element->parent->transform.v[i] + position.v[i];
 		}
-
-
-		// TODO: depending on centering type, add different paddings of parent
-
 	}
 	return position;
 }
 
-// static UI_OriginType CalculateOriginType(UIElement *element, UIClass *class){
-// 	UI_OriginType origin = class->origin;
-// 	bool o1 = class->transform_type.x == UI_TRANSFORM_PIXELS_INVERTED;
-// 	bool o2 = class->transform_type.y == UI_TRANSFORM_PIXELS_INVERTED;
-
-// 	if(o1 && o2){
-// 		origin = UI_ORIGIN_BOTTOM_RIGHT;
-// 	}else if(o1){
-// 		origin = UI_ORIGIN_TOP_RIGHT;
-// 	}else if(o2){
-// 		origin = UI_ORIGIN_BOTTOM_LEFT;
-// 	}
-	
-// 	return origin;
-// }
-
 // This function only calculates offset for the internals of the element (border, padding, scale)
 static Vector2 CalculateOffset(UIElement *element){
 	Vector2 origin_offset = {0, 0};
-	// UI_OriginType origin = CalculateOriginType(element, class);
 	UI_OriginType origin = element->origin;
-	// Vector2 scale = (Vector2){element->transform.v[2], element->transform.v[3]};
 	Vector2 scale = (Vector2){
 		element->base_scale.x + element->border.y + element->border.w + element->padding.y + element->padding.w,
 		element->base_scale.y + element->border.x + element->border.z + element->padding.x + element->padding.z
@@ -196,12 +167,7 @@ static Vector2 CalculateOffset(UIElement *element){
 	if(origin == UI_ORIGIN_UNDEFINED){
 		origin = element->origin;
 	}
-	// if(strcmp(class->name, "huh") == 0){
-	// 	printf("class origin: %d, element origin: %d\n", origin, element->origin);
-	// }
-	// Vector2 tmp_offset = {border.l + border.r + padding.l + padding.r + scale.x}
-	// Vector2 tmp_offset = {border.y + border.w + padding.y + padding.w + scale.x}; // x axis
-	// Vector2 tmp_offset = {border.x + border.z + padding.x + padding.z + scale.x}; // y axis
+
 	// RETURN: stop offseting the position inside the position function, do it all here
 	// once that is done, possibly combine all property setting functions into 1
 	switch(origin){
@@ -236,13 +202,7 @@ static Vector2 CalculateOffset(UIElement *element){
 			origin_offset = (Vector2){scale.x, scale.y};
 			break;
 	}
-	// if(strcmp(element->name, "child_ment") == 0){
-	// 	printf("boop\n");
-	// }
-	// element->transform.x = element->parent->transform.x + element->base_position.x - origin_offset.x;
-	// element->transform.y = element->parent->transform.y + element->base_position.y - origin_offset.y;
-	// element->transform.x = element->parent->transform.x + element->base_position.x;
-	// element->transform.y = element->parent->transform.y + element->base_position.y;
+
 	element->origin_offset = (Vector2)origin_offset;
 	element->transform.x = element->base_position.x;
 	element->transform.y = element->base_position.y;
@@ -350,11 +310,6 @@ static Vector2 CalculateChildPosition(UIElement *element, Vector2 offset){
 
 void ApplyClass(UIElement *element, UIClass *class){
 	if(class != NULL){
-		// printf("namee: %s\n", class->name);
-		// --- STYLE APPLICATION ORDER ---
-		// Apply defaults (Done once when the element is created)
-		// Loop through children to adapt scale (only if scale isnt explicitly set)
-		// Loop through classes applying their properties
 		CalculateBorder(element, class);
 		CalculatePadding(element, class);
 		CalculateScale(element, class);
@@ -363,7 +318,6 @@ void ApplyClass(UIElement *element, UIClass *class){
 		
 		CalculateRadius(element, class);
 
-		// Calculate transform_relative
 		SetValues(element, class);
 
 
@@ -380,7 +334,6 @@ static void LargestChild(Vector2 *current, UIElement *new_child){
 	}
 }
 
-#include "ui_interact.h"
 void RecursiveApplyStaticClasses(UIElement *element){
 	ResetElement(element);
 	for(int i = 0; i < element->num_classes; i++){
@@ -391,7 +344,6 @@ void RecursiveApplyStaticClasses(UIElement *element){
 			RecursiveApplyStaticClasses(&element->children[i]);
 		}
 	}
-	// CheckInteractions(element);
 }
 
 void RecursiveApplyElementClasses(UIElement *element){
@@ -406,44 +358,28 @@ void RecursiveApplyElementClasses(UIElement *element){
 
 	// Calculate positioning
 	if(element->num_children != 0){
-		// TODO: 
+		// TODO: Fix origin offset with children
 		Vector2 offset = (Vector2){element->base_position.x + element->padding.w + element->border.w, element->base_position.y + element->padding.x + element->border.x};
-		// glm_vec2_add(offset.v, CalculatePropertyDimensions(element->padding).v, offset.v);
+		// Now we calculate the size and positioning of elements relative to each other
 		Vector2 largest_child = {0, 0};
 		for(int i = 0; i < element->num_children; i++){
 			offset = CalculateChildPosition(&element->children[i], offset);
 			LargestChild(&largest_child, &element->children[i]);
 		}
 
-		// printf("largest: %f, %f\n", largest_child.x, largest_child.y);
-		// element->transform.z = 0;
-		// element->transform.w = 0;
 		largest_child.y *= (element->align == UI_ALIGN_HORIZONTAL);
 		largest_child.x *= (element->align == UI_ALIGN_VERTICAL);
-	// 	if(element->align == UI_ALIGN_HORIZONTAL){
-	// 		// element->transform.w = largest_child.y;
-	// printf("vret\n");
-	// 	}else if(element->align == UI_ALIGN_HORIZONTAL){
-	// 		// element->transform.z = largest_child.x;
-	// 		largest_child.x = 0;
-	// printf("hroi\n");
-	// 	}
-	// printf("algn: %d\n", element->align);
-		// element->transform.z = offset.x - element->transform.x;
-		// element->transform.w = offset.y;
-		// UIElement *final_child = &element->children[element->num_children - 1];
+
 		if(!element->scale_defined[0]){
 			element->transform.z = offset.x - element->transform.x + element->padding.y + element->border.y + largest_child.x;
 		}
 		if(!element->scale_defined[1]){
 			element->transform.w = offset.y - element->transform.y + element->padding.z + element->border.z + largest_child.y;
 		}
-		// element->transform.w = offset.y;
 
 	}
 	CalculateRadiusLimit(element->transform.z, &element->radius.z, &element->radius.w);
 	CalculateRadiusLimit(element->transform.w, &element->radius.y, &element->radius.z);
 	CalculateRadiusLimit(element->transform.w, &element->radius.w, &element->radius.x);
 	CalculateRadiusLimit(element->transform.z, &element->radius.x, &element->radius.y);
-	// Now we calculate the size and positioning of elements relative to each other
 }

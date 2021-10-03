@@ -9,8 +9,6 @@
 #include "ui_parser.h"
 #include "ui_interact.h"
 
-TilesheetObject ui_tilesheet;
-
 ShaderObject ui_shader;
 AttribArray ui_vao;
 
@@ -29,9 +27,6 @@ static void WindowResize(EventData event){
 }
 
 void InitUI(){
-	ui_tilesheet = LoadTilesheet("../images/ui/ui.png", 16, 16);
-
-
 	ui_vao = NewVAO(5, ATTR_MAT4, ATTR_VEC4, ATTR_VEC4, ATTR_VEC4, ATTR_VEC4);
 	ui_shader = LoadShaderProgram("ui.shader");
 	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
@@ -48,14 +43,8 @@ void RenderUIElement(UIElement *element, unsigned int layer){
 		RenderTextEx(
 			&default_font, 
 			element->text_size, 
-			// 10,
-			// element->content_rect.x,
 			element->transform.x + element->border.w + element->padding.w,
-			// element->padding_calculated.w + element->border_calculated.w + element->transform.x,
-			// element->content_rect.y,
 			element->transform.y + element->border.x + element->padding.x,
-			// 0,
-			// 0,
 			element->text_color,
 			TEXT_ALIGN_LEFT,
 			100 + layer + 1,
@@ -64,11 +53,11 @@ void RenderUIElement(UIElement *element, unsigned int layer){
 		);
 	}
 	/*
-	mat3 model_a;
-	vec4 border_a;
-	vec4 radius_a;
-	vec4 color_a;
-	vec4 border_color_a;
+		mat3 model_a;
+		vec4 border_a;
+		vec4 radius_a;
+		vec4 color_a;
+		vec4 border_color_a;
 	*/
 	Vector4 transform = element->transform;
 	mat4 matrix;
@@ -78,10 +67,10 @@ void RenderUIElement(UIElement *element, unsigned int layer){
 
 	float data[64] = {0};
 	memcpy(&data[0], matrix, sizeof(mat4));
-	memcpy(&data[16], element->border.v, sizeof(Vector4_i));
-	memcpy(&data[20], element->radius.v, sizeof(Vector4_i));
-	memcpy(&data[24], element->color.v, sizeof(Vector4_i));
-	memcpy(&data[28], element->border_color.v, sizeof(Vector4_i));
+	memcpy(&data[16], element->border.v, sizeof(iVector4));
+	memcpy(&data[20], element->radius.v, sizeof(iVector4));
+	memcpy(&data[24], element->color.v, sizeof(iVector4));
+	memcpy(&data[28], element->border_color.v, sizeof(iVector4));
 
 	TextureObject texture_array[16] = {1};
 	AppendInstance(ui_vao, data, &ui_shader, 1, texture_array);
@@ -99,8 +88,6 @@ static void RecursiveRender(UIElement *element, unsigned int layer){
 }
 
 void UI_RenderScene(UIScene *scene){
-		// printf("scene start\n");
-		// RecursiveCheckInteract(&scene->body);
 		for(int i = 0; i < scene->body.num_children; i++){
 			// if(scene->needs_update){
 			RecursiveApplyStaticClasses(&scene->body.children[i]);

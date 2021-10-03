@@ -32,7 +32,6 @@
 			"stdlib.h": "c",
 			"gl_context.h": "c",
 			"debug.h": "c",
-			"obj_loader.h": "c",
 			"gl_utils.h": "c",
 			"ui_layout.h": "c",
 			"textures.h": "c",

@@ -12,9 +12,7 @@
 #include "scene/scene.h"
 
 
-// #include "scene/obj_loader.h"
 #include "scene/gltf_loader.h"
-#include "gyro/gyro.h"
 
 SDL_GLContext gl_context;
 
@@ -193,7 +191,7 @@ int InitGL(){
 
 
 	crate_tex = LoadTexture("../images/example_atlas.png");
-	normal_map = LoadTexture("../images/brick_normal.png");
+	normal_map = LoadTexture("../images/decal.png");
 
 
 	mesh_shader = LoadShaderProgram("mesh.shader");
@@ -431,7 +429,6 @@ void RenderGL(){
 	SetVAO(mesh_vao);
 	// child->transform.rotation_e.z = -child->parent->transform.rotation_e.z; // Cancels object rotation inherited from its parent on the z axis
 	child->transform.position.y = 1;
-	child->transform.rotation_e = rot;
 	CalculateModelTransform(parent);
 	// CalculateTransform(&parent->transform);
     UniformSetMat4(&axis_shader, "model", parent->transform.result);
@@ -452,7 +449,6 @@ void RenderGL(){
 	glDisable(GL_LINE_SMOOTH);
 
 	// SDL_Rect mouse = {mouse_pos.x, mouse_pos.y, 16, 16};
-	// RenderTilesheet(ui_tilesheet, 5, &mouse, RNDR_UI + 20, (Vector4){1, 1, 1, 1});
 }
 
 float movement_speed = 0.01f;

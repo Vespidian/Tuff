@@ -3,6 +3,8 @@
 
 #include "text_event.h"
 
+// TODO: Go over this shitshow of a system and probably remake the entire thing
+
 bool text_input = false;
 char text_buffer;
 TextObject text_object;

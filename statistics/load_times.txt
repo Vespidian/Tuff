@@ -1,9 +1,0 @@
-no indexing:
-stanford-dragon_lowply.obj
-52162 faces
-567ms*
-473ms
-490ms
-480ms
-
-indexing:

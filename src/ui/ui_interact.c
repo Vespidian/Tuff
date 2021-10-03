@@ -6,7 +6,7 @@
 #include "ui_layout.h"
 #include "ui_interact.h"
 
-static bool PointInBounds(Vector2_i point, Vector4 bounds){
+static bool PointInBounds(iVector2 point, Vector4 bounds){
     return ( (point.x >= bounds.x) && (point.x < (bounds.x + bounds.z)) &&
              (point.y >= bounds.y) && (point.y < (bounds.y + bounds.w)) );
 }

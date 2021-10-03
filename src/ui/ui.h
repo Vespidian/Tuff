@@ -4,8 +4,6 @@
 #include "../gl_utils.h"
 #include "../renderer/render_text.h"
 
-extern TilesheetObject ui_tilesheet;
-
 extern ShaderObject ui_shader;
 
 void InitUI();
@@ -58,16 +56,6 @@ typedef enum UI_OriginType{
 	UI_ORIGIN_TOP_LEFT 		= 0b1001,
 
 	UI_ORIGIN_CENTER 		= 0b1111,
-	// UI_ORIGIN_UNDEFINED = 0b0000,
-	// UI_ORIGIN_TOP = 0b0001,
-	// UI_ORIGIN_RIGHT = 0b0010,
-	// UI_ORIGIN_BOTTOM_LEFT = 0b0011,
-	// UI_ORIGIN_BOTTOM = 0b0100,
-	// UI_ORIGIN_BOTTOM_RIGHT = 0b0110,
-	// UI_ORIGIN_LEFT = 0b1000,
-	// UI_ORIGIN_TOP_LEFT = 0b1001,
-	// UI_ORIGIN_TOP_RIGHT = 0b1100,
-	// UI_ORIGIN_CENTER = 0b1111,
 
 }UI_OriginType;
 

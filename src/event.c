@@ -6,8 +6,8 @@
 #include "event.h"
 
 SDL_Event e;
-Vector2_i mouse_pos = {0, 0};
-Vector2_i mouse_pos_previous = {0, 0};
+iVector2 mouse_pos = {0, 0};
+iVector2 mouse_pos_previous = {0, 0};
 
 InputEvent *events;
 int num_events = 0;

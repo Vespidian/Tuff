@@ -583,7 +583,7 @@ TextureObject LoadTexture(const char *path){
 
     TextureObject tex_out = {texture, tmp_surface->w, tmp_surface->h};
     if(tmp_surface){
-
+		// TODO: Support more image formats / image color formats without crashing
 		int internal_format;
 		int image_format;
 		if(SDL_ISPIXELFORMAT_ALPHA(tmp_surface->format->format)){
