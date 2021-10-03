@@ -26,10 +26,12 @@ FontObject *NewFont(char *name, TilesheetObject *tilesheet, Vector2 char_size, V
     font_stack = realloc(font_stack, sizeof(FontObject) * (num_fonts + 1));
 
 	// Allocate memory for font name
-    font_stack[num_fonts].name = malloc(sizeof(char) * strlen(name));
+    font_stack[num_fonts].name = malloc(sizeof(char) * (strlen(name) + 1));
+	strcpy(font_stack[num_fonts].name, name);
+	font_stack[num_fonts].name[strlen(name)] = 0;
 
 	// Copy data to font
-    font_stack[num_fonts] = (FontObject){name, nextID, *tilesheet, char_size, padding};
+    font_stack[num_fonts] = (FontObject){.id = nextID, *tilesheet, char_size, padding};
     DebugLog(D_ACT, "Created font id '%d' name '%s'", nextID, name);
 
 	// Increment stack counters
@@ -67,11 +69,14 @@ void RenderText(FontObject *font, float font_size, int x_pos, int y_pos, int ali
     vsprintf(formattedText, text, va_format);
     va_end(va_format);
 
-    RenderTextEx(font, font_size, x_pos, y_pos, (Vector4){1, 1, 1, 1}, alignment, -1, formattedText);
+    RenderTextEx(font, font_size, x_pos, y_pos, (Vector4){1, 1, 1, 1}, alignment, RNDR_TEXT, -1, formattedText);
 }
 
-void RenderTextEx(FontObject *font, float font_size, int x_pos, int y_pos, Vector4 color, int alignment, int num_characters, char *text, ...){
-    va_list va_format;
+void RenderTextEx(FontObject *font, float font_size, int x_pos, int y_pos, Vector4 color, int alignment, int render_layer, int num_characters, char *text, ...){
+    if(font == NULL){
+		return;
+	}
+	va_list va_format;
 
 	// Convert va_arg to single string
     va_start(va_format, text);
@@ -111,7 +116,7 @@ void RenderTextEx(FontObject *font, float font_size, int x_pos, int y_pos, Vecto
             		dst.x = x_pos + i * ((float)font->padding.x * 1.7f * font_size);
 					break;
 			}
-            RenderTilesheet(font->tilesheet, char_value, &dst, RNDR_TEXT, color);
+            RenderTilesheet(font->tilesheet, char_value, &dst, render_layer, color);
         }else{// Some unprintable characters do stuff
             switch(char_value){
                 case -22: // NEWLINE (\n)

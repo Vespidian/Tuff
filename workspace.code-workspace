@@ -34,7 +34,7 @@
 			"debug.h": "c",
 			"obj_loader.h": "c",
 			"gl_utils.h": "c",
-			"ui.h": "c",
+			"ui_layout.h": "c",
 			"textures.h": "c",
 			"cgltf.h": "c",
 			"cstddef": "c",
@@ -42,7 +42,17 @@
 			"initializer_list": "c",
 			"new": "c",
 			"type_traits": "c",
-			"*.ui": "c"
+			"*.ui": "c",
+			"serial.h": "c",
+			"gltf_loader.h": "c",
+			"stdbool.h": "c",
+			"ui_parser.h": "c",
+			"ui_interact.h": "c",
+			"ui.h": "c",
+			"cglm.h": "c",
+			"vectorlib.h": "c",
+			"jsmn.h": "c",
+			"sdl.h": "c"
 		}
 	}
 }

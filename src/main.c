@@ -13,16 +13,11 @@
 #include "renderer/materials/mask.h"
 
 #include "ui/ui.h"
-#include "ui/start_screen.h"
-#include "ui/load_screen.h"
-#include "ui/elements/button.h"
-#include "ui/resizable_rect.h"
+#include "ui/ui_layout.h"
+#include "ui/ui_parser.h"
 
 
-#include "ui/load_screen.h"
-
-
-
+#include "gyro/gyro.h"
 
 
 int loop_start_ticks = 0;
@@ -71,10 +66,14 @@ void Setup(){
 	InitTextures();
 	InitTilesheets();
 	InitFonts();
-	LoadScreenInit();
+
+	UI_LoadScene("../ui/blenderish.uiss");
 
 
 	LoadBuiltinResources();
+
+
+	InitGyro();
 }
 
 void Quit(){
@@ -90,7 +89,7 @@ void GameLoop(){
 
 	
 	
-	RenderText(&default_font, 1, SCREEN_WIDTH - 10, 10, TEXT_ALIGN_RIGHT, "Number of render appends: %d", num_append_instance_calls);
+	// RenderText(&default_font, 1, SCREEN_WIDTH - 10, 10, TEXT_ALIGN_RIGHT, "Number of render appends: %d", num_append_instance_calls);
 
 
 }
@@ -101,6 +100,11 @@ static void CheckWindowActive(EventData event){
 	}else if(event.e->window.event == SDL_WINDOWEVENT_FOCUS_GAINED){
 		window_active = true;
 	}
+}
+
+static void ReloadUI(){
+	UI_FreeScene(&scene_stack[0]);
+	UI_LoadScene("../ui/flexbox.uiss");
 }
 
 bool wireframe = false;
@@ -119,7 +123,8 @@ int main(int argc, char *argv[]){
 	Setup();
 	// startupTime.x = SDL_GetTicks();
 	BindKeyEvent(ToggleWireframe, 'z', SDL_KEYDOWN);
-	BindEvent(EV_ACCURATE, SDL_WINDOWEVENT, CheckWindowActive);
+	BindKeyEvent(ReloadUI, 'i', SDL_KEYDOWN);
+	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, CheckWindowActive);
 
 	// LoadObj("../models/cube.obj");
 
@@ -130,11 +135,15 @@ int main(int argc, char *argv[]){
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			RenderGL();
+			LoopGyro();
 			// if(main_menu){
 				// RenderStartScreen();
 			// }else{
 			// 	GameLoop();
 			// }
+			UI_RenderScene(&scene_stack[0]);
+
+
 			PushRender();
 			SDL_GL_SwapWindow(window);
 		}

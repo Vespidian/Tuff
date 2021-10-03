@@ -46,10 +46,10 @@ void LoadGLTF(){
 	pos = data->meshes->primitives->attributes[0].data->buffer_view;
 	norm = data->meshes->primitives->attributes[1].data->buffer_view;
 	texc = data->meshes->primitives->attributes[2].data->buffer_view;
-	printf("test: %d\n", data->meshes->primitives->attributes[1].data->buffer_view->offset);
+	// printf("test: %d\n", data->meshes->primitives->attributes[1].data->buffer_view->offset);
 	ind = data->meshes->primitives->indices->buffer_view;
 
-	printf("%d\n", data->meshes->primitives->attributes[1].data->count);
+	// printf("%d\n", data->meshes->primitives->attributes[1].data->count);
 
 	// cgltf_buffer_view *buffer = norm;
 

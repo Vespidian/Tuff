@@ -221,6 +221,7 @@ onclick 			// Calls function once the moment the element is clicked
 onhover 			// Calls function continuously while element is being hovered
 onhold 				// Calls function continuously while mouse button is being held over element
 onleave 			// Calls function once when the cursor exits the element
+onenter				// Calls function once when the cursor enters the element
 
 // Optional property ideas
 onshow 				// Calls function when element is activated

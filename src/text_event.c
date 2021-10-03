@@ -10,7 +10,7 @@ TextObject text_object;
 void Backspace(EventData event);
 
 void InitTextEvent(){
-    BindEvent(EV_ACCURATE, SDL_KEYDOWN, Backspace);
+    BindEvent(EV_POLL_ACCURATE, SDL_KEYDOWN, Backspace);
 	// SDL_StartTextInput();
 }
 
