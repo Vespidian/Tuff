@@ -5,7 +5,7 @@
 
 #include <SDL.h>
 
-#include "../include/cgltf.h"
+#include "cgltf.h"
 
 cgltf_data *data = NULL;
 

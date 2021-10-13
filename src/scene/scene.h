@@ -1,7 +1,7 @@
 #ifndef MODEL_H_
 #define MODEL_H_
 
-#include "../include/cgltf.h"
+#include "cgltf.h"
 
 typedef struct AttributePointer{
 	unsigned int size;

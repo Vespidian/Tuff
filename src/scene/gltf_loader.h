@@ -1,7 +1,7 @@
 #ifndef GLTF_LOADER_H_
 #define GLTF_LOADER_H_
 
-#include "../include/cgltf.h"
+#include "cgltf.h"
 
 cgltf_data *data;
 

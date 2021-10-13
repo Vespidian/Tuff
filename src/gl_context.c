@@ -62,7 +62,11 @@ int num_grid_verts;
 unsigned int grid_vao;
 unsigned int grid_vbo;
 ShaderObject grid_shader;
+bool grid_enabled = true;
 
+void ToggleGrid(){
+	grid_enabled = !grid_enabled;
+}
 
 void GenerateGrid(){
 	Vector3 grid_position = {0, 0, 0};
@@ -184,6 +188,7 @@ int InitGL(){
     BindEvent(EV_POLL_ACCURATE, SDL_MOUSEWHEEL, Zoom);
     BindEvent(EV_POLL_ACCURATE, SDL_MOUSEMOTION, MouseEvent);
     BindEvent(EV_POLL_ACCURATE, SDL_MOUSEBUTTONDOWN, MouseEvent);
+    BindKeyEvent(&ToggleGrid, 'g', SDL_KEYDOWN);
 
 	InitGLUtils();
 
@@ -409,7 +414,6 @@ void RenderGL(){
 	}
 	// glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
 
-
 	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_LINE_SMOOTH);
 
@@ -431,20 +435,22 @@ void RenderGL(){
 	child->transform.position.y = 1;
 	CalculateModelTransform(parent);
 	// CalculateTransform(&parent->transform);
-    UniformSetMat4(&axis_shader, "model", parent->transform.result);
-	PassShaderUniforms(&axis_shader);
+    UniformSetMat4(&mesh_shader, "model", parent->transform.result);
+	PassShaderUniforms(&mesh_shader);
 	glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
 	// child axis
-	SetVAO(mesh_vao);
+	// SetVAO(mesh_vao);
 	// CalculateModelTransform(child);
 	// CalculateTransform(&child->transform);
-    UniformSetMat4(&axis_shader, "model", child->transform.result);
-	PassShaderUniforms(&axis_shader);
-	glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
+    // UniformSetMat4(&axis_shader, "model", child->transform.result);
+	// PassShaderUniforms(&axis_shader);
+	// glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
 
-	SetVAO(grid_vao);
-	PassShaderUniforms(&grid_shader);
-	glDrawArrays(GL_LINES, 0, grid_vertex_count);
+	if(grid_enabled){
+		SetVAO(grid_vao);
+		PassShaderUniforms(&grid_shader);
+		glDrawArrays(GL_LINES, 0, grid_vertex_count);
+	}
 	glDisable(GL_MULTISAMPLE);
 	glDisable(GL_LINE_SMOOTH);
 

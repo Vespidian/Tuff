@@ -96,6 +96,10 @@ void UI_RenderScene(UIScene *scene){
 			RecursiveApplyElementClasses(&scene->body.children[i]);
 			// }
 		}
+			// RecursiveApplyStaticClasses(&scene->body);
+			// RecursiveApplyElementClasses(&scene->body);
+			// RecursiveCheckInteract(&scene->body);
+			// RecursiveApplyElementClasses(&scene->body);
 		// scene->needs_update = false;
 
 

@@ -11,7 +11,7 @@
 #include <SDL_image.h>
 #include <SDL_opengl.h>
 
-#include "include/cglm/cglm.h"
+#include <cglm/cglm.h>
 #include "gl_utils.h"
 
 #define DEBUG_BUILD

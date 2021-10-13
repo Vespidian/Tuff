@@ -5,7 +5,7 @@
 #include <SDL.h>
 
 #include "../global.h"
-#include "../include/jsmn.h"
+#include <jsmn.h>
 #include "../debug.h"
 
 #include "ui.h"
@@ -29,7 +29,7 @@ typedef enum CurrentObject_e{
 
 static char *active_path;
 
-const int num_properties = 46;
+const int num_properties = 47;
 const char *property_dict[] = {
 	"position",
 	"top",
@@ -75,6 +75,8 @@ const char *property_dict[] = {
 	"text-color",
 	"text-size",
 	"font",
+
+	"align",
 
 	"transition-duration",
 	"transition-ease",
@@ -130,7 +132,7 @@ UIClass *UI_NewClass(UIScene *scene){
 	for(int i = 0; i < UI_NUM_ACTIONS; i++){
 		class->actions[i].enabled = false;
 		class->actions[i].num_classes = 0;
-		class->actions[i].function = NULL;
+		// class->actions[i].function = NULL;
 	}
 
 	return class;
@@ -350,7 +352,6 @@ static int GetPropertyHash(JSONObject_t json, unsigned int token){
 	return -1;
 }
 
-
 static UIClass *FindClass(UIScene *scene, char *name, unsigned int length){
 	for(int i = 0; i < scene->num_classes; i++){
 		if(strncmp(scene->classes[i].name, name, length) == 0){
@@ -391,7 +392,7 @@ static void LoopAction(JSONObject_t json, unsigned int token, UIScene *scene, UI
 
 	// Initialize action
 	action->enabled = true;
-	action->function = NULL;
+	// action->function = NULL;
 	action->classes = NULL;
 	action->num_classes = 0;
 
@@ -640,26 +641,37 @@ static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UICl
 				class->text_color = HexToColor(json.json_string + json.tokens[current_token + 1].start);
 				break;
 
-			case 39: // active
+			case 37: // align
+				// Default align is vertical
+				if(CompareToken(json, current_token + 1, "horizontal")){
+					class->align = UI_ALIGN_HORIZONTAL;
+				}else if(CompareToken(json, current_token + 1, "vertical")){
+					class->align = UI_ALIGN_VERTICAL;
+				}else{
+					class->align = UI_ALIGN_UNDEFINED;
+				}
+				break;
+
+			case 40: // active
 				class->is_active = json.json_string[json.tokens[current_token + 1].start] == 't' ? true : false;
 				break;
 
-			case 40: // onhover
+			case 41: // onhover
 				LoopAction(json, current_token, scene, class, UI_ACT_HOVER);
 				break;
-			case 41: // onenter
+			case 42: // onenter
 				LoopAction(json, current_token, scene, class, UI_ACT_ENTER);
 				break;
-			case 42: // onleave
+			case 43: // onleave
 				LoopAction(json, current_token, scene, class, UI_ACT_LEAVE);
 				break;
-			case 43: // onhold
+			case 44: // onhold
 				LoopAction(json, current_token, scene, class, UI_ACT_HOLD);
 				break;
-			case 44: // onclick
+			case 45: // onclick
 				LoopAction(json, current_token, scene, class, UI_ACT_CLICK);
 				break;
-			case 45: // onrelease
+			case 46: // onrelease
 				LoopAction(json, current_token, scene, class, UI_ACT_RELEASE);
 				break;
 

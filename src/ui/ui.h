@@ -68,7 +68,6 @@ typedef enum UI_Align{
 typedef struct UIClass UIClass;
 typedef struct UIAction{
 	bool enabled;
-	void (*function)(void);
 	UIClass **classes; // 'classes' cannot contain the action's parent class
 	unsigned int num_classes;
 }UIAction;

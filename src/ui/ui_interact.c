@@ -16,9 +16,9 @@ static void ApplyAction(UIElement *element, UI_Action action){
 	for(int i = 0; i < element->num_classes; i++){
 		class = element->classes[i];
 		if(class->actions[action].enabled){
-			if(class->actions[action].function != NULL){
-				class->actions[action].function();
-			}
+			// if(class->actions[action].function != NULL){
+			// 	class->actions[action].function();
+			// }
 			for(int j = 0; j < class->actions[action].num_classes; j++){
 				if(&class->actions[action].classes[j] != &class){
 					ApplyClass(element, class->actions[action].classes[j]);

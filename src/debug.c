@@ -21,8 +21,8 @@ void DebugLog(int type, const char *format, ...){
 	//Use var args to create formatted text
 	va_start(va_format, format);
 	int length = vsnprintf(NULL, 0, format, va_format);
-	char *formattedText = malloc((length + 1) * sizeof(char));
-	vsnprintf(formattedText, sizeof(char) * (length + 1), format, va_format);
+	char *formatted_text = malloc(length + 1);
+	vsnprintf(formatted_text, length + 1, format, va_format);
 	va_end(va_format);
 	
 	//Insert timestamp to log
@@ -69,11 +69,11 @@ void DebugLog(int type, const char *format, ...){
 			default:
 				break;
 		}
-		fprintf(logFile, "%s\n", formattedText);
+		fprintf(logFile, "%s\n", formatted_text);
 	}
 	
 	//Free the formatted string
-	free(formattedText);
+	free(formatted_text);
 	//Flush the file buffer to the file
 	fflush(logFile);
 }

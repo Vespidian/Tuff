@@ -64,8 +64,9 @@ void Setup(){
 	InitTilesheets();
 	InitFonts();
 
+	int start = SDL_GetTicks();
 	UI_LoadScene("../ui/blenderish.uiss");
-
+	printf("Loading ui took: %dms\n", SDL_GetTicks() - start);
 
 	// LoadBuiltinResources();
 }
@@ -113,6 +114,8 @@ static void ToggleWireframe(EventData event){
 	}
 }
 
+#include "ui/ui_utility.h"
+
 int main(int argc, char *argv[]){
 	Setup();
 	// startupTime.x = SDL_GetTicks();
@@ -130,8 +133,8 @@ int main(int argc, char *argv[]){
 
 			RenderGL();
 
+			SetElementText(FindElement(&scene_stack[0], "t1"), "Time: %d", SDL_GetTicks());
 			UI_RenderScene(&scene_stack[0]);
-
 
 			PushRender();
 			SDL_GL_SwapWindow(window);

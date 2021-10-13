@@ -64,7 +64,6 @@ static Vector2 CalculateScale(UIElement *element, UIClass *class){
 	Vector4 border = element->border;
 	Vector4 padding = element->padding;
 	for(int i = 2; i <= 3; i++){
-		bool type_defined = true;
 		element->scale_defined[i - 2] = true;
 		switch(class->transform_type.v[i]){
 			case UI_PERCENT:
@@ -74,11 +73,10 @@ static Vector2 CalculateScale(UIElement *element, UIClass *class){
 				scale.v[i - 2] = class->transform.v[i];
 				break;
 			default: // UI_UNDEFINED or anything not supported by this property
-				type_defined = false;
 				element->scale_defined[i - 2] = false;
 				break;
 		}
-		if(type_defined){
+		if(element->scale_defined[i - 2]){
 			element->base_scale.v[i - 2] = scale.v[i - 2];
 		}
 		if(i == 2){
@@ -261,6 +259,10 @@ static void SetValues(UIElement *element, UIClass *class){
 	}
 	if(class->font_defined){
 		element->font = class->font;
+	}
+
+	if(class->align != UI_ALIGN_UNDEFINED){
+		element->align = class->align;
 	}
 	// if(class->transition_defined){
 		// element-> = class->;
