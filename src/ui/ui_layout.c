@@ -273,16 +273,16 @@ static void SetValues(UIElement *element, UIClass *class){
 
 // float Transition(int start, int current, int end, int time_period); // TODO: Implement transition animations / easings for classes
 
-static void CalculateContentRect(UIElement *element){
-	element->content_rect = (Vector4){
-		// element->parent->transform.x + element->parent->border.x + element->parent->padding.x,
-		// element->parent->transform.y + element->parent->border.y + element->parent->padding.y,
-		element->transform.x + element->border.x + element->padding.x,
-		element->transform.y + element->border.y + element->padding.y,
-		element->transform.z,
-		element->transform.w,
-	};
-}
+// static void CalculateContentRect(UIElement *element){
+// 	element->content_rect = (Vector4){
+// 		// element->parent->transform.x + element->parent->border.x + element->parent->padding.x,
+// 		// element->parent->transform.y + element->parent->border.y + element->parent->padding.y,
+// 		element->transform.x + element->border.x + element->padding.x,
+// 		element->transform.y + element->border.y + element->padding.y,
+// 		element->transform.z,
+// 		element->transform.w,
+// 	};
+// }
 
 static Vector2 CalculateFullBounds(UIElement *element){
 	return (Vector2){
@@ -349,7 +349,7 @@ void RecursiveApplyStaticClasses(UIElement *element){
 }
 
 void RecursiveApplyElementClasses(UIElement *element){
-	CalculateContentRect(element);
+	// CalculateContentRect(element);
 	CalculateOffset(element);
 
 	if(element->children != NULL){

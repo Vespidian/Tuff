@@ -175,6 +175,7 @@ typedef struct UIElement{
 	// UIAction *actions; // Array of actions that this element triggers
 
 	bool is_active; // Element visibility
+	void (*function)(struct UIElement *element);
 
 }UIElement;
 
@@ -190,6 +191,7 @@ typedef struct UIScene{
 
 // TMP
 extern UIScene *scene_stack;
+extern unsigned int num_scenes;
 UIScene *UI_LoadScene(char *path);
 void UI_RenderScene(UIScene *scene);
 void UI_FreeScene(UIScene *scene);

@@ -88,12 +88,15 @@ static void RecursiveRender(UIElement *element, unsigned int layer){
 }
 
 void UI_RenderScene(UIScene *scene){
+	if(scene != NULL){
 		for(int i = 0; i < scene->body.num_children; i++){
 			// if(scene->needs_update){
+				// if(&scene->body.children[i] != NULL){
 			RecursiveApplyStaticClasses(&scene->body.children[i]);
 			RecursiveApplyElementClasses(&scene->body.children[i]);
 			RecursiveCheckInteract(&scene->body.children[i]);
 			RecursiveApplyElementClasses(&scene->body.children[i]);
+				// }
 			// }
 		}
 			// RecursiveApplyStaticClasses(&scene->body);
@@ -103,8 +106,9 @@ void UI_RenderScene(UIScene *scene){
 		// scene->needs_update = false;
 
 
-	for(int i = 0; i < scene->body.num_children; i++){
-		RecursiveRender(&scene->body.children[i], 0);
+		for(int i = 0; i < scene->body.num_children; i++){
+			RecursiveRender(&scene->body.children[i], 0);
+		}
 	}
 }
 
@@ -121,7 +125,9 @@ UIScene *UI_LoadScene(char *path){// TODO: Safeguard the reallocation of the sce
 void FreeClass(UIClass *class){
 	free(class->name);
 	for(int i = 0; i < UI_NUM_ACTIONS; i++){
-		free(class->actions[i].classes);
+		if(class->actions[i].num_classes > 0){
+			free(class->actions[i].classes);
+		}
 	}
 }
 
@@ -129,10 +135,21 @@ void RecursiveFreeElement(UIElement *element){
 	for(int i = 0; i < element->num_children; i++){
 		RecursiveFreeElement(&element->children[i]);
 	}
-	free(element->name);
-	free(element->children);
-	free(element->text);
-	free(element->classes);
+	if(element->name != NULL){
+		free(element->name);
+	}
+
+	if(element->text != NULL){
+		free(element->text);
+	}
+
+	if(element->num_children > 0){
+		free(element->children);
+	}
+
+	if(element->num_classes > 0){
+		free(element->classes);
+	}
 }
 
 void UI_FreeScene(UIScene *scene){
@@ -142,12 +159,15 @@ void UI_FreeScene(UIScene *scene){
 		FreeClass(&scene->classes[i]);
 	}
 	free(scene->classes);
+	// scene->num_classes = 0;
 
 	free(scene->path);
 
 	num_scenes--;
 	// scene_stack = NULL;
-	scene = NULL;
+	scene = NULL; 
+
+	// memcpy(scene, scene + sizeof(UIClass), )
 	// TODO: decide whether we want to reload all ui scenes at once or individually
 	// Empty all:
 	// free the entire scene stack and set it to null. load the scene files

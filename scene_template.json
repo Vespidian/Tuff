@@ -5,10 +5,29 @@
 	],
 	"textures" : [
 		"texture.png",
+		"icon.jpg",
 	],
 	"shaders" : [
 		"default.glsl",
-	]
+	],
+	
+	"materials": [
+		"default.mat",
+	],
+	
+	"scripts": [
+		"script.c",
+	],
+	
+	"ui": [
+		"hud.uiss",
+	],
+	
+	"scene": [
+		"lobby.scn",
+		"level_1.scn",
+	],
+	
 	"objects" : [
 		{
 			"mesh" : 0, 					// Index from 'meshes'

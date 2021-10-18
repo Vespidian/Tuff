@@ -13,6 +13,7 @@
 #include "renderer/materials/mask.h"
 
 #include "ui/ui.h"
+#include "ui/ui_utility.h"
 #include "ui/ui_layout.h"
 #include "ui/ui_parser.h"
 
@@ -52,6 +53,26 @@ void InitRenderers(){
 	
 }
 
+void LoadDiffScene(char *path){
+	printf("Loading: %s\n", path);
+	UI_LoadScene(path);
+}
+
+#include <libtcc.h>
+void (*script_setup)() = NULL;
+void (*script_loop)() = NULL;
+void (*script_onclick)(UIElement *element) = NULL;
+TCCState *script;
+
+void TccDebug(void *opaque, const char *msg){
+	DebugLog(D_ERR, "%s", msg);
+}
+
+struct Object{
+	int d1;
+	float f1;
+};
+
 void Setup(){
 	InitDebug();
 	InitEvents();
@@ -65,8 +86,60 @@ void Setup(){
 	InitFonts();
 
 	int start = SDL_GetTicks();
-	UI_LoadScene("../ui/blenderish.uiss");
+	UI_LoadScene("../ui/ui_tests.uiss");
+	// UI_LoadScene("../ui/tests/color.uiss");
+	// FindElement(&scene_stack[0], "color")->function = script_onclick;
+	// FindElement(&scene_stack[0], "layout")->function = script_onclick;
+
 	printf("Loading ui took: %dms\n", SDL_GetTicks() - start);
+
+		/*start = SDL_GetTicks();
+		struct Object prnt = {56, 1.48f};
+
+		// Create a script object
+		script = tcc_new();
+		if(!script){
+			printf("Couldnt initialize tcc!\n");
+		}
+
+		// Make sure we compile to memory (must be set before compilation)
+		tcc_set_output_type(script, TCC_OUTPUT_MEMORY);
+		
+		tcc_set_options(script, "g b Wall");
+		tcc_set_error_func(script, NULL, TccDebug);
+		// tcc_add_sysinclude_path(script, "include");
+		// printf("%d\n", script->do_bounds_check);
+		// script->do_bounds_check = true;
+		// script->do_debugging = true;
+
+		// Load the source file
+		if(tcc_add_file(script, "../resources/script.c") == -1){
+			printf("Couldnt load script file\n");
+		}
+
+		Vector3 pos = {5.6, 7.89, 2.731};
+		Vector3 clr = {5, 8, 2};
+		tcc_add_symbol(script, "parent", &prnt);
+		tcc_add_symbol(script, "position", &pos);
+		tcc_add_symbol(script, "color", &clr);
+		tcc_add_symbol(script, "LoadScene", &LoadDiffScene);
+
+		if(tcc_relocate(script, TCC_RELOCATE_AUTO) == -1){
+			printf("Error relocating script code\n");
+		}else{
+			// Successfully compiled! Now we can get the functions we need
+
+
+			script_setup = tcc_get_symbol(script, "Setup");
+			script_loop = tcc_get_symbol(script, "Loop");
+			script_onclick = tcc_get_symbol(script, "OnClick");
+
+			if(script_setup != NULL){
+				script_setup();
+			}
+		}
+		printf("Loading and compiling c took: %dms\n", SDL_GetTicks() - start);*/
+
 
 	// LoadBuiltinResources();
 }
@@ -97,9 +170,65 @@ static void CheckWindowActive(EventData event){
 	}
 }
 
+/*static void ReloadScript(){
+	int start = SDL_GetTicks();
+
+	tcc_delete(script);
+	struct Object prnt = {56, 1.48f};
+
+		// Create a script object
+		script = tcc_new();
+		if(!script){
+			printf("Couldnt initialize tcc!\n");
+		}
+
+		// Make sure we compile to memory (must be set before compilation)
+		tcc_set_output_type(script, TCC_OUTPUT_MEMORY);
+		
+		tcc_set_options(script, "g b Wall");
+		tcc_set_error_func(script, NULL, TccDebug);
+		// tcc_add_sysinclude_path(script, "include");
+		// printf("%d\n", script->do_bounds_check);
+		// script->do_bounds_check = true;
+		// script->do_debugging = true;
+
+		// Load the source file
+		if(tcc_add_file(script, "../resources/script.c") == -1){
+			printf("Couldnt load script file\n");
+		}
+
+
+		if(tcc_relocate(script, TCC_RELOCATE_AUTO) == -1){
+			printf("Error relocating script code\n");
+		}else{
+			// Successfully compiled! Now we can get the functions we need
+
+		Vector3 pos = {5.6, 7.89, 2.731};
+		Vector3 clr = {5, 8, 2};
+		tcc_add_symbol(script, "parent", &prnt);
+		tcc_add_symbol(script, "position", &pos);
+		tcc_add_symbol(script, "color", &clr);
+
+			script_setup = tcc_get_symbol(script, "Setup");
+			script_loop = tcc_get_symbol(script, "Loop");
+			script_onclick = tcc_get_symbol(script, "OnClick");
+
+			if(script_setup != NULL){
+				script_setup();
+			}
+		}
+		printf("Loading and compiling c took: %dms\n", SDL_GetTicks() - start);
+
+}*/
+
 static void ReloadUI(){
-	UI_FreeScene(&scene_stack[0]);
-	UI_LoadScene("../ui/flexbox.uiss");
+	for(int i = 0; i < num_scenes; i++){
+		UI_FreeScene(&scene_stack[i]);
+	}
+	UI_LoadScene("../ui/ui_tests.uiss");
+	// UI_LoadScene("../ui/tests/color.uiss");
+	// FindElement(&scene_stack[0], "color")->function = script_onclick;
+	// FindElement(&scene_stack[0], "layout")->function = script_onclick;
 }
 
 bool wireframe = false;
@@ -121,6 +250,7 @@ int main(int argc, char *argv[]){
 	// startupTime.x = SDL_GetTicks();
 	BindKeyEvent(ToggleWireframe, 'z', SDL_KEYDOWN);
 	BindKeyEvent(ReloadUI, 'i', SDL_KEYDOWN);
+	// BindKeyEvent(ReloadScript, 'l', SDL_KEYDOWN);
 	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, CheckWindowActive);
 
 	// LoadObj("../models/cube.obj");
@@ -131,10 +261,15 @@ int main(int argc, char *argv[]){
 		if(window_active){
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+			if(script_loop != NULL){
+				script_loop();
+			}
+
 			RenderGL();
 
-			SetElementText(FindElement(&scene_stack[0], "t1"), "Time: %d", SDL_GetTicks());
+			// SetElementText(FindElement(&scene_stack[0], "t1"), "Time: %d", SDL_GetTicks());
 			UI_RenderScene(&scene_stack[0]);
+			UI_RenderScene(&scene_stack[1]);
 
 			PushRender();
 			SDL_GL_SwapWindow(window);

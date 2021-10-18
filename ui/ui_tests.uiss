@@ -1,0 +1,68 @@
+{
+	classes: {
+		"container_class": {
+			radius: 5px,
+			left: 10px,
+			top: 10px,
+			color: #212121,
+			border-color: #19191a,
+			padding: 0px,
+			padding-top: 5px,
+			padding-bottom: 5px,
+		},
+		"menu_item": {
+			border: 0px,
+			width: 160px,
+			height: 21px,
+			padding: 2px,
+			margin: 5px,
+		},
+		"button:hover": {
+			color: #5177b3,
+		},
+		"button": {
+			radius: 5px,
+			border: 0xp,
+			color: #303030,
+			onhover: {
+				class: "button:hover",
+			},
+		},
+		"divider": {
+			height: 1px,
+			padding: 0px,
+			color: #393939,
+			margin-top: 5px,
+			margin-bottom: 5px,
+		},
+		"text": {
+			opacity: 0,
+		},
+	},
+	body: {
+		"container": {
+			class: "container_class",
+			elements: [
+				"header_text": {
+					text: "UI Test Scenes:",
+					class: "menu_item",
+					class: "text",
+				},
+				"d1": {
+					class: "menu_item",
+					class: "divider",
+				},
+				"color": {
+					text: "Colors",
+					class: "menu_item",
+					class: "button",
+				},
+				"layout": {
+					text: "Layout",
+					class: "menu_item",
+					class: "button",
+				},
+			],
+		},
+	},
+}

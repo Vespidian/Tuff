@@ -1,9 +1,8 @@
 CC = gcc
-CFLAGS = -Werror -Wall -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lglew32 -lopengl32 -g
+CFLAGS = -Werror -Wall -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lglew32 -lopengl32 -llibtcc -g
 DISABLE_FLAGS = -Wno-missing-braces
 
-# INCLUDE = -isystem C:/c_libs/include/ -LC:/c_libs/lib/
-INCLUDE = -isystem ../libs/include -L../libs/lib/
+INCLUDE = -isystem ../include -L../lib
 
 C_SOURCES = $(wildcard *.c */*.c */*/*.c)
 HEADERS = $(wildcard *.h */*.h */*/*.h)
@@ -22,5 +21,4 @@ clean:
 	rm -rf *.o
 	rm -rf */*.o
 	rm -rf */*/*.o
-	rm log.txt
 	rm ../*.exe

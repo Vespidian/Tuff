@@ -132,6 +132,7 @@ UIClass *UI_NewClass(UIScene *scene){
 	for(int i = 0; i < UI_NUM_ACTIONS; i++){
 		class->actions[i].enabled = false;
 		class->actions[i].num_classes = 0;
+		// class->actions[i].classes = malloc(sizeof(UIClass));
 		// class->actions[i].function = NULL;
 	}
 
@@ -140,32 +141,34 @@ UIClass *UI_NewClass(UIScene *scene){
 
 
 void ResetElement(UIElement *element){
-	element->image = false;
+	if(element != NULL){
+		element->image = false;
 
-	element->font = &default_font;
-	element->text_size = 1;
-	element->text_color = (Vector4){1, 1, 1, 1};
+		element->font = &default_font;
+		element->text_size = 1;
+		element->text_color = (Vector4){1, 1, 1, 1};
 
-	element->color = (Vector4){1, 1, 1, 1};
-	element->border_color = (Vector4){0, 0, 0, 1};
+		element->color = (Vector4){1, 1, 1, 1};
+		element->border_color = (Vector4){0, 0, 0, 1};
 
-	element->base_position= (Vector2){0, 0};
-	element->base_scale = (Vector2){0, 0};
-	element->scale_defined[0] = false;
-	element->scale_defined[1] = false;
-	element->transform 	= (Vector4){0, 0, 50, 50};
-	element->margin 	= (Vector4){0, 0, 0, 0};
-	element->border 	= (Vector4){1, 1, 1, 1};
-	element->padding 	= (Vector4){0, 0, 0, 0};
-	element->radius 	= (Vector4){0, 0, 0, 0};
+		element->base_position= (Vector2){0, 0};
+		element->base_scale = (Vector2){0, 0};
+		element->scale_defined[0] = false;
+		element->scale_defined[1] = false;
+		element->transform 	= (Vector4){0, 0, 50, 50};
+		element->margin 	= (Vector4){0, 0, 0, 0};
+		element->border 	= (Vector4){1, 1, 1, 1};
+		element->padding 	= (Vector4){0, 0, 0, 0};
+		element->radius 	= (Vector4){0, 0, 0, 0};
 
-	element->align = UI_ALIGN_VERTICAL;
-	element->origin = UI_ORIGIN_TOP_LEFT;
+		element->align = UI_ALIGN_VERTICAL;
+		element->origin = UI_ORIGIN_TOP_LEFT;
 
-	// element->ease_position = 0;
+		// element->ease_position = 0;
 
-	// element->is_selected = false;
-	// element->is_active = true;
+		// element->is_selected = false;
+		// element->is_active = true;
+	}
 }
 
 UIElement *UI_NewElement(UIElement *parent){
@@ -184,6 +187,9 @@ UIElement *UI_NewElement(UIElement *parent){
 
 	element->num_classes = 0;
 	element->classes = NULL;
+
+	//tmp
+	element->function = NULL;
 
 	ResetElement(element);
 
@@ -285,79 +291,87 @@ static Vector3 HexToColor(char *hex){
 	return  (Vector3){v[0] / 255.0, v[1] / 255.0, v[2] / 255.0};
 }
 
-static bool CompareToken(JSONObject_t json, unsigned int token, const char *string){ // TODO: convert to these parameters
-// static bool CompareToken(jsmntok_t *token, char *json_string, char *string){
-	bool result = false;
-	int num_equal = 0;
-	if(strlen(string) == json.tokens[token].end - json.tokens[token].start){
-		for(int i = 0; i < min(json.tokens[token].end - json.tokens[token].start, strlen(string)); i++){
-			if(json.json_string[json.tokens[token].start + i] == string[i]){
-				num_equal++;
-			}
-		}
-		if(num_equal == json.tokens[token].end - json.tokens[token].start){
-			result = true;
-		}
-	}
-
-	return result;
-}
-
 static unsigned int GetTokenLength(JSONObject_t json, unsigned int token){
 	return json.tokens[token].end - json.tokens[token].start;
 }
 
-static UI_StyleType_et GetPropertyType(JSONObject_t json, unsigned int token){
-	// px, %, inherit
-	UI_StyleType_et value_type = UI_UNDEFINED;
-	if(strncmp(json.json_string + json.tokens[token].end - 2, "px", 2) == 0){
-		value_type = UI_PIXELS;
-	}else if(json.json_string[json.tokens[token].end - 1] == '%'){
-		value_type = UI_PERCENT;
-	}else if(strncmp(json.json_string + json.tokens[token].end - 7, "inherit", 7) == 0){
-		value_type = UI_STYLE_INHERIT;
+static bool CompareToken(JSONObject_t json, unsigned int token, const char *string){
+	bool result = false;
+	int num_equal = 0;
+	if(strlen(string) == GetTokenLength(json, token)){
+		for(int i = 0; i < min(GetTokenLength(json, token), strlen(string)); i++){
+			if(json.json_string[json.tokens[token].start + i] == string[i]){
+				num_equal++;
+			}
+		}
+		if(num_equal == GetTokenLength(json, token)){
+			result = true;
+		}
 	}
+	
+	return result;
+}
 
+static UI_StyleType_et GetPropertyType(JSONObject_t json, unsigned int token){
+	UI_StyleType_et value_type = UI_UNDEFINED;
+		// px, %, inherit
+		if(strncmp(json.json_string + json.tokens[token].end - 2, "px", 2) == 0){
+			value_type = UI_PIXELS;
+		}else if(json.json_string[json.tokens[token].end - 1] == '%'){
+			value_type = UI_PERCENT;
+		}else if(strncmp(json.json_string + json.tokens[token].end - 7, "inherit", 7) == 0){
+			value_type = UI_STYLE_INHERIT;
+		}
 	return value_type;
 }
 
 static float GetPropertyValue(JSONObject_t json, unsigned int token){
-	UI_StyleType_et type =  GetPropertyType(json, token);
-	unsigned int num_length = GetTokenLength(json, token);
 	float value = 0;
-	switch(type){
-		case UI_PIXELS:
-		case UI_TRANSFORM_PIXELS_INVERTED:
-			num_length -= 2; // px
-			value = strntol(json.json_string + json.tokens[token].start, num_length);
-			break;
-		case UI_PERCENT:
-			num_length -= 1; // %
-			value = strntol(json.json_string + json.tokens[token].start, num_length) / 100.0;
-			break;
-		default:
-			// Either we dont know what it is or it is 'inherit'
-			break;
-	}
+		UI_StyleType_et type =  GetPropertyType(json, token);
+		unsigned int num_length = GetTokenLength(json, token);
+		switch(type){
+			case UI_PIXELS:
+			case UI_TRANSFORM_PIXELS_INVERTED:
+				num_length -= 2; // px
+				value = strntol(json.json_string + json.tokens[token].start, num_length);
+				break;
+			case UI_PERCENT:
+				num_length -= 1; // %
+				value = strntol(json.json_string + json.tokens[token].start, num_length) / 100.0;
+				break;
+			default:
+				// Either we dont know what it is or it is 'inherit'
+				break;
+		}
 	return value;
 }
 
 static int GetPropertyHash(JSONObject_t json, unsigned int token){
-	for(int i = 0; i < num_properties; i++){
-		if(CompareToken(json, token, property_dict[i])){
-			return i;
+	if(json.tokens[token].size > 0 && json.tokens[token].type == JSMN_PRIMITIVE){
+		for(int i = 0; i < num_properties; i++){
+			if(CompareToken(json, token, property_dict[i])){
+				return i;
+			}
 		}
+	}else{
+		// Property with no content
+		return -2;
 	}
 	// Unkown property
 	return -1;
 }
 
 static UIClass *FindClass(UIScene *scene, char *name, unsigned int length){
-	for(int i = 0; i < scene->num_classes; i++){
-		if(strncmp(scene->classes[i].name, name, length) == 0){
-			return &scene->classes[i];
+	if(name != NULL){
+		for(int i = 0; i < scene->num_classes; i++){
+			if(length == strlen(scene->classes[i].name)){
+				if(strncmp(scene->classes[i].name, name, length) == 0){
+					return &scene->classes[i];
+				}
+			}
 		}
 	}
+
 	// Class with name 'name' not found
 	return NULL;
 }
@@ -367,22 +381,22 @@ static int SkipToken(JSONObject_t json, unsigned int token){
 	// 'token + 1' is the data of this property or element
 	// and 'token + 2' is the name of the element's first child if it has any children
 	// if this element has no children, then 'token + 2' is the name of the next element
-	int current_token = token + 2;
-	for(int i = 0; i < json.tokens[token + 1].size; i++){
+	int current_token = token + 1;
+	for(int i = 0; i < json.tokens[token].size; i++){
 		current_token = SkipToken(json, current_token);
 	}
 	return current_token;
 }
 
 static void LogUnkownToken(JSONObject_t json, unsigned int token, UIScene *scene){
-	char *unkown_property = malloc(GetTokenLength(json, token) + 1);
-	strncpy(unkown_property, json.json_string + json.tokens[token].start, GetTokenLength(json, token));
-	unkown_property[GetTokenLength(json, token)] = 0;
-	// printf("UISS: Unknown property (): %s\n", unkown_property);
-	printf("%s:%d Unknown property '%s'\n", scene->path, json.tokens[token].start, unkown_property);
-	// DebugLog(D_WARN, "UISS: Unknown property: %s", unkown_property);
-	DebugLog(D_WARN, "%s:%d Unknown property '%s'", scene->path, json.tokens[token].start, unkown_property);
-	free(unkown_property);
+	if(token <= json.num_tokens){
+		char *unkown_property = malloc(GetTokenLength(json, token) + 1);
+		strncpy(unkown_property, json.json_string + json.tokens[token].start, GetTokenLength(json, token));
+		unkown_property[GetTokenLength(json, token)] = 0;
+		printf("%s:%d Unknown property '%s'\n", scene->path, json.tokens[token].start, unkown_property);
+		DebugLog(D_WARN, "%s:%d Unknown property '%s'", scene->path, json.tokens[token].start, unkown_property);
+		free(unkown_property);
+	}
 }
 
 static void LoopAction(JSONObject_t json, unsigned int token, UIScene *scene, UIClass *parent_class, UI_Action act_type){
@@ -416,7 +430,6 @@ static void LoopAction(JSONObject_t json, unsigned int token, UIScene *scene, UI
 		}
 		current_token = SkipToken(json, current_token);
 	}
-
 }
 
 static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UIClass *class){
@@ -426,6 +439,7 @@ static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UICl
 
 	// 'token' is the name of the class and 'token + 2' is the first property within the class
 	int current_token = token + 2;
+	// int current_token = token;
 
 	// bool absolute_position[2] = {false, false};
 	float *value_pointer;
@@ -675,10 +689,16 @@ static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UICl
 				LoopAction(json, current_token, scene, class, UI_ACT_RELEASE);
 				break;
 
+			case -2:
+				DebugLog(D_WARN, "COLON MISSING?");
+				LogUnkownToken(json, current_token, scene);
+				break;
+
 			default:
 				LogUnkownToken(json, current_token, scene);
 				break;
 		}
+
 
 		if(use_pointers){
 			*value_pointer = GetPropertyValue(json, current_token + 1);
@@ -690,6 +710,8 @@ static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UICl
 		current_token = SkipToken(json, current_token);
 	}
 
+
+
 	// Return the token after the final token we found
 	return current_token;
 }
@@ -700,14 +722,15 @@ static int LoopClassBuffer(JSONObject_t json, unsigned int token, UIScene *scene
 	for(int i = 0; i < json.tokens[token + 1].size; i++){
 		class = FindClass(scene, json.json_string + json.tokens[current_token].start, GetTokenLength(json, current_token));
 		if(class == NULL){
-			class = &scene->classes[scene->num_classes];
+			// class = &scene->classes[scene->num_classes];
 			class = UI_NewClass(scene);
 
-		}else{
-			scene->num_classes++;
+		// }else{
+			// scene->num_classes++;
 
 		}
 		current_token = LoopClass(json, current_token, scene, class);
+		// printf("Class: %s\n", class->name);
 	}
 
 	return current_token;
@@ -796,6 +819,7 @@ void LoadScene(char *path, UIScene *scene){
 	SDL_RWops *fp = SDL_RWFromFile(path, "r");
 	if(fp == NULL){
 		printf("Error opening JSON file '%s'", path);
+		return;
 	}
 	long file_length = SDL_RWseek(fp, 0, SEEK_END);
 	SDL_RWseek(fp, 0, SEEK_SET);

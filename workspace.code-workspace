@@ -1,57 +1,31 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"name": "Root",
+			"path": ".",
+		}
+		{
+			"name": "Resources",
+			"path": "resources",
 		}
 	],
 	"settings": {
+		"files.exclude":{
+			"include/": true,
+			"lib/": true,
+			"bin/": true,
+			"**/*.o": true,
+			"models/": true,
+			"images/": true,
+			"resources/": true,
+		}
 		"problems.decorations.enabled": false,
 		"explorer.sortOrder": "type",
 		"files.associations": {
-			"*.fs": "glsl",
 			"*.shader": "glsl",
-			"*.tcc": "c",
-			"button.h": "c",
-			"ui_elements.h": "c",
-			"event.h": "c",
-			"render_text.h": "c",
-			"sandbox.h": "c",
-			"start_screen.h": "c",
-			"renderer.h": "c",
-			"text_event.h": "c",
-			"resizable_rect.h": "c",
-			"global.h": "c",
-			"tilesheet.h": "c",
-			"unistd.h": "c",
-			"chunk.h": "c",
-			"mask.h": "c",
-			"quad.h": "c",
-			"slider.h": "c",
-			"checkbox.h": "c",
-			"stdio.h": "c",
-			"stdlib.h": "c",
-			"gl_context.h": "c",
-			"debug.h": "c",
-			"gl_utils.h": "c",
-			"ui_layout.h": "c",
-			"textures.h": "c",
-			"cgltf.h": "c",
-			"cstddef": "c",
-			"cstdlib": "c",
-			"initializer_list": "c",
-			"new": "c",
-			"type_traits": "c",
-			"*.ui": "c",
-			"serial.h": "c",
-			"gltf_loader.h": "c",
-			"stdbool.h": "c",
-			"ui_parser.h": "c",
-			"ui_interact.h": "c",
-			"ui.h": "c",
-			"cglm.h": "c",
-			"vectorlib.h": "c",
-			"jsmn.h": "c",
-			"sdl.h": "c"
+			"*.h": "c",
+			"*.c": "c",
+			"*.uiss": "json",
 		}
 	}
 }
