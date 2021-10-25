@@ -32,7 +32,7 @@ void InitEvents(){
 	events = malloc(sizeof(InputEvent));
 
 	#ifdef DEBUG_BUILD
-		BindKeyEvent(Quit, 0x1B, SDL_KEYDOWN);//escape
+		BindKeyEvent(Quit, 0x1B, SDL_KEYDOWN);// Escape
 	#endif
 	BindEvent(EV_POLL_ACCURATE, SDL_MOUSEBUTTONDOWN, MouseClicked);
 	BindEvent(EV_POLL_ACCURATE, SDL_MOUSEBUTTONUP, MouseUp);

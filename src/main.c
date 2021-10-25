@@ -53,25 +53,25 @@ void InitRenderers(){
 	
 }
 
-void LoadDiffScene(char *path){
+void LoadDiffDomain(char *path){
 	printf("Loading: %s\n", path);
-	UI_LoadScene(path);
+	UI_LoadDomain(path);
 }
 
-#include <libtcc.h>
-void (*script_setup)() = NULL;
-void (*script_loop)() = NULL;
-void (*script_onclick)(UIElement *element) = NULL;
-TCCState *script;
+// #include <libtcc.h>
+// void (*script_setup)() = NULL;
+// void (*script_loop)() = NULL;
+// void (*script_onclick)(UIElement *element) = NULL;
+// TCCState *script;
 
-void TccDebug(void *opaque, const char *msg){
-	DebugLog(D_ERR, "%s", msg);
-}
+// void TccDebug(void *opaque, const char *msg){
+// 	DebugLog(D_ERR, "%s", msg);
+// }
 
-struct Object{
-	int d1;
-	float f1;
-};
+// struct Object{
+// 	int d1;
+// 	float f1;
+// };
 
 void Setup(){
 	InitDebug();
@@ -86,8 +86,8 @@ void Setup(){
 	InitFonts();
 
 	int start = SDL_GetTicks();
-	UI_LoadScene("../ui/ui_tests.uiss");
-	// UI_LoadScene("../ui/tests/color.uiss");
+	UI_LoadDomain("../ui/minimal.uiss");
+	UI_LoadDomain("../ui/tests/color.uiss");
 	// FindElement(&scene_stack[0], "color")->function = script_onclick;
 	// FindElement(&scene_stack[0], "layout")->function = script_onclick;
 
@@ -122,7 +122,7 @@ void Setup(){
 		tcc_add_symbol(script, "parent", &prnt);
 		tcc_add_symbol(script, "position", &pos);
 		tcc_add_symbol(script, "color", &clr);
-		tcc_add_symbol(script, "LoadScene", &LoadDiffScene);
+		tcc_add_symbol(script, "LoadDomain", &LoadDiffDomain);
 
 		if(tcc_relocate(script, TCC_RELOCATE_AUTO) == -1){
 			printf("Error relocating script code\n");
@@ -222,11 +222,11 @@ static void CheckWindowActive(EventData event){
 }*/
 
 static void ReloadUI(){
-	for(int i = 0; i < num_scenes; i++){
-		UI_FreeScene(&scene_stack[i]);
+	for(int i = 0; i < num_domains; i++){
+		UI_FreeDomain(&scene_stack[i]);
 	}
-	UI_LoadScene("../ui/ui_tests.uiss");
-	// UI_LoadScene("../ui/tests/color.uiss");
+	UI_LoadDomain("../ui/minimal.uiss");
+	// UI_LoadDomain("../ui/tests/color.uiss");
 	// FindElement(&scene_stack[0], "color")->function = script_onclick;
 	// FindElement(&scene_stack[0], "layout")->function = script_onclick;
 }
@@ -261,15 +261,18 @@ int main(int argc, char *argv[]){
 		if(window_active){
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			if(script_loop != NULL){
-				script_loop();
-			}
+			// if(script_loop != NULL){
+			// 	script_loop();
+			// }
 
 			RenderGL();
 
-			// SetElementText(FindElement(&scene_stack[0], "t1"), "Time: %d", SDL_GetTicks());
-			UI_RenderScene(&scene_stack[0]);
-			UI_RenderScene(&scene_stack[1]);
+			// SetElementText(FindElement(&scene_stack[0], "t1"), "Time: %d", SDL_GetTicks());+
+			for(int i = 0; i < num_domains; i++){
+				UI_RenderDomain(&scene_stack[i]);
+
+			}
+			// UI_RenderDomain(&scene_stack[1]);
 
 			PushRender();
 			SDL_GL_SwapWindow(window);

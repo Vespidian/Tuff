@@ -6,7 +6,6 @@
 #include "debug.h"
 #include "renderer/renderer.h"
 #include "renderer/quad.h"
-#include "ui/ui.h"
 
 #include "gl_context.h"
 #include "scene/scene.h"
@@ -47,9 +46,9 @@ unsigned int uniform_buffer;
 
 float axis[] = {
 	// x1, y1, z1, r, g, b, x2, y2, z2, r, g, b,
-	0, 0, 0,  1, 0, 0,    1, 0, 0,  1, 0, 0, // x axis
-	0, 0, 0,  0, 1, 0,    0, 1, 0,  0, 1, 0, // y axis
-	0, 0, 0,  0, 0, 1,    0, 0, 1,  0, 0, 1, // z axis
+	1, 0, 0,  1, 0, 0,	0, 0, 0,  1, 0, 0, // x axis
+	0, 1, 0,  0, 1, 0,	0, 0, 0,  0, 1, 0, // y axis
+	0, 0, 1,  0, 0, 1,	0, 0, 0,  0, 0, 1, // z axis
 };
 unsigned int axis_vao;
 unsigned int axis_vbo;
@@ -151,8 +150,6 @@ void PrintShaderUniforms(ShaderObject *shader){
 		printf("%s : %s\n", shader->uniforms[i].name, uniform_types[shader->uniforms[i].type]);
 	}
 }
-
-UIScene ui_scene;
 
 int InitGL(){
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -322,7 +319,6 @@ static float view_distance = 2;
 static float yaw, pitch = 0.25;
 static float normal_intense = 1;
 void RenderUI(){
-	// RenderUIInstance(&ui_scene);
 	// RenderText(&default_font, 1, 0, 0, TEXT_ALIGN_LEFT, "TESTING TEXT!");
 	Vector3 tmp = {0, 0, view_distance};
 	glm_vec3_rotate(tmp.v, -pitch * 2, (vec3){1, 0, 0});
@@ -419,6 +415,7 @@ void RenderGL(){
 
 	// Scene axis
 	SetVAO(axis_vao);
+	UniformSetFloat(&axis_shader, "zoom", view_distance);
     UniformSetMat4(&axis_shader, "model", origin_transform.result);
 	PassShaderUniforms(&axis_shader);
 	glDrawArrays(GL_LINES, 0, 26);
@@ -433,6 +430,7 @@ void RenderGL(){
 	SetVAO(mesh_vao);
 	// child->transform.rotation_e.z = -child->parent->transform.rotation_e.z; // Cancels object rotation inherited from its parent on the z axis
 	child->transform.position.y = 1;
+	// child->parent->transform.position.y = -1;
 	CalculateModelTransform(parent);
 	// CalculateTransform(&parent->transform);
     UniformSetMat4(&mesh_shader, "model", parent->transform.result);
@@ -471,30 +469,34 @@ static void Zoom(EventData event){
 }
 
 static void KeyPresses(EventData event){
-	Vector3 direction = {0};
+	Vector3 direction = {0, 0, 0};
 	// Forward / back
 	if(event.keyStates[SDL_SCANCODE_W]){
-		direction = (Vector3){0, 0, 1};
+		glm_vec3_add(direction.v, (vec3){0, 0, 1}, direction.v);
+		// direction = (Vector3){0, 0, 1};
 	}
 	if(event.keyStates[SDL_SCANCODE_A]){
-		direction = (Vector3){-1, 0, 0};
+		glm_vec3_add(direction.v, (vec3){-1, 0, 0}, direction.v);
 	}
 	// Left / right
 	if(event.keyStates[SDL_SCANCODE_S]){
-		direction = (Vector3){0, 0, -1};
+		glm_vec3_add(direction.v, (vec3){0, 0, -1}, direction.v);
 	}
 	if(event.keyStates[SDL_SCANCODE_D]){
-		direction = (Vector3){1, 0, 0};
+		glm_vec3_add(direction.v, (vec3){1, 0, 0}, direction.v);
 	}
 	// Up / Down
 	if(event.keyStates[SDL_SCANCODE_LCTRL]){
-		direction = (Vector3){0, 1, 0};
+		glm_vec3_add(direction.v, (vec3){0, 1, 0}, direction.v);
 	}
 	if(event.keyStates[SDL_SCANCODE_SPACE]){
-		direction = (Vector3){0, -1, 0};
+		glm_vec3_add(direction.v, (vec3){0, -1, 0}, direction.v);
 	}
 
 	glm_vec3_scale(direction.v, movement_speed * view_distance, direction.v);
+	if(event.keyStates[SDL_SCANCODE_LSHIFT]){
+		glm_vec3_scale(direction.v, 3, direction.v);
+	}
 	glm_vec3_rotate(direction.v, -pitch * 2, (vec3){1, 0, 0});
 	glm_vec3_rotate(direction.v, yaw, (vec3){0, 1, 0});
 	view_position.x += -direction.x;

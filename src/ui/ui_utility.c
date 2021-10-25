@@ -23,11 +23,11 @@ void SetElementText(UIElement *element, char *format, ...){
 	}
 }
 
-UIClass *FindClass(UIScene *scene, char *name){
+UIClass *FindClass(UIDomain *domain, char *name){
 	if(name != NULL){
-		for(int i = 0; i < scene->num_classes; i++){
-			if(strcmp(scene->classes[i].name, name) == 0){
-				return &scene->classes[i];
+		for(int i = 0; i < domain->num_classes; i++){
+			if(strcmp(domain->classes[i].name, name) == 0){
+				return &domain->classes[i];
 			}
 		}
 	}
@@ -52,7 +52,7 @@ static UIElement *RecursiveFindElement(UIElement *element, char *name){
 	return child;
 }
 
-UIElement *FindElement(UIScene *scene, char *name){
-	UIElement *element = RecursiveFindElement(&scene->body, name);
+UIElement *FindElement(UIDomain *domain, char *name){
+	UIElement *element = RecursiveFindElement(&domain->body, name);
 	return element;
 }

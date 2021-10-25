@@ -29,7 +29,7 @@ typedef enum CurrentObject_e{
 
 static char *active_path;
 
-const int num_properties = 47;
+unsigned int num_properties = 0;
 const char *property_dict[] = {
 	"position",
 	"top",
@@ -90,7 +90,15 @@ const char *property_dict[] = {
 	"onclick",
 	"onrelease",
 
-}; // MAKE SURE to update 'num_properties' when editing the number of properties
+	NULL,
+
+}; // MAKE SURE to keep a NULL at the end of this array for counting number of properties
+
+void CountUIProperties(){
+	while(property_dict[num_properties] != NULL){
+		num_properties++;
+	}
+}
 
 static int min(int a, int b){
 	int result = a;
@@ -100,11 +108,12 @@ static int min(int a, int b){
 	return result;
 }
 
-UIClass *UI_NewClass(UIScene *scene){
-	// TODO: Add a 'global scene' to allow for external classes that can be accessed from any .uiss file
-	scene->classes = realloc(scene->classes, sizeof(UIClass) * ++scene->num_classes);
-	UIClass *class = &scene->classes[scene->num_classes - 1];
+UIClass *UI_NewClass(UIDomain *domain){
+	// TODO: Add a 'global domain' to allow for external classes that can be accessed from any .uiss file
+	domain->classes = realloc(domain->classes, sizeof(UIClass) * ++domain->num_classes);
+	UIClass *class = &domain->classes[domain->num_classes - 1];
 
+	// class->name = malloc(1);
 	class->name = NULL;
 	class->font_defined = false;
 	class->font = &default_font;
@@ -133,6 +142,7 @@ UIClass *UI_NewClass(UIScene *scene){
 		class->actions[i].enabled = false;
 		class->actions[i].num_classes = 0;
 		// class->actions[i].classes = malloc(sizeof(UIClass));
+		class->actions[i].classes = NULL;
 		// class->actions[i].function = NULL;
 	}
 
@@ -142,7 +152,7 @@ UIClass *UI_NewClass(UIScene *scene){
 
 void ResetElement(UIElement *element){
 	if(element != NULL){
-		element->image = false;
+		element->image = &undefined_texture;
 
 		element->font = &default_font;
 		element->text_size = 1;
@@ -177,7 +187,7 @@ UIElement *UI_NewElement(UIElement *parent){
 
 	element->name = NULL;
 
-	element->scene = parent->scene;
+	element->domain = parent->domain;
 
 	element->parent = parent;
 	element->num_children = 0;
@@ -189,7 +199,7 @@ UIElement *UI_NewElement(UIElement *parent){
 	element->classes = NULL;
 
 	//tmp
-	element->function = NULL;
+	// element->function = NULL;
 
 	ResetElement(element);
 
@@ -197,55 +207,56 @@ UIElement *UI_NewElement(UIElement *parent){
 	return element;
 }
 
-void InitializeScene(UIScene *scene){
-	scene->classes = NULL;
-	scene->num_classes = 0;
+void InitializeDomain(UIDomain *domain){
+	domain->classes = NULL;
+	domain->num_classes = 0;
 
-	scene->dynamic = false; // Scenes are static by default
+	domain->dynamic = false; // Domains are static by default
 
-	scene->needs_update = true;
+	domain->needs_update = true;
 
 
-	scene->body.name = malloc(sizeof(char) * 5);
-	strcpy(scene->body.name, "body");
+	domain->body.name = malloc(sizeof(char) * 5);
+	strcpy(domain->body.name, "body");
+	domain->body.name[4] = 0;
 
-	scene->body.scene = scene;
+	domain->body.domain = domain;
 
-	scene->body.parent = NULL;
-	scene->body.children = NULL;
-	scene->body.num_children = 0;
+	domain->body.parent = NULL;
+	domain->body.children = NULL;
+	domain->body.num_children = 0;
 
-	scene->body.image = false;
+	domain->body.image = false;
 
-	scene->body.text = 0;
-	scene->body.font = &default_font;
-	scene->body.text_size = 1;
-	scene->body.text_color = (Vector4){1, 1, 1, 1};
+	domain->body.text = NULL;
+	domain->body.font = &default_font;
+	domain->body.text_size = 1;
+	domain->body.text_color = (Vector4){1, 1, 1, 1};
 
-	scene->body.color = (Vector4){0, 0, 0, 0};
-	scene->body.border_color = (Vector4){0, 0, 0, 1};
+	domain->body.color = (Vector4){0, 0, 0, 0};
+	domain->body.border_color = (Vector4){0, 0, 0, 1};
 
-	scene->body.base_position= (Vector2){0, 0};
-	scene->body.base_scale 	= (Vector2){SCREEN_WIDTH, SCREEN_HEIGHT};
-	scene->body.content_rect= (Vector4){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-	scene->body.transform 	= (Vector4){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-	scene->body.margin 		= (Vector4){5, 5, 5, 5};
-	scene->body.border 		= (Vector4){0, 0, 0, 0};
-	scene->body.padding 	= (Vector4){10, 10, 10, 10};
-	scene->body.radius 		= (Vector4){0, 0, 0, 0};
+	domain->body.base_position= (Vector2){0, 0};
+	domain->body.base_scale 	= (Vector2){SCREEN_WIDTH, SCREEN_HEIGHT};
+	domain->body.content_rect= (Vector4){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+	domain->body.transform 	= (Vector4){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+	domain->body.margin 		= (Vector4){5, 5, 5, 5};
+	domain->body.border 		= (Vector4){0, 0, 0, 0};
+	domain->body.padding 	= (Vector4){10, 10, 10, 10};
+	domain->body.radius 		= (Vector4){0, 0, 0, 0};
 
-	scene->body.align = UI_ALIGN_HORIZONTAL;
-	scene->body.origin = UI_ORIGIN_TOP_LEFT;
+	domain->body.align = UI_ALIGN_HORIZONTAL;
+	domain->body.origin = UI_ORIGIN_TOP_LEFT;
 
-	scene->body.full_screen = true;
+	domain->body.full_screen = true;
 
-	scene->body.ease_position = 0;
+	domain->body.ease_position = 0;
 
-	scene->body.classes = NULL;
-	scene->body.num_classes = 0;
+	domain->body.classes = NULL;
+	domain->body.num_classes = 0;
 
-	scene->body.is_selected = false;
-	scene->body.is_active = true;
+	domain->body.is_selected = false;
+	domain->body.is_active = true;
 }
 
 static int strntol(char *string, unsigned int length){
@@ -361,12 +372,12 @@ static int GetPropertyHash(JSONObject_t json, unsigned int token){
 	return -1;
 }
 
-static UIClass *FindClass(UIScene *scene, char *name, unsigned int length){
+static UIClass *FindClass(UIDomain *domain, char *name, unsigned int length){
 	if(name != NULL){
-		for(int i = 0; i < scene->num_classes; i++){
-			if(length == strlen(scene->classes[i].name)){
-				if(strncmp(scene->classes[i].name, name, length) == 0){
-					return &scene->classes[i];
+		for(int i = 0; i < domain->num_classes; i++){
+			if(length == strlen(domain->classes[i].name)){
+				if(strncmp(domain->classes[i].name, name, length) == 0){
+					return &domain->classes[i];
 				}
 			}
 		}
@@ -388,18 +399,18 @@ static int SkipToken(JSONObject_t json, unsigned int token){
 	return current_token;
 }
 
-static void LogUnkownToken(JSONObject_t json, unsigned int token, UIScene *scene){
+static void LogUnkownToken(JSONObject_t json, unsigned int token, UIDomain *domain){
 	if(token <= json.num_tokens){
 		char *unkown_property = malloc(GetTokenLength(json, token) + 1);
 		strncpy(unkown_property, json.json_string + json.tokens[token].start, GetTokenLength(json, token));
 		unkown_property[GetTokenLength(json, token)] = 0;
-		printf("%s:%d Unknown property '%s'\n", scene->path, json.tokens[token].start, unkown_property);
-		DebugLog(D_WARN, "%s:%d Unknown property '%s'", scene->path, json.tokens[token].start, unkown_property);
+		printf("%s:%d Unknown property '%s'\n", domain->path, json.tokens[token].start, unkown_property);
+		DebugLog(D_WARN, "%s:%d Unknown property '%s'", domain->path, json.tokens[token].start, unkown_property);
 		free(unkown_property);
 	}
 }
 
-static void LoopAction(JSONObject_t json, unsigned int token, UIScene *scene, UIClass *parent_class, UI_Action act_type){
+static void LoopAction(JSONObject_t json, unsigned int token, UIDomain *domain, UIClass *parent_class, UI_Action act_type){
 	UIAction *action = &parent_class->actions[act_type];
 	// parent_class->actions = realloc(parent_class->actions, sizeof(UIAction) * (parent_class->num_actions + 1));
 	// UIAction *action = parent_class->actions[parent_class->num_actions];
@@ -416,13 +427,13 @@ static void LoopAction(JSONObject_t json, unsigned int token, UIScene *scene, UI
 
 		if(CompareToken(json, current_token, "class")){
 			action->classes = realloc(action->classes, sizeof(UIClass *) * (action->num_classes + 1));
-			UIClass *class = FindClass(scene, json.json_string + json.tokens[current_token + 1].start, GetTokenLength(json, current_token + 1));
+			UIClass *class = FindClass(domain, json.json_string + json.tokens[current_token + 1].start, GetTokenLength(json, current_token + 1));
 			if(class != NULL){
 				action->classes[action->num_classes] = class;
 				action->num_classes++;
-			}else{
-				action->classes = realloc(action->classes, sizeof(UIClass *) * (action->num_classes));
-				continue;
+			// }else{
+				// action->classes = realloc(action->classes, sizeof(UIClass *) * (action->num_classes));
+				// continue;
 			}
 			printf("class action\n");
 		}else if(CompareToken(json, current_token, "call")){
@@ -432,7 +443,7 @@ static void LoopAction(JSONObject_t json, unsigned int token, UIScene *scene, UI
 	}
 }
 
-static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UIClass *class){
+static int LoopClass(JSONObject_t json, unsigned int token, UIDomain *domain, UIClass *class){
 	int name_length = GetTokenLength(json, token);
 	class->name = calloc(sizeof(char), (name_length + 1));
 	strncpy(class->name, json.json_string + json.tokens[token].start, name_length);
@@ -671,31 +682,31 @@ static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UICl
 				break;
 
 			case 41: // onhover
-				LoopAction(json, current_token, scene, class, UI_ACT_HOVER);
+				LoopAction(json, current_token, domain, class, UI_ACT_HOVER);
 				break;
 			case 42: // onenter
-				LoopAction(json, current_token, scene, class, UI_ACT_ENTER);
+				LoopAction(json, current_token, domain, class, UI_ACT_ENTER);
 				break;
 			case 43: // onleave
-				LoopAction(json, current_token, scene, class, UI_ACT_LEAVE);
+				LoopAction(json, current_token, domain, class, UI_ACT_LEAVE);
 				break;
 			case 44: // onhold
-				LoopAction(json, current_token, scene, class, UI_ACT_HOLD);
+				LoopAction(json, current_token, domain, class, UI_ACT_HOLD);
 				break;
 			case 45: // onclick
-				LoopAction(json, current_token, scene, class, UI_ACT_CLICK);
+				LoopAction(json, current_token, domain, class, UI_ACT_CLICK);
 				break;
 			case 46: // onrelease
-				LoopAction(json, current_token, scene, class, UI_ACT_RELEASE);
+				LoopAction(json, current_token, domain, class, UI_ACT_RELEASE);
 				break;
 
 			case -2:
 				DebugLog(D_WARN, "COLON MISSING?");
-				LogUnkownToken(json, current_token, scene);
+				LogUnkownToken(json, current_token, domain);
 				break;
 
 			default:
-				LogUnkownToken(json, current_token, scene);
+				LogUnkownToken(json, current_token, domain);
 				break;
 		}
 
@@ -716,20 +727,20 @@ static int LoopClass(JSONObject_t json, unsigned int token, UIScene *scene, UICl
 	return current_token;
 }
 
-static int LoopClassBuffer(JSONObject_t json, unsigned int token, UIScene *scene){
+static int LoopClassBuffer(JSONObject_t json, unsigned int token, UIDomain *domain){
 	int current_token = token + 2;
 	UIClass *class = NULL;
 	for(int i = 0; i < json.tokens[token + 1].size; i++){
-		class = FindClass(scene, json.json_string + json.tokens[current_token].start, GetTokenLength(json, current_token));
+		class = FindClass(domain, json.json_string + json.tokens[current_token].start, GetTokenLength(json, current_token));
 		if(class == NULL){
-			// class = &scene->classes[scene->num_classes];
-			class = UI_NewClass(scene);
+			// class = &domain->classes[domain->num_classes];
+			class = UI_NewClass(domain);
 
 		// }else{
-			// scene->num_classes++;
+			// domain->num_classes++;
 
 		}
-		current_token = LoopClass(json, current_token, scene, class);
+		current_token = LoopClass(json, current_token, domain, class);
 		// printf("Class: %s\n", class->name);
 	}
 
@@ -737,7 +748,7 @@ static int LoopClassBuffer(JSONObject_t json, unsigned int token, UIScene *scene
 }
 
 // Returns the position of the next element or -1 if there is no next element
-static int LoopElement(JSONObject_t json, unsigned int token, UIScene *scene, UIElement *element){
+static int LoopElement(JSONObject_t json, unsigned int token, UIDomain *domain, UIElement *element){
 	int name_length = GetTokenLength(json, token);
 	element->name = malloc(sizeof(char) * (name_length + 1));
 	strncpy(element->name, json.json_string + json.tokens[token].start, name_length);
@@ -749,16 +760,20 @@ static int LoopElement(JSONObject_t json, unsigned int token, UIScene *scene, UI
 		if(CompareToken(json, current_token, "class")){
 			if(json.tokens[current_token + 1].type == JSMN_STRING){
 				element->classes = realloc(element->classes, sizeof(UIClass) * (element->num_classes + 1));
-				element->classes[element->num_classes] = FindClass(scene, json.json_string + json.tokens[current_token + 1].start, GetTokenLength(json, current_token + 1));
-				if(element->classes[element->num_classes] == NULL){
-					element->classes = realloc(element->classes, sizeof(UIClass) * (element->num_classes));
+				element->classes[element->num_classes] = FindClass(domain, json.json_string + json.tokens[current_token + 1].start, GetTokenLength(json, current_token + 1));
+				// if(element->classes[element->num_classes] == NULL){
+				// 	element->classes = realloc(element->classes, sizeof(UIClass) * (element->num_classes));
 
-				}else{
+				// }else{
+				// 	element->num_classes++;
+
+				// }
+				if(element->classes[element->num_classes] != NULL){
 					element->num_classes++;
 
 				}
 			}else{
-				DebugLog(D_ERR, "%s:%d Property 'class' must be of string type", scene->path, json.tokens[current_token + 1].start);
+				DebugLog(D_ERR, "%s:%d Property 'class' must be of string type", domain->path, json.tokens[current_token + 1].start);
 			}
 			printf("element class\n");
 			
@@ -768,7 +783,7 @@ static int LoopElement(JSONObject_t json, unsigned int token, UIScene *scene, UI
 				strncpy(element->text, json.json_string + json.tokens[current_token + 1].start, GetTokenLength(json, current_token + 1));
 				element->text[GetTokenLength(json, current_token + 1)] = 0;
 			}else{
-				DebugLog(D_ERR, "%s:%d Property 'text' must be of string type", scene->path, json.tokens[current_token + 1].start);
+				DebugLog(D_ERR, "%s:%d Property 'text' must be of string type", domain->path, json.tokens[current_token + 1].start);
 				current_token = SkipToken(json, current_token);
 				continue;
 			}
@@ -782,14 +797,14 @@ static int LoopElement(JSONObject_t json, unsigned int token, UIScene *scene, UI
 				int num_elements = json.tokens[current_token + 1].size;
 				unsigned int child_token = current_token + 2;
 				for(int i = 0; i < num_elements; i++){
-					child_token = LoopElement(json, child_token, scene, UI_NewElement(element));
+					child_token = LoopElement(json, child_token, domain, UI_NewElement(element));
 				}
 			}else{
-				DebugLog(D_ERR, "%s:%d Property 'elements' must be of array type", scene->path, json.tokens[current_token + 1].start);
+				DebugLog(D_ERR, "%s:%d Property 'elements' must be of array type", domain->path, json.tokens[current_token + 1].start);
 			}
 
 		}else{
-			LogUnkownToken(json, current_token, scene);
+			LogUnkownToken(json, current_token, domain);
 
 		}
 		current_token = SkipToken(json, current_token);
@@ -799,21 +814,21 @@ static int LoopElement(JSONObject_t json, unsigned int token, UIScene *scene, UI
 	return current_token;
 }
 
-static int LoopBody(JSONObject_t json, unsigned int token, UIScene *scene){
-	// 'token' indexes the token with the string "scene" so the array of elements is in 'token + 1'
+static int LoopBody(JSONObject_t json, unsigned int token, UIDomain *domain){
+	// 'token' indexes the token with the string "domain" so the array of elements is in 'token + 1'
 
 	// Start on the name of the first element
 	int current_token = token + 2;
 	for(int i = 0; i < json.tokens[token + 1].size; i++){
 		if(json.tokens[current_token].type == JSMN_STRING){
-			current_token = LoopElement(json, current_token, scene, UI_NewElement(&scene->body));
+			current_token = LoopElement(json, current_token, domain, UI_NewElement(&domain->body));
 		}
 	}
 
 	return current_token;
 }
 
-void LoadScene(char *path, UIScene *scene){
+void LoadDomain(char *path, UIDomain *domain){
 	JSONObject_t json;
 
 	SDL_RWops *fp = SDL_RWFromFile(path, "r");
@@ -870,24 +885,24 @@ void LoadScene(char *path, UIScene *scene){
 	jsmn_parse(&parser, json.json_string, strlen(json.json_string), json.tokens, json.num_tokens);
 
 
-	scene->path = malloc(sizeof(char) * (strlen(path) + 1));
-	strncpy(scene->path, path, strlen(path));
-	scene->path[strlen(path)] = 0;
+	domain->path = malloc(sizeof(char) * (strlen(path) + 1));
+	strncpy(domain->path, path, strlen(path));
+	domain->path[strlen(path)] = 0;
 
 
 	if(json.tokens[0].type != JSMN_OBJECT){
-		DebugLog(D_ERR, "%s:%d UI scene needs to be encapsulated in curly braces", scene->path, json.tokens[0].start);
+		DebugLog(D_ERR, "%s:%d UI domain needs to be encapsulated in curly braces", domain->path, json.tokens[0].start);
 		goto exit;
 	}
 
 	int current_token = 1;
 	for(int i = 0; i < json.tokens[0].size; i++){
 		if(CompareToken(json, current_token, "classes")){
-			current_token = LoopClassBuffer(json, current_token, scene);
+			current_token = LoopClassBuffer(json, current_token, domain);
 		}else if(CompareToken(json, current_token, "body")){
-			current_token = LoopBody(json, current_token, scene);
+			current_token = LoopBody(json, current_token, domain);
 		}else{
-			LogUnkownToken(json, current_token, scene);
+			LogUnkownToken(json, current_token, domain);
 			current_token = SkipToken(json, current_token);
 		}
 	}

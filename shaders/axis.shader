@@ -15,11 +15,20 @@ layout (std140) uniform ShaderGlobals{
 
 out vec3 color_v;
 
+out vec3 pos_v;
+flat out vec3 pos_f;
+
+
 uniform mat4 model;
 
 void main(){
 	color_v = color_a;
 	gl_Position = projection_persp * view * model * vec4(pos_a, 1);
+
+
+	pos_v = (projection_persp * view * model * vec4(pos_a, 1)).xyz;
+	pos_f = (projection_persp * view * model * vec4(pos_a, 1)).xyz;
+
 }
 
 @shader fragment
@@ -27,9 +36,18 @@ void main(){
 
 out vec4 FragColor;
 
+in vec3 pos_v;
+flat in vec3 pos_f;
+
+uniform float zoom;
+
 in vec3 color_v;
 
 void main(){
+
+	if(fract(length(pos_f - pos_v) * 400 / 20 / zoom) > 0.5){
+		discard;
+	}
 
 	FragColor = vec4(color_v, 1);
 

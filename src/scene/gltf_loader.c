@@ -15,7 +15,7 @@ cgltf_buffer_view *texc;
 cgltf_buffer_view *ind;
 
 void LoadGLTF(){
-	const char file[] = "../models/axis.gltf";
+	const char file[] = "../models/soda_can.gltf";
 
 	cgltf_options options;
 	memset(&options, 0, sizeof(cgltf_options));

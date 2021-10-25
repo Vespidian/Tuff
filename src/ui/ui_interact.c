@@ -30,14 +30,14 @@ static void ApplyAction(UIElement *element, UI_Action action){
 					ApplyClass(element, class->actions[action].classes[j]);
 				}
 			}
-			element->scene->needs_update = true;
+			element->domain->needs_update = true;
 		}
 	}
 }
 
 void CheckInteractions(UIElement *element){
 	/** TODO: 
-	 *  - Add octree / quadtree system for ui scene
+	 *  - Add octree / quadtree system for ui domain
 	 *  - Check mouse collision against all elements in current quadtree
 	 *  - Only apply actions to the element with the largest z value (the top-most element)
 	 */
@@ -57,9 +57,9 @@ void CheckInteractions(UIElement *element){
 			if(mouse_clicked){ // ONCLICK
 				ApplyAction(element, UI_ACT_CLICK);
 				element->is_selected = true;
-				if(element->function != NULL){
-					element->function(element);
-				}
+				// if(element->function != NULL){
+				// 	element->function(element);
+				// }
 
 			}
 		}else{

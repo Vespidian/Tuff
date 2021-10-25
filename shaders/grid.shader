@@ -15,15 +15,10 @@ layout (std140) uniform ShaderGlobals{
 
 uniform vec3 grid_pos_u;
 
-out vec3 pos_v;
 out vec3 color_v;
-out vec3 grid_pos_v;
 
 void main(){
 	gl_Position = projection_persp * view * vec4(pos_a, 1);
-	// gl_Position = vec4(pos_a, 1);
-	pos_v = pos_a;
-	grid_pos_v = grid_pos_u;
 
 	if(pos_a.z == 0){
 		color_v = vec3(1, 0.2, 0.322);
@@ -39,13 +34,11 @@ void main(){
 #version 130
 out vec4 FragColor;
 
-in vec3 pos_v;
 in vec3 color_v;
-in vec3 grid_pos_v;
 
 void main(){
+	
 	FragColor = vec4(color_v, 1);
-	// FragColor *= 4 - distance(vec3(0), pos_v);
 }
 // #version 140
 // #extension GL_ARB_explicit_attrib_location : enable

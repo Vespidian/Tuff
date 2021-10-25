@@ -12,15 +12,15 @@
 ShaderObject ui_shader;
 AttribArray ui_vao;
 
-UIScene *scene_stack;
-unsigned int num_scenes = 0;
+UIDomain *scene_stack;
+unsigned int num_domains = 0;
 
 static void WindowResize(EventData event){
 	if(event.e->window.event == SDL_WINDOWEVENT_RESIZED){
-		for(int i = 0; i < num_scenes; i++){
+		for(int i = 0; i < num_domains; i++){
 			if(scene_stack[i].body.full_screen){
 				scene_stack[i].body.transform.z = SCREEN_WIDTH;
-				scene_stack[i].body.transform.w = SCREEN_WIDTH;
+				scene_stack[i].body.transform.w = SCREEN_HEIGHT;
 			}
 		}
 	}
@@ -34,6 +34,8 @@ void InitUI(){
 	UniformSetMat4(&ui_shader, "tex_coordinates", default_texture_coordinates);
 
 	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, WindowResize);
+
+	CountUIProperties();
 
 	DebugLog(D_ACT, "Initialized UI subsystem");
 }
@@ -87,39 +89,39 @@ static void RecursiveRender(UIElement *element, unsigned int layer){
 	}
 }
 
-void UI_RenderScene(UIScene *scene){
-	if(scene != NULL){
-		for(int i = 0; i < scene->body.num_children; i++){
-			// if(scene->needs_update){
-				// if(&scene->body.children[i] != NULL){
-			RecursiveApplyStaticClasses(&scene->body.children[i]);
-			RecursiveApplyElementClasses(&scene->body.children[i]);
-			RecursiveCheckInteract(&scene->body.children[i]);
-			RecursiveApplyElementClasses(&scene->body.children[i]);
+void UI_RenderDomain(UIDomain *domain){
+	if(domain != NULL){
+		for(int i = 0; i < domain->body.num_children; i++){
+			// if(domain->needs_update){
+				// if(&domain->body.children[i] != NULL){
+			RecursiveApplyStaticClasses(&domain->body.children[i]);
+			RecursiveApplyElementClasses(&domain->body.children[i]);
+			RecursiveCheckInteract(&domain->body.children[i]);
+			RecursiveApplyElementClasses(&domain->body.children[i]);
 				// }
 			// }
 		}
-			// RecursiveApplyStaticClasses(&scene->body);
-			// RecursiveApplyElementClasses(&scene->body);
-			// RecursiveCheckInteract(&scene->body);
-			// RecursiveApplyElementClasses(&scene->body);
-		// scene->needs_update = false;
+			// RecursiveApplyStaticClasses(&domain->body);
+			// RecursiveApplyElementClasses(&domain->body);
+			// RecursiveCheckInteract(&domain->body);
+			// RecursiveApplyElementClasses(&domain->body);
+		// domain->needs_update = false;
 
 
-		for(int i = 0; i < scene->body.num_children; i++){
-			RecursiveRender(&scene->body.children[i], 0);
+		for(int i = 0; i < domain->body.num_children; i++){
+			RecursiveRender(&domain->body.children[i], 0);
 		}
 	}
 }
 
-UIScene *UI_LoadScene(char *path){// TODO: Safeguard the reallocation of the scene_stack so that 'element.scene' can never point to garbage
-	scene_stack = realloc(scene_stack, sizeof(UIScene) * (num_scenes + 1));
+UIDomain *UI_LoadDomain(char *path){// TODO: Safeguard the reallocation of the scene_stack so that 'element.domain' can never point to garbage
+	scene_stack = realloc(scene_stack, sizeof(UIDomain) * (num_domains + 1));
 	
-	InitializeScene(&scene_stack[num_scenes]);
+	InitializeDomain(&scene_stack[num_domains]);
 
-	LoadScene(path, &scene_stack[num_scenes]);
+	LoadDomain(path, &scene_stack[num_domains]);
 
-	return &scene_stack[num_scenes++];
+	return &scene_stack[num_domains++];
 }
 
 void FreeClass(UIClass *class){
@@ -152,25 +154,29 @@ void RecursiveFreeElement(UIElement *element){
 	}
 }
 
-void UI_FreeScene(UIScene *scene){
-	RecursiveFreeElement(&scene->body);
+void UI_FreeDomain(UIDomain *domain){
+	RecursiveFreeElement(&domain->body);
 
-	for(int i = 0; i < scene->num_classes; i++){
-		FreeClass(&scene->classes[i]);
+	for(int i = 0; i < domain->num_classes; i++){
+		FreeClass(&domain->classes[i]);
 	}
-	free(scene->classes);
-	// scene->num_classes = 0;
+	if(domain->num_classes > 0){
+		free(domain->classes);
+	}
+	// domain->num_classes = 0;
 
-	free(scene->path);
+	if(domain->path != NULL){
+		free(domain->path);
+	}
 
-	num_scenes--;
+	num_domains--;
 	// scene_stack = NULL;
-	scene = NULL; 
+	domain = NULL; 
 
-	// memcpy(scene, scene + sizeof(UIClass), )
-	// TODO: decide whether we want to reload all ui scenes at once or individually
+	// memcpy(domain, domain + sizeof(UIClass), )
+	// TODO: decide whether we want to reload all ui domains at once or individually
 	// Empty all:
-	// free the entire scene stack and set it to null. load the scene files
+	// free the entire domain stack and set it to null. load the domain files
 	// Individual frees:
-	// set the specified scene to null, shift over all other scenes to fill the newly created gap
+	// set the specified domain to null, shift over all other domains to fill the newly created gap
 }

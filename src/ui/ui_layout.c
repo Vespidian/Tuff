@@ -67,7 +67,9 @@ static Vector2 CalculateScale(UIElement *element, UIClass *class){
 		element->scale_defined[i - 2] = true;
 		switch(class->transform_type.v[i]){
 			case UI_PERCENT:
-				scale.v[i - 2] = element->parent->transform.v[i] * class->transform.v[i];
+				if(element->parent->scale_defined[i - 2] == true){
+					scale.v[i - 2] = element->parent->base_scale.v[i - 2] * class->transform.v[i];
+				}
 				break;
 			case UI_PIXELS:
 				scale.v[i - 2] = class->transform.v[i];
@@ -146,6 +148,7 @@ static Vector2 CalculatePosition(UIElement *element, UIClass *class){
 				element->origin |= 1 << (i + 1);
 				// Clear the opposite direction
 				element->origin &= ~(1 << (!i * 3));
+				// element->origin = 0x0110;
 			}
 		}
 	}
@@ -198,6 +201,7 @@ static Vector2 CalculateOffset(UIElement *element){
 			break;
 		case UI_ORIGIN_BOTTOM_RIGHT:
 			origin_offset = (Vector2){scale.x, scale.y};
+			
 			break;
 	}
 
@@ -294,8 +298,8 @@ static Vector2 CalculateFullBounds(UIElement *element){
 static Vector2 CalculateChildPosition(UIElement *element, Vector2 offset){
 	// TODO: add options for aligning elements to 'right' and 'bottom'
 	// element->transform = (Vector4){
-		element->transform.x += offset.x + element->margin.w - element->origin_offset.x;
-		element->transform.y += offset.y + element->margin.x - element->origin_offset.y;
+		element->transform.x += offset.x + element->margin.w - element->parent->origin_offset.x;
+		element->transform.y += offset.y + element->margin.x - element->parent->origin_offset.y;
 	// };
 
 	Vector2 next_offset = CalculateFullBounds(element);
@@ -350,7 +354,6 @@ void RecursiveApplyStaticClasses(UIElement *element){
 
 void RecursiveApplyElementClasses(UIElement *element){
 	// CalculateContentRect(element);
-	CalculateOffset(element);
 
 	if(element->children != NULL){
 		for(int i = 0; i < element->num_children; i++){
@@ -379,7 +382,11 @@ void RecursiveApplyElementClasses(UIElement *element){
 			element->transform.w = offset.y - element->transform.y + element->padding.z + element->border.z + largest_child.y;
 		}
 
+
 	}
+	CalculateOffset(element);
+	element->transform.x -= element->origin_offset.x;
+	element->transform.y -= element->origin_offset.y;
 	CalculateRadiusLimit(element->transform.z, &element->radius.z, &element->radius.w);
 	CalculateRadiusLimit(element->transform.w, &element->radius.y, &element->radius.z);
 	CalculateRadiusLimit(element->transform.w, &element->radius.w, &element->radius.x);

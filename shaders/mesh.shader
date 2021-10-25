@@ -47,6 +47,7 @@ void main(){
 	// gl_Position = projection * view * model * vec4(texture_a, 1);
 	frag_pos_v = vec3(model * vec4(pos_a, 1));
 	gl_PointSize = gl_Position.z;
+
 }
 
 @shader fragment
@@ -59,7 +60,6 @@ in vec3 normal_v;
 in vec2 texture_v;
 in mat3 TBN_v;
 uniform float value;
-
 
 in vec3 frag_pos_v;
 
@@ -118,7 +118,6 @@ void main(){
 	// FragColor *= vec4(ambient + specular, 1);
 	// FragColor = vec4(light_pos, 1);
 	// FragColor = texture(normal_map, texture_v.xy);
-	// FragColor = vec4(1);
 
 
 }
