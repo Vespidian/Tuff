@@ -156,7 +156,6 @@ void RecursiveFreeElement(UIElement *element){
 
 void UI_FreeDomain(UIDomain *domain){
 	RecursiveFreeElement(&domain->body);
-
 	for(int i = 0; i < domain->num_classes; i++){
 		FreeClass(&domain->classes[i]);
 	}
@@ -171,7 +170,7 @@ void UI_FreeDomain(UIDomain *domain){
 
 	num_domains--;
 	// scene_stack = NULL;
-	domain = NULL; 
+	// domain = NULL; 
 
 	// memcpy(domain, domain + sizeof(UIClass), )
 	// TODO: decide whether we want to reload all ui domains at once or individually

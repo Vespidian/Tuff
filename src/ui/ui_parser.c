@@ -114,7 +114,7 @@ UIClass *UI_NewClass(UIDomain *domain){
 	UIClass *class = &domain->classes[domain->num_classes - 1];
 
 	// class->name = malloc(1);
-	class->name = NULL;
+	class->name = 0;
 	class->font_defined = false;
 	class->font = &default_font;
 	class->text_size_defined = false;
@@ -185,7 +185,7 @@ UIElement *UI_NewElement(UIElement *parent){
 	parent->children = realloc(parent->children, sizeof(UIElement) * ++parent->num_children);
 	UIElement *element = &parent->children[parent->num_children - 1];
 
-	element->name = NULL;
+	element->name = 0;
 
 	element->domain = parent->domain;
 
@@ -193,7 +193,7 @@ UIElement *UI_NewElement(UIElement *parent){
 	element->num_children = 0;
 	element->children = NULL;
 
-	element->text = NULL;
+	element->text = 0;
 
 	element->num_classes = 0;
 	element->classes = NULL;
@@ -228,7 +228,7 @@ void InitializeDomain(UIDomain *domain){
 
 	domain->body.image = false;
 
-	domain->body.text = NULL;
+	domain->body.text = 0;
 	domain->body.font = &default_font;
 	domain->body.text_size = 1;
 	domain->body.text_color = (Vector4){1, 1, 1, 1};
@@ -445,7 +445,7 @@ static void LoopAction(JSONObject_t json, unsigned int token, UIDomain *domain, 
 
 static int LoopClass(JSONObject_t json, unsigned int token, UIDomain *domain, UIClass *class){
 	int name_length = GetTokenLength(json, token);
-	class->name = calloc(sizeof(char), (name_length + 1));
+	class->name = calloc(1, (name_length + 1));
 	strncpy(class->name, json.json_string + json.tokens[token].start, name_length);
 
 	// 'token' is the name of the class and 'token + 2' is the first property within the class
@@ -750,7 +750,7 @@ static int LoopClassBuffer(JSONObject_t json, unsigned int token, UIDomain *doma
 // Returns the position of the next element or -1 if there is no next element
 static int LoopElement(JSONObject_t json, unsigned int token, UIDomain *domain, UIElement *element){
 	int name_length = GetTokenLength(json, token);
-	element->name = malloc(sizeof(char) * (name_length + 1));
+	element->name = calloc(1, name_length + 1);
 	strncpy(element->name, json.json_string + json.tokens[token].start, name_length);
 	element->name[GetTokenLength(json, token)] = 0;
 
@@ -779,7 +779,7 @@ static int LoopElement(JSONObject_t json, unsigned int token, UIDomain *domain, 
 			
 		}else if(CompareToken(json, current_token, "text")){
 			if(json.tokens[current_token + 1].type == JSMN_STRING){
-				element->text = malloc(GetTokenLength(json, current_token + 1) + 1);
+				element->text = calloc(1, GetTokenLength(json, current_token + 1) + 1);
 				strncpy(element->text, json.json_string + json.tokens[current_token + 1].start, GetTokenLength(json, current_token + 1));
 				element->text[GetTokenLength(json, current_token + 1)] = 0;
 			}else{
@@ -842,7 +842,7 @@ void LoadDomain(char *path, UIDomain *domain){
 		printf("Error reading length of JSON file '%s'", path);
 	}
 	printf("file length: %ld\n", file_length);
-	json.json_string = malloc(sizeof(char) * (file_length + 1));
+	json.json_string = malloc(file_length + 1);
 	SDL_RWread(fp, json.json_string, 1, file_length);
 	
 	// Null terminate the copied string

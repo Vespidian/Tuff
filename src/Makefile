@@ -5,20 +5,22 @@ DISABLE_FLAGS = -Wno-missing-braces
 INCLUDE = -isystem ../include -L../lib
 
 C_SOURCES = $(wildcard *.c */*.c */*/*.c)
-HEADERS = $(wildcard *.h */*.h */*/*.h)
 
 OBJ = $(C_SOURCES:.c=.o)
 
-
-../bin/foXandbox.exe: $(OBJ)
+../bin/main.exe: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(DISABLE_FLAGS) $(INCLUDE)
 	
-%.o: %.c $(HEADERS)
-	$(CC) $(CFLAGS) $(DISABLE_FLAGS) $(INCLUDE) -c $< -o $@
+%.o: %.c
+	$(CC) $(CFLAGS) $(DISABLE_FLAGS) $(INCLUDE) -c -MMD $< -o $@
 	
-	
+-include *.d */*.d */*/*.d
+
 clean:
 	rm -rf *.o
 	rm -rf */*.o
 	rm -rf */*/*.o
+	rm -rf *.d
+	rm -rf */*.d
+	rm -rf */*/*.d
 	rm ../*.exe

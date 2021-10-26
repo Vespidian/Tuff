@@ -1,4 +1,4 @@
-@shader vertex
+mak@shader vertex
 #version 130
 #extension GL_ARB_explicit_attrib_location : enable
 layout (location = 0) in vec3 pos_a;

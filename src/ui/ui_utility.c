@@ -26,6 +26,9 @@ void SetElementText(UIElement *element, char *format, ...){
 UIClass *FindClass(UIDomain *domain, char *name){
 	if(name != NULL){
 		for(int i = 0; i < domain->num_classes; i++){
+			if(domain->classes[i].name == NULL){
+				printf("OH NO\n");
+			}
 			if(strcmp(domain->classes[i].name, name) == 0){
 				return &domain->classes[i];
 			}

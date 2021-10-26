@@ -86,7 +86,7 @@ void Setup(){
 	InitFonts();
 
 	int start = SDL_GetTicks();
-	UI_LoadDomain("../ui/minimal.uiss");
+	// UI_LoadDomain("../ui/minimal.uiss");
 	UI_LoadDomain("../ui/tests/color.uiss");
 	// FindElement(&scene_stack[0], "color")->function = script_onclick;
 	// FindElement(&scene_stack[0], "layout")->function = script_onclick;
@@ -225,8 +225,9 @@ static void ReloadUI(){
 	for(int i = 0; i < num_domains; i++){
 		UI_FreeDomain(&scene_stack[i]);
 	}
+	printf("BYUN DOMAINS: %d\n", num_domains);
 	UI_LoadDomain("../ui/minimal.uiss");
-	// UI_LoadDomain("../ui/tests/color.uiss");
+	UI_LoadDomain("../ui/tests/color.uiss");
 	// FindElement(&scene_stack[0], "color")->function = script_onclick;
 	// FindElement(&scene_stack[0], "layout")->function = script_onclick;
 }
