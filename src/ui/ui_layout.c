@@ -341,54 +341,57 @@ static void LargestChild(Vector2 *current, UIElement *new_child){
 }
 
 void RecursiveApplyStaticClasses(UIElement *element){
-	ResetElement(element);
-	for(int i = 0; i < element->num_classes; i++){
-		ApplyClass(element, element->classes[i]);
-	}
-	if(element->children != NULL){
-		for(int i = 0; i < element->num_children; i++){
-			RecursiveApplyStaticClasses(&element->children[i]);
+	if(element != NULL){
+		ResetElement(element);
+		for(int i = 0; i < element->num_classes; i++){
+			ApplyClass(element, element->classes[i]);
+		}
+		if(element->children != NULL){
+			for(int i = 0; i < element->num_children; i++){
+				RecursiveApplyStaticClasses(&element->children[i]);
+			}
 		}
 	}
 }
 
 void RecursiveApplyElementClasses(UIElement *element){
 	// CalculateContentRect(element);
-
-	if(element->children != NULL){
-		for(int i = 0; i < element->num_children; i++){
-			RecursiveApplyElementClasses(&element->children[i]);
+	if(element != NULL){
+		if(element->children != NULL){
+			for(int i = 0; i < element->num_children; i++){
+				RecursiveApplyElementClasses(&element->children[i]);
+			}
 		}
+
+		// Calculate positioning
+		if(element->num_children != 0){
+			// TODO: Fix origin offset with children
+			Vector2 offset = (Vector2){element->base_position.x + element->padding.w + element->border.w, element->base_position.y + element->padding.x + element->border.x};
+			// Now we calculate the size and positioning of elements relative to each other
+			Vector2 largest_child = {0, 0};
+			for(int i = 0; i < element->num_children; i++){
+				offset = CalculateChildPosition(&element->children[i], offset);
+				LargestChild(&largest_child, &element->children[i]);
+			}
+
+			largest_child.y *= (element->align == UI_ALIGN_HORIZONTAL);
+			largest_child.x *= (element->align == UI_ALIGN_VERTICAL);
+
+			if(!element->scale_defined[0]){
+				element->transform.z = offset.x - element->transform.x + element->padding.y + element->border.y + largest_child.x;
+			}
+			if(!element->scale_defined[1]){
+				element->transform.w = offset.y - element->transform.y + element->padding.z + element->border.z + largest_child.y;
+			}
+
+
+		}
+		CalculateOffset(element);
+		element->transform.x -= element->origin_offset.x;
+		element->transform.y -= element->origin_offset.y;
+		CalculateRadiusLimit(element->transform.z, &element->radius.z, &element->radius.w);
+		CalculateRadiusLimit(element->transform.w, &element->radius.y, &element->radius.z);
+		CalculateRadiusLimit(element->transform.w, &element->radius.w, &element->radius.x);
+		CalculateRadiusLimit(element->transform.z, &element->radius.x, &element->radius.y);
 	}
-
-	// Calculate positioning
-	if(element->num_children != 0){
-		// TODO: Fix origin offset with children
-		Vector2 offset = (Vector2){element->base_position.x + element->padding.w + element->border.w, element->base_position.y + element->padding.x + element->border.x};
-		// Now we calculate the size and positioning of elements relative to each other
-		Vector2 largest_child = {0, 0};
-		for(int i = 0; i < element->num_children; i++){
-			offset = CalculateChildPosition(&element->children[i], offset);
-			LargestChild(&largest_child, &element->children[i]);
-		}
-
-		largest_child.y *= (element->align == UI_ALIGN_HORIZONTAL);
-		largest_child.x *= (element->align == UI_ALIGN_VERTICAL);
-
-		if(!element->scale_defined[0]){
-			element->transform.z = offset.x - element->transform.x + element->padding.y + element->border.y + largest_child.x;
-		}
-		if(!element->scale_defined[1]){
-			element->transform.w = offset.y - element->transform.y + element->padding.z + element->border.z + largest_child.y;
-		}
-
-
-	}
-	CalculateOffset(element);
-	element->transform.x -= element->origin_offset.x;
-	element->transform.y -= element->origin_offset.y;
-	CalculateRadiusLimit(element->transform.z, &element->radius.z, &element->radius.w);
-	CalculateRadiusLimit(element->transform.w, &element->radius.y, &element->radius.z);
-	CalculateRadiusLimit(element->transform.w, &element->radius.w, &element->radius.x);
-	CalculateRadiusLimit(element->transform.z, &element->radius.x, &element->radius.y);
 }

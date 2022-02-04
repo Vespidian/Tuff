@@ -31,6 +31,8 @@ extern FontObject default_font;
  */
 void InitFonts();
 
+void FreeFontStack();
+
 /**
  *  @brief generate a new font (to be used when rendering text)
  *  @param name name of the font

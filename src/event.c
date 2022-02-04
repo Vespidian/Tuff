@@ -9,7 +9,7 @@ SDL_Event e;
 iVector2 mouse_pos = {0, 0};
 iVector2 mouse_pos_previous = {0, 0};
 
-InputEvent *events;
+InputEvent *events = NULL;
 int num_events = 0;
 
 bool enable_input = true;
@@ -45,9 +45,12 @@ void InitEvents(){
 }
 
 void BindEvent(EventPollType_et pollType, Uint32 eventType, EV_Function function){
-	events = realloc(events, sizeof(InputEvent) * (num_events + 1));
-	events[num_events] = (InputEvent){pollType, eventType, function, false, 0x00};
-	num_events++;
+	InputEvent *tmp = realloc(events, sizeof(InputEvent) * (num_events + 1));
+	if(tmp != NULL){
+		events = tmp;
+		events[num_events] = (InputEvent){pollType, eventType, function, false, 0x00};
+		num_events++;
+	}
 }
 
 void PollEvents(){
@@ -111,6 +114,12 @@ void BindKeyEvent(EV_Function function, char keyCode, Uint32 keyPressType){
 	}
 	BindEvent(EV_POLL_ACCURATE, keyPressType, function);
 	events[num_events - 1] = (InputEvent){EV_POLL_ACCURATE, keyPressType, function, true, keyCode};
+}
+
+void QuitEvents(){
+	num_events = 0;
+	free(events);
+	events = NULL;
 }
 
 //Events

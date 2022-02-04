@@ -3,7 +3,7 @@
     "problems.decorations.enabled": false,
     "C_Cpp.dimInactiveRegions": true,
     "C_Cpp.default.includePath": [
-        "${workspaceFolder}/libs/include",
+        "${workspaceFolder}/include",
         "C:/MinGW/include"
     ],
 	"terminal.external.windowsExec": "S:\Programs\cmder\Cmder.exe"

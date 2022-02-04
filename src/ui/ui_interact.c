@@ -81,10 +81,12 @@ void CheckInteractions(UIElement *element){
 }
 
 void RecursiveCheckInteract(UIElement *element){
-	if(element->is_active){
-		for(int i = 0; i < element->num_children; i++){
-			RecursiveCheckInteract(&element->children[i]);
+	if(element != NULL){
+		if(element->is_active){
+			for(int i = 0; i < element->num_children; i++){
+				RecursiveCheckInteract(&element->children[i]);
+			}
+			CheckInteractions(element);
 		}
-		CheckInteractions(element);
 	}
 }

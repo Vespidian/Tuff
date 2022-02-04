@@ -2,10 +2,13 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include "../global.h"
-#include <jsmn.h>
+#ifndef JSMN_HEADER
+	#define JSMN_HEADER
+	#include <jsmn.h>
+#endif
 #include "../debug.h"
 
 #include "ui.h"
@@ -110,43 +113,48 @@ static int min(int a, int b){
 
 UIClass *UI_NewClass(UIDomain *domain){
 	// TODO: Add a 'global domain' to allow for external classes that can be accessed from any .uiss file
-	domain->classes = realloc(domain->classes, sizeof(UIClass) * ++domain->num_classes);
-	UIClass *class = &domain->classes[domain->num_classes - 1];
+	UIClass *tmp_classes = realloc(domain->classes, sizeof(UIClass) * ++domain->num_classes);
+	if(tmp_classes != NULL){
+		domain->classes = tmp_classes;
+		UIClass *class = &domain->classes[domain->num_classes - 1];
 
-	// class->name = malloc(1);
-	class->name = 0;
-	class->font_defined = false;
-	class->font = &default_font;
-	class->text_size_defined = false;
-	class->color_defined = false;
-	class->opacity_defined = false;
-	class->border_color_defined = false;
-	class->border_opacity_defined = false;
-	class->text_color_defined = false;
-	class->text_opacity_defined = false;
-	class->transition_defined = false;
-	class->is_active = true;
-	class->align = UI_ALIGN_UNDEFINED;
-	class->origin = UI_ORIGIN_UNDEFINED;
+		class->name = NULL;
+		class->font_defined = false;
+		class->font = &default_font;
+		class->text_size_defined = false;
+		class->color_defined = false;
+		class->opacity_defined = false;
+		class->border_color_defined = false;
+		class->border_opacity_defined = false;
+		class->text_color_defined = false;
+		class->text_opacity_defined = false;
+		class->transition_defined = false;
+		class->is_active = true;
+		class->align = UI_ALIGN_UNDEFINED;
+		class->origin = UI_ORIGIN_UNDEFINED;
 
-	class->transform_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
-	class->transform_relative_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
-	class->margin_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
-	class->border_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
-	class->padding_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
-	class->radius_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
+		class->transform_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
+		class->transform_relative_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
+		class->margin_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
+		class->border_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
+		class->padding_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
+		class->radius_type = (UI_Property){UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED, UI_UNDEFINED};
 
-	class->ease = UI_EASE_UNDEFINED;
+		class->ease = UI_EASE_UNDEFINED;
 
-	for(int i = 0; i < UI_NUM_ACTIONS; i++){
-		class->actions[i].enabled = false;
-		class->actions[i].num_classes = 0;
-		// class->actions[i].classes = malloc(sizeof(UIClass));
-		class->actions[i].classes = NULL;
-		// class->actions[i].function = NULL;
+		for(int i = 0; i < UI_NUM_ACTIONS; i++){
+			class->actions[i].enabled = false;
+			class->actions[i].num_classes = 0;
+			// class->actions[i].classes = malloc(sizeof(UIClass));
+			class->actions[i].classes = NULL;
+			// class->actions[i].function = NULL;
+		}
+
+		return class;
+	}else{
+		DebugLog(D_WARN, "Could not create new class in UI domain: %s", domain->path);
+		return NULL;
 	}
-
-	return class;
 }
 
 
@@ -182,29 +190,35 @@ void ResetElement(UIElement *element){
 }
 
 UIElement *UI_NewElement(UIElement *parent){
-	parent->children = realloc(parent->children, sizeof(UIElement) * ++parent->num_children);
-	UIElement *element = &parent->children[parent->num_children - 1];
+	UIElement *tmp_children = realloc(parent->children, sizeof(UIElement) * ++parent->num_children);
+	if(tmp_children != NULL){
+		parent->children = tmp_children;
+		UIElement *element = &parent->children[parent->num_children - 1];
 
-	element->name = 0;
+		element->name = NULL;
 
-	element->domain = parent->domain;
+		element->domain = parent->domain;
 
-	element->parent = parent;
-	element->num_children = 0;
-	element->children = NULL;
+		element->parent = parent;
+		element->num_children = 0;
+		element->children = NULL;
 
-	element->text = 0;
+		element->text = NULL;
 
-	element->num_classes = 0;
-	element->classes = NULL;
+		element->num_classes = 0;
+		element->classes = NULL;
 
-	//tmp
-	// element->function = NULL;
+		//tmp
+		// element->function = NULL;
 
-	ResetElement(element);
+		ResetElement(element);
 
 
-	return element;
+		return element;
+	}else{
+		DebugLog(D_WARN, "Could not create child element for element '%s'", parent->name);
+		return NULL;
+	}
 }
 
 void InitializeDomain(UIDomain *domain){
@@ -412,7 +426,7 @@ static void LogUnkownToken(JSONObject_t json, unsigned int token, UIDomain *doma
 
 static void LoopAction(JSONObject_t json, unsigned int token, UIDomain *domain, UIClass *parent_class, UI_Action act_type){
 	UIAction *action = &parent_class->actions[act_type];
-	// parent_class->actions = realloc(parent_class->actions, sizeof(UIAction) * (parent_class->num_actions + 1));
+	// parent_class->actions = real loc(parent_class->actions, sizeof(UIAction) * (parent_class->num_actions + 1));
 	// UIAction *action = parent_class->actions[parent_class->num_actions];
 
 	// Initialize action
@@ -426,16 +440,20 @@ static void LoopAction(JSONObject_t json, unsigned int token, UIDomain *domain, 
 	for(int i = 0; i < json.tokens[token + 1].size; i++){
 
 		if(CompareToken(json, current_token, "class")){
-			action->classes = realloc(action->classes, sizeof(UIClass *) * (action->num_classes + 1));
-			UIClass *class = FindClass(domain, json.json_string + json.tokens[current_token + 1].start, GetTokenLength(json, current_token + 1));
-			if(class != NULL){
-				action->classes[action->num_classes] = class;
-				action->num_classes++;
-			// }else{
-				// action->classes = realloc(action->classes, sizeof(UIClass *) * (action->num_classes));
-				// continue;
+			UIClass **tmp_classes = realloc(action->classes, sizeof(UIClass *) * (action->num_classes + 1));
+			if(tmp_classes != NULL){
+				action->classes = tmp_classes;
+
+				UIClass *class = FindClass(domain, json.json_string + json.tokens[current_token + 1].start, GetTokenLength(json, current_token + 1));
+				if(class != NULL){
+					action->classes[action->num_classes] = class;
+					action->num_classes++;
+				// }else{
+					// action->classes = real loc(action->classes, sizeof(UIClass *) * (action->num_classes));
+					// continue;
+				}
+				printf("class action\n");
 			}
-			printf("class action\n");
 		}else if(CompareToken(json, current_token, "call")){
 			printf("call action\n");
 		}
@@ -842,6 +860,7 @@ void LoadDomain(char *path, UIDomain *domain){
 		printf("Error reading length of JSON file '%s'", path);
 	}
 	printf("file length: %ld\n", file_length);
+	json.json_string = NULL;
 	json.json_string = malloc(file_length + 1);
 	SDL_RWread(fp, json.json_string, 1, file_length);
 	

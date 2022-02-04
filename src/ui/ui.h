@@ -1,10 +1,10 @@
 #ifndef UI_H_
 #define UI_H_
 
-#include "../gl_utils.h"
+#include "../shader.h"
 #include "../renderer/render_text.h"
 
-extern ShaderObject ui_shader;
+extern Shader ui_shader;
 
 void InitUI();
 
@@ -144,7 +144,7 @@ typedef struct UIElement{
 	FontObject *font;
 	float text_size;
 
-	TextureObject *image;
+	Texture *image;
 
 	Vector4 color;
 	Vector4 border_color;

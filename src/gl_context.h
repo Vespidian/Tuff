@@ -24,7 +24,7 @@ void InitRenderers();
 extern unsigned int uniform_buffer;
 
 //tmp
-#include "gl_utils.h"
+// #include "gl_utils.h"
 // extern ModelObject *parent;
 // extern ModelObject *child;
 

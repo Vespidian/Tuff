@@ -3,23 +3,29 @@
 #include "ui.h"
 
 void SetElementText(UIElement *element, char *format, ...){
-	if(element != NULL){
+	if(element != NULL && format != NULL){
 		va_list va_format;
+		va_list copy;
 		
 		//Use var args to create formatted text
 		va_start(va_format, format);
-		int length = vsnprintf(NULL, 0, format, va_format);
+		va_copy(copy, va_format);
+		int length = vsnprintf(NULL, 0, format, copy);
+		va_end(copy);
 		char *formatted_text = malloc(length + 1);
-		vsnprintf(formatted_text, length + 1, format, va_format);
-		va_end(va_format);
 
-		element->text = malloc(length + 1);
-		if(element->text != NULL){
-			strcpy(element->text, formatted_text);
-			element->text[length] = 0;
+		if(formatted_text != NULL){
+			vsnprintf(formatted_text, length + 1, format, va_format);
+			formatted_text[length] = 0;
+
+			element->text = malloc(length + 1);
+			if(element->text != NULL){
+				strcpy(element->text, formatted_text);
+				element->text[length] = 0;
+			}
+			free(formatted_text);
 		}
-
-		free(formatted_text);
+		va_end(va_format);
 	}
 }
 

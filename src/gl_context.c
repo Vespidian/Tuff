@@ -1,6 +1,7 @@
 #include <math.h>
 #include "global.h"
-#include "gl_utils.h"
+// #include "gl_utils.h"
+#include "shader.h"
 
 #include "event.h"
 #include "debug.h"
@@ -17,8 +18,8 @@ SDL_GLContext gl_context;
 
 int z_depth = 1000;
 
-TextureObject crate_tex;
-TextureObject normal_map;
+Texture crate_tex;
+Texture normal_map;
 
 static void WindowResize(EventData event);
 static void KeyPresses(EventData event);
@@ -34,8 +35,9 @@ unsigned int mesh_ebo;
 unsigned int vert_vbo;
 unsigned int norm_vbo;
 unsigned int texc_vbo;
+unsigned int tanv_vbo;
 
-ShaderObject mesh_shader;
+Shader mesh_shader;
 mat4 mesh_matrix;
 TransformObject mesh_transform;
 TransformObject origin_transform;
@@ -52,15 +54,15 @@ float axis[] = {
 };
 unsigned int axis_vao;
 unsigned int axis_vbo;
-ShaderObject axis_shader;
+Shader axis_shader;
 
 
-float *grid;
+float *grid = NULL;
 int grid_vertex_count;
 int num_grid_verts;
 unsigned int grid_vao;
 unsigned int grid_vbo;
-ShaderObject grid_shader;
+Shader grid_shader;
 bool grid_enabled = true;
 
 void ToggleGrid(){
@@ -144,7 +146,7 @@ char uniform_types[12][16] = {
 	"sampler2d",
 	"sampler3d",
 };
-void PrintShaderUniforms(ShaderObject *shader){
+void PrintShaderUniforms(Shader *shader){
 	printf("Shader '%s' uniforms:\n", shader->name);
 	for(int i = 0; i < shader->num_uniforms; i++){
 		printf("%s : %s\n", shader->uniforms[i].name, uniform_types[shader->uniforms[i].type]);
@@ -152,27 +154,10 @@ void PrintShaderUniforms(ShaderObject *shader){
 }
 
 int InitGL(){
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 8);
-
-    gl_context = SDL_GL_CreateContext(window);
-    SDL_GL_MakeCurrent(window, gl_context);
-    glewExperimental = GL_TRUE;
-    if(glewInit() != GLEW_OK){
-        DebugLog(D_ERR, "Failed to initialize GLEW!");
-        return EXIT_FAILURE;
-    }
-	SDL_GL_SetSwapInterval(1);
-    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
 	glEnable(GL_PROGRAM_POINT_SIZE);
-    // glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_LINE_SMOOTH);
 	// glFrontFace(GL_CCW);
@@ -191,14 +176,14 @@ int InitGL(){
 
 	RendererInit();
 
+	// FILE LOADING SHOULD NOT HAPPEN IN THIS FUNCTION
+	// crate_tex = TextureOpen("../images/brick_diffuse.png");
+	crate_tex = TextureOpen("images/brick_diffuse.png");
+	normal_map = TextureOpen("images/brick_normal.png");
 
-	crate_tex = LoadTexture("../images/example_atlas.png");
-	normal_map = LoadTexture("../images/decal.png");
-
-
-	mesh_shader = LoadShaderProgram("mesh.shader");
-	axis_shader = LoadShaderProgram("axis.shader");
-	grid_shader = LoadShaderProgram("grid.shader");
+	mesh_shader = ShaderOpen("shaders/mesh.shader");
+	axis_shader = ShaderOpen("shaders/axis.shader");
+	grid_shader = ShaderOpen("shaders/grid.shader");
 
 
 	glGenBuffers(1, &uniform_buffer);
@@ -237,21 +222,24 @@ int InitGL(){
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)(sizeof(float) * 3));
 
-// ShaderObject shad = ParseShaderUniforms("test", 0, "uniform vec2 finding_nemo_is_a_sad_story;", "");
+// Shader shad = ShaderParseUniforms("test", 0, "uniform vec2 finding_nemo_is_a_sad_story;", "");
 // 	printf("nam: %s\n", shad.name);
 // 	printf("uni[0] name: %s\n", shad.uniforms[0].name);
 
 
 	// int start = SDL_GetTicks();
 	// LoadObj("../models/cube.obj", &mesh);
-	LoadGLTF();
+	// GLTFState gltf = GLTFOpen("meshes/entrance.gltf");
+	// GLTFFree(&gltf);
 	// printf("Loaded mesh in %dms\n", SDL_GetTicks() - start);
-	glGenVertexArrays(1, &mesh_vao);
+	/*glGenVertexArrays(1, &mesh_vao);
 	glBindVertexArray(mesh_vao);
 
 	glGenBuffers(1, &vert_vbo);
 	glGenBuffers(1, &norm_vbo);
 	glGenBuffers(1, &texc_vbo);
+	glGenBuffers(1, &tanv_vbo);
+
 	glGenBuffers(1, &mesh_ebo);
 
 
@@ -273,9 +261,14 @@ int InitGL(){
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)(0));
 
+	glBindBuffer(GL_ARRAY_BUFFER, tanv_vbo);
+	glBufferData(GL_ARRAY_BUFFER, tanv_size, tanv, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)(0));
+
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, ind->size, data->buffers->data + ind->offset, GL_STATIC_DRAW);
-
+*/
     glm_mat4_identity(perspective_projection);
     glm_mat4_identity(view_matrix);
 
@@ -356,12 +349,12 @@ void RenderUI(){
 	// glm_scale_uni(mesh_matrix, 0.5f);
     // UniformSetMat4(&mesh_shader, "model", mesh_matrix);
 
-	// float time = SDL_GetTicks() / 1000.0;
+	// light_time = (SDL_GetTicks() % 1000) / 1000.0;
 	// glm_scale_uni(mesh_matrix, 0.1);
 	glm_mat4_identity(light_transform.result);
 	glm_translate(light_transform.result, light_transform.position.v);
-	glm_vec3_rotate(light_transform.position.v, light_time, (vec3){0, 1, 0});
-	light_transform.position.y = cos(light_time * 7.5) / 1.5;
+	glm_vec3_rotate(light_transform.position.v, 0.1, (vec3){0, 1, 0});
+	// light_transform.position.y = cos(light_time * 7.5) / 1.5;
 	glm_scale_uni(light_transform.result, 0.25);
 	UniformSetVec3(&mesh_shader, "light_pos", light_transform.position.v);
 
@@ -401,13 +394,13 @@ void RenderGL(){
 	SetVAO(mesh_vao);
 	CalculateTransform(&mesh_transform);
     UniformSetMat4(&mesh_shader, "model", mesh_transform.result);
-	PassShaderUniforms(&mesh_shader);
-	int type;
-	if(data->meshes->primitives->indices->component_type == cgltf_component_type_r_16u){
-		type = GL_UNSIGNED_SHORT;
-	}else{
-		type = GL_UNSIGNED_INT;
-	}
+	ShaderPassUniforms(&mesh_shader);
+	// int type;
+	// if(data->meshes->primitives->indices->component_type == cgltf_component_type_r_16u){
+	// 	type = GL_UNSIGNED_SHORT;
+	// }else{
+	// 	type = GL_UNSIGNED_INT;
+	// }
 	// glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
 
 	glEnable(GL_MULTISAMPLE);
@@ -417,36 +410,39 @@ void RenderGL(){
 	SetVAO(axis_vao);
 	UniformSetFloat(&axis_shader, "zoom", view_distance);
     UniformSetMat4(&axis_shader, "model", origin_transform.result);
-	PassShaderUniforms(&axis_shader);
+	ShaderPassUniforms(&axis_shader);
 	glDrawArrays(GL_LINES, 0, 26);
 	
 	// Mesh axis
 	SetVAO(axis_vao);
     UniformSetMat4(&axis_shader, "model", mesh_transform.result);
-	PassShaderUniforms(&axis_shader);
+	ShaderPassUniforms(&axis_shader);
 	glDrawArrays(GL_LINES, 0, 26);
 
 	// parent axis
-	SetVAO(mesh_vao);
+	// SetVAO(mesh_vao);
 	// child->transform.rotation_e.z = -child->parent->transform.rotation_e.z; // Cancels object rotation inherited from its parent on the z axis
 	child->transform.position.y = 1;
-	// child->parent->transform.position.y = -1;
+	// child->parent->transform.position.y = sin(SDL_GetTicks() / 200.0) / 8;
+	// child->parent->transform.position.x = sin(SDL_GetTicks() / 100.0) / 128;
+	// child->parent->transform.position.z = cos(SDL_GetTicks() / 100.0) / 128;
+	// child->parent->transform.position.z = cos(SDL_GetTicks() / 200.0) / 48;
 	CalculateModelTransform(parent);
 	// CalculateTransform(&parent->transform);
     UniformSetMat4(&mesh_shader, "model", parent->transform.result);
-	PassShaderUniforms(&mesh_shader);
-	glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
+	// ShaderPassUniforms(&mesh_shader);
+	// glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
 	// child axis
 	// SetVAO(mesh_vao);
 	// CalculateModelTransform(child);
 	// CalculateTransform(&child->transform);
     // UniformSetMat4(&axis_shader, "model", child->transform.result);
-	// PassShaderUniforms(&axis_shader);
+	// ShaderPassUniforms(&axis_shader);
 	// glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
 
 	if(grid_enabled){
 		SetVAO(grid_vao);
-		PassShaderUniforms(&grid_shader);
+		ShaderPassUniforms(&grid_shader);
 		glDrawArrays(GL_LINES, 0, grid_vertex_count);
 	}
 	glDisable(GL_MULTISAMPLE);

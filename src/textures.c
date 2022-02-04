@@ -1,36 +1,164 @@
 #include "global.h"
 #include "debug.h"
+#include "gl_context.h"
+#include "gl_utils.h"
 #include "renderer/renderer.h"
 
 #include "textures.h"
 
-TextureObject undefined_texture;
+Texture undefined_texture;
 
-TextureObject *texture_stack;
+Texture *texture_stack;
 
 // Number of textures currently loaded into the 'texture_stack'
 unsigned int num_textures = 0;
 
 void InitTextures(){
-    undefined_texture = LoadTexture("../images/undefined.png");
+    undefined_texture = TextureOpen("../bin/builtin_assets/undefined.png");
     DebugLog(D_ACT, "Initialized texture subsystem");
 }
 
-TextureObject *LoadTextureToStack(const char *path){
-	// Expand 'texture_stack' to fit new texture
-    texture_stack = realloc(texture_stack, sizeof(TextureObject) * (num_textures + 1));
-    
-	// Load the new texture
-	texture_stack[num_textures] = LoadTexture(path);
-
-    return &texture_stack[num_textures++];
-}
-
-TextureObject *FindTexture(unsigned int texture){
+Texture *TextureFind(unsigned int texture){ // Not currently used
     for(int i = 0; i < num_textures; i++){
         if(texture_stack[i].gl_tex == texture){
             return &texture_stack[i];
         }
     }
     return &undefined_texture;
+}
+
+void TextureFree(Texture *texture){
+	if(texture != NULL){
+		if(texture->is_loaded){
+			unsigned int *id = &texture->gl_tex;
+			glDeleteTextures(1, id);
+			texture->is_loaded = false;
+			texture->w = 0;
+			texture->h = 0;
+
+			free(texture->path);
+			texture->path = NULL;
+		}
+	}
+}
+
+static int InvertSurfaceVertical(SDL_Surface *surface)
+{
+    Uint8 *t;
+    register Uint8 *a, *b;
+    Uint8 *last;
+    register Uint16 pitch;
+
+    /* do nothing unless at least two lines */
+    if(surface->h < 2) {
+        return 0;
+    }
+
+    /* get a place to store a line */
+    pitch = surface->pitch;
+    t = (Uint8*)malloc(pitch);
+
+    if(t == NULL) {
+        // SDL_UNLOCKIFMUST(surface);
+        return -2;
+    }
+
+    /* get first line; it's about to be trampled */
+    memcpy(t,surface->pixels,pitch);
+
+    /* now, shuffle the rest so it's almost correct */
+    a = (Uint8*)surface->pixels;
+    last = a + pitch * (surface->h - 1);
+    b = last;
+
+    while(a < b) {
+        memcpy(a,b,pitch);
+        a += pitch;
+        memcpy(b,a,pitch);
+        b -= pitch;
+    }
+
+    /* in this shuffled state, the bottom slice is too far down */
+    memmove( b, b+pitch, last-b );
+    /* now we can put back that first row--in the last place */
+    memcpy(last,t,pitch);
+
+    free(t);
+
+    return 0;
+}
+
+Texture TextureOpen(char *path){
+    Texture texture;
+	texture.is_loaded = false;
+	texture.gl_tex = 0;
+	texture.w = 0;
+	texture.h = 0;
+
+	if(path != NULL){
+		texture.path = malloc(strlen(path) + 1);
+		memcpy(texture.path, path, strlen(path));
+		texture.path[strlen(path)] = 0;
+
+		unsigned int gl_texture;
+		SDL_Surface *tmp_surface;
+		
+		GLCall(glGenTextures(1, &gl_texture));
+		GLCall(glBindTexture(GL_TEXTURE_2D, gl_texture));
+
+		GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+		GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+		// GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+		// GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+		GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+		GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+
+		tmp_surface = IMG_Load(texture.path);
+		if(tmp_surface == NULL){
+			DebugLog(D_ERR, "Error reading image: '%s'", texture.path);
+			return undefined_texture;
+		}
+		InvertSurfaceVertical(tmp_surface);
+
+		texture.gl_tex = gl_texture;
+		texture.w = tmp_surface->w;
+		texture.h = tmp_surface->h;
+		if(tmp_surface != NULL){
+			// TODO: Support more image formats / image color formats without crashing
+			int internal_format;
+			int image_format;
+			if(SDL_ISPIXELFORMAT_ALPHA(tmp_surface->format->format)){
+				internal_format = GL_RGBA8;
+				image_format = GL_RGBA;
+			}else{
+				internal_format = GL_RGB8;
+				image_format = GL_RGB;
+			}
+			// switch(tmp_surface->format->format){
+			// 	case 
+			// }
+			// // if(format == GL_RGB){
+			// 	internal = GL_RGB8;
+			// // }
+			// printf("name: %s --- format: %s\n", path, SDL_GetPixelFormatName(tmp_surface->format->format));
+			// int internal = GL_RGBA8;
+			// if(format == GL_RGB){
+			// 	internal = GL_RGB8;
+			// }
+			// GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tmp_surface->w, tmp_surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp_surface->pixels));
+			GLCall(glTexImage2D(GL_TEXTURE_2D, 0, internal_format, tmp_surface->w, tmp_surface->h, 0, image_format, GL_UNSIGNED_BYTE, tmp_surface->pixels));
+			GLCall(glGenerateMipmap(GL_TEXTURE_2D));
+			DebugLog(D_ACT, "Loaded texture: '%s'", texture.path);
+			texture.is_loaded = true;
+		}else{
+			DebugLog(D_ERR, "Could not load image: '%s'", texture.path);
+			texture = undefined_texture;
+		}
+		SDL_FreeSurface(tmp_surface);
+	}
+    return texture;
+}
+
+TilesheetObject LoadTilesheet(char *path, int tile_width, int tile_height){
+    return (TilesheetObject){0, TextureOpen(path), tile_width, tile_height};
 }

@@ -1,7 +1,8 @@
 #ifndef RENDERER_H_
 #define RENDERER_H_
 
-#include "../gl_utils.h"
+#include "../textures.h"
+#include "../shader.h"
 
 // VAO function constants
 enum VAOAttributes{ATTR_FLOAT = 1, ATTR_VEC2, ATTR_VEC3, ATTR_VEC4, ATTR_MAT2 = 8, ATTR_MAT3 = 9, ATTR_MAT4 = 16};
@@ -21,7 +22,7 @@ typedef struct AttribArray{
 typedef struct InstanceBuffer{
 	char num_textures_used;
 	unsigned int texture[16];
-	ShaderObject *shader;
+	Shader *shader;
 	AttribArray vao;
 	unsigned int count;
 	float *buffer;
@@ -63,7 +64,7 @@ AttribArray NewVAO(int num_attribs, ...);
  *  @param num_textures_used number of textures to copy to instance texture buffer
  *  @param textures[16] array of textures to use
  */
-void AppendInstance(AttribArray vao, float data[64], ShaderObject *shader, char num_textures_used, TextureObject textures[16]);
+void AppendInstance(AttribArray vao, float data[64], Shader *shader, char num_textures_used, Texture textures[16]);
 
 /**
  *  @brief Passes all instance data to the GPU (window buffer still needs to be swapped)

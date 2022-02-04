@@ -47,6 +47,10 @@ void RendererInit(){
 
 }
 
+void RendererQuit(){
+
+}
+
 AttribArray NewVAO(int num_attribs, ...){
 	// Initialize vao variables
 	AttribArray vao;
@@ -136,27 +140,37 @@ AttribArray NewVAO(int num_attribs, ...){
 	return vao;
 }
 
-unsigned int NewInstance(char num_textures_used, TextureObject textures[16], AttribArray vao, ShaderObject *shader){
+unsigned int NewInstance(char num_textures_used, Texture textures[16], AttribArray vao, Shader *shader){
 	// Extend buffer by 1 instance
-	instance_buffer = realloc(instance_buffer, sizeof(InstanceBuffer) * (num_instances + 1));
+	InstanceBuffer *tmp_buffer = realloc(instance_buffer, sizeof(InstanceBuffer) * (num_instances + 1));
+	if(tmp_buffer != NULL){
+		instance_buffer = tmp_buffer;
 
-	// Copy all textures to texture buffer
-	for(int i = 0; i < num_textures_used; i++){
-		instance_buffer[num_instances].texture[i] = textures[i].gl_tex;
+		// Copy all textures to texture buffer
+		for(int i = 0; i < num_textures_used; i++){
+			instance_buffer[num_instances].texture[i] = textures[i].gl_tex;
+		}
+
+		// Set instance data
+		instance_buffer[num_instances].num_textures_used = num_textures_used;
+		instance_buffer[num_instances].vao = vao;
+		if(shader->is_loaded){
+			instance_buffer[num_instances].shader = shader;
+		}else{
+			instance_buffer[num_instances].shader = 0;
+		}
+		instance_buffer[num_instances].count = 0;
+
+		// Initialize instance vbo
+		instance_buffer[num_instances].buffer = malloc(sizeof(float) * vao.stride);
+		return num_instances++;
+	}else{
+		// DebugLog(D_WARN)
+		return 0;
 	}
-
-	// Set instance data
-	instance_buffer[num_instances].num_textures_used = num_textures_used;
-	instance_buffer[num_instances].vao = vao;
-	instance_buffer[num_instances].shader = shader;
-	instance_buffer[num_instances].count = 0;
-
-	// Initialize instance vbo
-	instance_buffer[num_instances].buffer = malloc(sizeof(float) * vao.stride);
-	return num_instances++;
 }
 
-unsigned int FindInstance(char num_textures_used, TextureObject textures[16], AttribArray vao, ShaderObject *shader){
+unsigned int FindInstance(char num_textures_used, Texture textures[16], AttribArray vao, Shader *shader){
 	// Loop through all instances to find exact match
 	for(int i = 0; i < num_instances; i++){
 		if(instance_buffer[i].vao.array_object == vao.array_object && instance_buffer[i].shader == shader){
@@ -182,21 +196,26 @@ unsigned int FindInstance(char num_textures_used, TextureObject textures[16], At
 	return NewInstance(num_textures_used, textures, vao, shader);
 }
 
-void AppendInstance(AttribArray vao, float data[64], ShaderObject *shader, char num_textures_used, TextureObject textures[16]){
+void AppendInstance(AttribArray vao, float data[64], Shader *shader, char num_textures_used, Texture textures[16]){
 	// Retrieve instance id for inputed configuration
 	unsigned int instance = FindInstance(num_textures_used, textures, vao, shader);
 
 	// Allocate space for new element in instance buffer
-	instance_buffer[instance].buffer = realloc(instance_buffer[instance].buffer, sizeof(float) * vao.stride * (instance_buffer[instance].count + 1));
+	float *tmp_buffer = realloc(instance_buffer[instance].buffer, sizeof(float) * vao.stride * (instance_buffer[instance].count + 1));
+	if(tmp_buffer != NULL){
+		instance_buffer[instance].buffer = tmp_buffer;
 
-	// Copy single instance data to vbo
-	int current_offset = vao.stride * instance_buffer[instance].count;
-	memcpy(&instance_buffer[instance].buffer[current_offset], data, sizeof(float) * vao.stride);
+		// Copy single instance data to vbo
+		int current_offset = vao.stride * instance_buffer[instance].count;
+		memcpy(&instance_buffer[instance].buffer[current_offset], data, sizeof(float) * vao.stride);
 
-	// Increment instance count
-	instance_buffer[instance].count++;
+		// Increment instance count
+		instance_buffer[instance].count++;
 
-	num_append_instance_calls++;
+		num_append_instance_calls++;
+	}else{
+		//DebugLog(D_WARN, "");
+	}
 }
 
 void EmptyRenderBuffer(){
@@ -222,7 +241,7 @@ void PushRender(){
 		}
 
 		// Bind shader
-		PassShaderUniforms(instance_buffer[instance].shader);
+		ShaderPassUniforms(instance_buffer[instance].shader);
 
 		// Loop through textures
 		for(int texture_slot = 0; texture_slot < instance_buffer[instance].num_textures_used; texture_slot++){

@@ -1,8 +1,14 @@
 CC = gcc
-CFLAGS = -Werror -Wall -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lglew32 -lopengl32 -llibtcc -g
-DISABLE_FLAGS = -Wno-missing-braces
 
-INCLUDE = -isystem ../include -L../lib
+ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
+	CFLAGS = -Werror -Wall -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lglew32 -lopengl32 -llibtcc -g
+	INCLUDE = -isystem ../include -L../lib
+else
+	CFLAGS = -Werror -Wall -lSDL2 -lSDL2_image -lGLEW -lGL -lm -g
+	INCLUDE = -isystem ../include
+endif
+
+DISABLE_FLAGS = -Wno-missing-braces
 
 C_SOURCES = $(wildcard *.c */*.c */*/*.c)
 

@@ -1,6 +1,8 @@
 #ifndef MODEL_H_
 #define MODEL_H_
 
+// TODO: This file and its corresponding .c file are to be completely removed
+
 #include "cgltf.h"
 
 typedef struct AttributePointer{
@@ -78,10 +80,10 @@ typedef struct SceneObject{
 	MeshObject *meshes;
 	unsigned int num_meshes;
 
-	TextureObject *textures;
+	Texture *textures;
 	unsigned int num_textures;
 
-	ShaderObject *shaders;
+	Shader *shaders;
 	unsigned int num_shaders;
 
 	MaterialObject *materials;
@@ -90,11 +92,18 @@ typedef struct SceneObject{
 	ModelObject *models;
 	unsigned int num_models;
 
+	/**
+	 *  Scripts
+	 */
+
 	// -- Scene attributes --
 	// skybox
 	// physics constants
 	// 
 }SceneObject;
+
+// Functions to reload each array within the bundle seperately (Eventually hotloading individual files upon changes)
+// Then one function to reload the entire bundle
 
 void InitTransform(TransformObject *transform);
 void CalculateTransform(TransformObject *transform);

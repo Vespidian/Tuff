@@ -1,0 +1,14 @@
+File:		Num allocs
+debug.c: 	1
+events.c: 	2
+gl_utils.c:	8
+textures.c:	2
+render_text.c	3
+renderer.c	5	(*)
+
+Todo:
+- Rework texture loading to be per bundle
+- Work out bundle parsing and loading of each element within the bundle
+- Rework ui parsing to use new JSONParser
+- Create seperate functions for setting each parameter of all structs (MODEL_SetParent, MODEL_SetTransform) and have one giant New* function that incorporates all necessary ones (ModelObject *NewModel(char *name, ModelObject *parent, TransformObject *transform, unsigned int mesh_file, unsigned int mesh_index, unsigned int material);)
+- Trying to load a non existent shader should not crash the application
