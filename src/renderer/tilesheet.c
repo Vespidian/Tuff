@@ -20,7 +20,7 @@ void InitTilesheets(){
     DebugLog(D_ACT, "Initialized tilesheet subsystem");
 }
 
-TilesheetObject *NewTilesheet(TextureObject texture, int tile_w, int tile_h){
+TilesheetObject *NewTilesheet(Texture texture, int tile_w, int tile_h){
 	// Expand 'tilesheet_stack' for new tilesheet
     tilesheet_stack = realloc(tilesheet_stack, sizeof(TilesheetObject) * (num_tilesheets + 1));
 
@@ -35,7 +35,7 @@ TilesheetObject *NewTilesheet(TextureObject texture, int tile_w, int tile_h){
 }
 
 TilesheetObject *NewTilesheetFromFile(char *path, int format, int tile_w, int tile_h){
-    return NewTilesheet(LoadTexture(path), tile_w, tile_h);
+    return NewTilesheet(TextureOpen(path), tile_w, tile_h);
 }
 
 TilesheetObject *FindTilesheet(unsigned int id){

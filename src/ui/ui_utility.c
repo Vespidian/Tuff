@@ -3,31 +3,40 @@
 #include "ui.h"
 
 void SetElementText(UIElement *element, char *format, ...){
-	if(element != NULL){
+	if(element != NULL && format != NULL){
 		va_list va_format;
+		va_list copy;
 		
 		//Use var args to create formatted text
 		va_start(va_format, format);
-		int length = vsnprintf(NULL, 0, format, va_format);
+		va_copy(copy, va_format);
+		int length = vsnprintf(NULL, 0, format, copy);
+		va_end(copy);
 		char *formatted_text = malloc(length + 1);
-		vsnprintf(formatted_text, length + 1, format, va_format);
-		va_end(va_format);
 
-		element->text = malloc(length + 1);
-		if(element->text != NULL){
-			strcpy(element->text, formatted_text);
-			element->text[length] = 0;
+		if(formatted_text != NULL){
+			vsnprintf(formatted_text, length + 1, format, va_format);
+			formatted_text[length] = 0;
+
+			element->text = malloc(length + 1);
+			if(element->text != NULL){
+				strcpy(element->text, formatted_text);
+				element->text[length] = 0;
+			}
+			free(formatted_text);
 		}
-
-		free(formatted_text);
+		va_end(va_format);
 	}
 }
 
-UIClass *FindClass(UIScene *scene, char *name){
+UIClass *FindClass(UIDomain *domain, char *name){
 	if(name != NULL){
-		for(int i = 0; i < scene->num_classes; i++){
-			if(strcmp(scene->classes[i].name, name) == 0){
-				return &scene->classes[i];
+		for(int i = 0; i < domain->num_classes; i++){
+			if(domain->classes[i].name == NULL){
+				printf("OH NO\n");
+			}
+			if(strcmp(domain->classes[i].name, name) == 0){
+				return &domain->classes[i];
 			}
 		}
 	}
@@ -52,7 +61,7 @@ static UIElement *RecursiveFindElement(UIElement *element, char *name){
 	return child;
 }
 
-UIElement *FindElement(UIScene *scene, char *name){
-	UIElement *element = RecursiveFindElement(&scene->body, name);
+UIElement *FindElement(UIDomain *domain, char *name){
+	UIElement *element = RecursiveFindElement(&domain->body, name);
 	return element;
 }

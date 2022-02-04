@@ -1,0 +1,50 @@
+{
+	"models" : [
+		{
+			path: "models/entrance.gltf",
+		},
+		{
+			path: "lamp.gltf",
+		},
+		{
+			path: "models/plane.gltf",
+		},
+		{
+			path: "models/plane.gltf",
+		},
+		{
+			path: "models/plane.gltf",
+		},
+	],
+	
+	"textures" : [
+		{
+			path: "../bin/builtin_assets/undefined.png",
+			filtering: "linear",
+		},
+		{
+			path: "icon.jpg",
+		},
+	],
+	
+	"shaders" : [
+		"default.glsl",
+	],
+	
+	"materials": [
+		"default.mat",
+	],
+	
+	"scripts": [
+		"script.c",
+	],
+	
+	"domains": [
+		"ui.uiss",
+	],
+	
+	"scenes": [
+		"lobby.scn",
+		"level_1.scn",
+	],
+}

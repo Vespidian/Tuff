@@ -1,4 +1,6 @@
 #include "../global.h"
+#include "../shader.h"
+#include "../textures.h"
 
 #include "scene.h"
 
@@ -144,11 +146,11 @@ void InitScene(SceneObject *scene){
 
 	// Textures
 	scene->num_textures = 0;
-	scene->textures = malloc(sizeof(TextureObject));
+	scene->textures = malloc(sizeof(Texture));
 
 	// Shaders
 	scene->num_shaders = 0;
-	scene->shaders = malloc(sizeof(ShaderObject));
+	scene->shaders = malloc(sizeof(Shader));
 
 	// Materials
 	scene->num_materials = 0;

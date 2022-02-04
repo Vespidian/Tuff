@@ -33,6 +33,7 @@ extern bool mouse_lifted;
 extern int scroll_value;
 
 void InitEvents();
+void QuitEvents();
 void FastEvents();
 void EventListener();
 

@@ -8,26 +8,25 @@
             "type": "by-gdb",
             "request": "launch",
             "name": "Launch(gdb)",
-            "program": "${workspaceFolder}/bin/foXandbox.exe",
+            "program": "${workspaceFolder}/bin/main.exe",
             "cwd": "${workspaceRoot}/bin",
 			"internalConsoleOptions": "neverOpen",
 			"debug.internalConsoleOptions": "neverOpen",
 			"console": "externalTerminal",
         },
-
         
         {
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/foXandbox.exe",
+            "program": "${workspaceFolder}/bin/main.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "externalConsole": true,
             "MIMode": "gdb",
-            "miDebuggerPath": "C:/MinGW/bin/gdb.exe",
+            "miDebuggerPath": "S:/Programs/Mingw/bin/gdb.exe",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

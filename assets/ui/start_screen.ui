@@ -1,0 +1,229 @@
+/* -- C API -- */
+typedef struct UIClass{
+	char *name;
+
+	Vector4 transform_relative; // Transforms the element relative to its current position
+	Vector4 transform; // Transforms the element relative to its parent's position
+	
+	Vector4 color;
+	Vector4 border_color;
+
+	Vector4 border;
+	Vector4 padding;
+	Vector4 margin;
+	Vector4 radius;
+
+	Vector4 text_color;
+	FontObject *font;
+	float text_size;
+	
+	int transition; // Defines the length of property transitions in ms, 0 = instant
+	enum ease{/* Define all types of easings in here : https://easings.net */};
+	bool is_active;
+
+	struct UIAction actions[/* Number of actions to be determined */];
+}UIClass;
+
+typedef struct UIAction{
+	char *name; // Possibly not needed
+	enum type{/* Define interaction types here: none, onhover, onclick, etc.. */};
+	union{
+		void (*onhover)(void);
+		void (*onclick)(void);
+		// etc..
+	};
+	UIClass *classes; // If this action is called form a class it cant be its own class, possibly limit the number of nests too
+}UIAction;
+
+typedef struct UIElement{
+	char *name;
+
+	struct UIElement *parent;
+	struct UIElement *children;
+
+
+	Texture *image;
+
+
+	Vector4 initial_transform;
+	Vector4 transform;
+
+
+	Vector4 color;	
+
+	Vector4 margin;
+
+	Vector4 radius;
+	Vector4 border_color;
+	Vector4 border;
+
+	Vector4 padding;
+
+
+	char *text;
+	Vector4 text_color;
+	FontObject *font;
+	float text_size;
+
+
+	UIClass *classes;
+	
+	UIAction actions[/* Number of actions to be determined */];
+	
+	bool is_active;
+	
+}UIElement;
+
+typedef struct UIScene{
+	unsigned int num_classes;
+	UIClass *classes;
+	UIElement body;
+}UIScene;
+
+// Now for the ui scene structure
+// There is only 1 element type, things like buttons and dropdowns should be implemented through classes and script
+// If properties are not included in an element, they are set to predetermined defaults
+// If properties are included in an element which doesnt support them, ignore them (e.g. position for the scene element)
+// For dynamic text like displaying a changing number you will have to edit the text directly from the scripting api
+
+/* -- EXAMPLE SCENE -- */
+{
+	classes : [ // Classes are always read first. Whenever an element references a class, that element gets added to that class' users
+		"class_name" : {
+			
+			color : [r, g, b],
+
+		}
+	],
+	scene : [
+		"button" : {
+			text : "This is a button",
+			onclick : {
+				call : "function",
+			},
+			onhover : {
+				hide : "button1_class",
+			}
+			onhold : {
+				call : "slider_drag",
+			}
+			class : "button1_class", // If an undefined class is used, the class is created empty and the element gets added to its users
+				
+			// Style
+			position : [x, y],
+			color : [r, g, b],
+			class : "class_name",
+			// If a property is defined after a class is referenced, that property overides the class' value
+			// If a property is not defined within the class, the current value is kept
+			// e.g. since position is not defined within the class, it remains as previously set. But color gets overridden
+			size : [w, h],
+			border : 1,
+			padding : 0,
+			margin : 0,
+				
+		},
+		"dropdown" : {
+			elements: [
+				"options" : {
+					active : true, // Defines whether or not this element is visible or not
+					text : "Option 1",
+					
+				},
+			],
+		},
+		vertical_list : {
+			
+			elements : [ // Any elements positioned within another element are positioned using relative position and scale, unless otherwise specified
+				
+			],
+		}
+	]
+}
+
+/* --------------------------------------------- */
+/* Other important things to remember */
+// If an element is positioned at 0, 0 and its scale is set to 100%, it shall be scaled up to, but not including the border of its parent
+
+
+/* --------------------------------------------- */
+// List of properties and specifiers
+
+/* -- ROOT SPECIFIERS -- */
+classes 			// Classes are a way to apply the same styles and actions across multiple elements
+					// Classes also allow for animation of elements in response to actions
+scene 				// Root of all elements
+elements			// Used inside elements to nest children elements
+					// Can be stylized using classes
+					// Can be interacted with using actions and the scripting api
+
+/* -- STYLE -- */
+position			// Supports inputs in either '%' ( Percent of parent element ) or 'px' ( Pixel offset relative to parent element )
+					// Supports input in either an array of all 4 values or 1 value at a time with these properties:
+	left			// Position relative to left side of screen
+	right			// Position relative to bottom of screen
+	top				// Position relative to top of screen
+	bottom			// Position relative to right side of screen
+
+size				// Supports the same inputs as 'position'
+	width		
+	height		
+
+rotation			// Supports input as degrees or percent, clockwise is positive and counter clockwise is negative
+
+padding				// Supports either 1 value or 4 values, 1 value makes the padding equal on all sides
+margin 				// Supports 1 or 4 values
+
+// BORDER
+border 				// Supports 1 or 4 values
+border_color		// Equivalent to 'color' but for the border
+border_opacity		// Equivalent to 'opacity' but for the border
+radius				// Supports 1 or 4 values
+
+opacity 			// Value between 1.0 - 0.0, 1.0 being fully opaque and 0.0 fully transparent
+image 				// Path to image file (currently only support png or jpeg)
+color 				// Support multiple color input types:
+/**
+ * Hex: 	#123abe
+ * rgb: 	[18, 58, 190]
+ * rgb_0-1: [0.07, 0.23, 0.74] // Possibly dont support this one
+ */
+
+transform 			// Transforms position and scale relative to the current position of the element
+	position		
+	scale	
+	rotation	
+
+// TEXT
+// Text itself cannot be modified from within a class, but its style can
+// Text can also be modified using the scripting api
+text				// Text to be shown inside the element (element only)
+text_color			// Equivalent to 'color' attribute but for text
+font				// Font for look / style of text
+text_size			// Scale of the rendered text
+
+// ANIMATION
+transition			// Transitions from previous style properties to the new ones that this transition's class defines
+	duration		// Transition is applied over 'duration' seconds
+	ease 			// Defines transition function : https://easings.net/
+
+align 				// Options: horizontal, vertical(default). Sets the direction in which children are drawn
+					// Vertical (default): children are placed below eachother, going from top to bottom
+					// Horizontal: children are placed next to eachother, going from left to right
+
+hide				// De-activates the element
+show				// Activates the element
+toggle				// Inverts the element's activation state
+
+/* -- MOUSE EVENTS / ACTIONS -- */
+// Classes set in interaction events will be set when the event occurs and reverted when it ends
+// Only 1 action per class or element
+onclick 			// Calls function once the moment the element is clicked
+onhover 			// Calls function continuously while element is being hovered
+onhold 				// Calls function continuously while mouse button is being held over element
+onleave 			// Calls function once when the cursor exits the element
+onenter				// Calls function once when the cursor enters the element
+
+// Optional property ideas
+onshow 				// Calls function when element is activated
+onhide 				// Calls function when element is de-activated
+

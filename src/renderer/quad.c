@@ -1,12 +1,13 @@
 #include "../global.h"
 #include "../gl_context.h"
-#include "../gl_utils.h"
+// #include "../gl_utils.h"
+#include "../shader.h"
 #include "../event.h"
 #include "renderer.h"
 
 #include "quad.h"
 
-ShaderObject quad_shader;
+Shader quad_shader;
 
 AttribArray quad_vao;
 
@@ -15,7 +16,7 @@ void SetQuadProjection();
 void InitQuadRender(){
 
 	quad_vao = NewVAO(3, ATTR_MAT4, ATTR_VEC4, ATTR_VEC4);
-    quad_shader = LoadShaderProgram("quad_default.shader");
+    quad_shader = ShaderOpen("shaders/quad_default.shader");
 	UniformSetSampler2D(&quad_shader, "src_texture", 0);
 	UniformSetMat4(&quad_shader, "tex_coordinates", default_texture_coordinates);
     UniformSetMat4(&quad_shader, "projection", orthographic_projection);
@@ -27,7 +28,7 @@ void SetQuadProjection(){
     UniformSetMat4(&quad_shader, "projection", orthographic_projection);
 }
 
-void RenderQuad(TextureObject texture, SDL_Rect *src, SDL_Rect *dst, int zpos, Vector4 color, float rot){
+void RenderQuad(Texture texture, SDL_Rect *src, SDL_Rect *dst, int zpos, Vector4 color, float rot){
 	// NULL to fill entire viewport
 	if(dst == NULL){
 		dst = &(SDL_Rect){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
@@ -51,7 +52,11 @@ void RenderQuad(TextureObject texture, SDL_Rect *src, SDL_Rect *dst, int zpos, V
 		texture.h - src->y - src->h, 
 		src->w, 
 		src->h
+		// 16
 	};
+	// vec4 texture_src = {
+	// 	0, 0, 16, 16
+	// };
 
 
 	// Copy all data into data array
@@ -61,7 +66,7 @@ void RenderQuad(TextureObject texture, SDL_Rect *src, SDL_Rect *dst, int zpos, V
 	memcpy(&data[20], texture_src, sizeof(vec4));
 
 	// Put texture in array
-	TextureObject texture_array[16] = {texture};
+	Texture texture_array[16] = {texture};
 
 	//Send data to be processed
 	AppendInstance(quad_vao, data, &quad_shader, 1, texture_array);
@@ -97,6 +102,6 @@ void RenderTilesheet(TilesheetObject tilesheet, unsigned int index, SDL_Rect *ds
 
 
 
-	TextureObject textures[16] = {tilesheet.texture};
+	Texture textures[16] = {tilesheet.texture};
 	AppendInstance(quad_vao, data, &quad_shader, 1, textures);
 }

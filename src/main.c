@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "global.h"
 #include "event.h"
 #include "gl_context.h"
@@ -17,6 +19,9 @@
 #include "ui/ui_layout.h"
 #include "ui/ui_parser.h"
 
+#include "json_base.h"
+#include "bundle.h"
+
 
 int loop_start_ticks = 0;
 float deltatime = 0;
@@ -26,12 +31,14 @@ int SCREEN_WIDTH =  800;
 int SCREEN_HEIGHT =  800;
 SDL_Window *window = NULL;
 
-bool running = true;
+bool running = false;
 float time_scale = 1.0f;
 bool paused = false;
 bool main_menu = true;
 bool window_active = true;
 
+
+Bundle app;
 // TilesheetObject builtin_tilesheet;
 // void LoadBuiltinResources(){
 // 	builtin_tilesheet = LoadTilesheet("../images/builtin.png", 16, 16);
@@ -40,41 +47,90 @@ bool window_active = true;
 void InitSDL(){
 	if(SDL_Init(SDL_INIT_EVERYTHING) < 0){
 		DebugLog(D_ERR, "Could not initialize SDL. SDL_Error: %s", SDL_GetError());
+		return;
 	}
 	window = SDL_CreateWindow("FoXandbox", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	if(window == NULL){
 		DebugLog(D_ERR, "SDL window could not be created. SDL_Error: %s", SDL_GetError());
+		return;
 	}
+
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+
+    gl_context = SDL_GL_CreateContext(window);
+    SDL_GL_MakeCurrent(window, gl_context);
+	SDL_GL_SetSwapInterval(1);
+
+    glewExperimental = GL_TRUE;
+    if(glewInit() != GLEW_OK){
+        DebugLog(D_ERR, "Failed to initialize GLEW!");
+        return;
+    }
+    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+	running = true;
 }
 
 void InitRenderers(){
 	InitQuadRender();
-	InitUI();
+	// InitUI();
 	
 }
 
-void LoadDiffScene(char *path){
-	printf("Loading: %s\n", path);
-	UI_LoadScene(path);
-}
+// void LoadDiffDomain(char *path){
+// 	printf("Loading: %s\n", path);
+// 	UI_LoadDomain(path);
+// }
 
-#include <libtcc.h>
-void (*script_setup)() = NULL;
-void (*script_loop)() = NULL;
-void (*script_onclick)(UIElement *element) = NULL;
-TCCState *script;
-
-void TccDebug(void *opaque, const char *msg){
-	DebugLog(D_ERR, "%s", msg);
-}
-
-struct Object{
-	int d1;
-	float f1;
+static char *startup_dict[] = {
+	"startup_bundle",
+	NULL
 };
+static void tfunc_startup(JSONState *json, unsigned int token){
+	switch(JSONTokenHash(json, token, startup_dict)){
+		case 0:; // startup_bundle
+			// JSONToken startup_token = JSONTokenValue(json, token + 1);
+			// if(startup_token.type == JSON_STRING){
+			// 	char *startup_path = malloc(strlen(startup_token._string) + 1);
+			// 	if(startup_path != NULL){
+			// 		memcpy(startup_path, startup_token._string, strlen(startup_token._string));
+			// 		startup_path[strlen(startup_token._string)] = 0;
+			// 		if(strncmp(startup_path + strlen(startup_path) - 5, ".bndl", 5) == 0){ // Make sure the file is a '.bndl' file
+			// 			app = BundleOpen(startup_path);
+			// 		}
+			// 		free(startup_path);
+			// 		startup_path = NULL;
+			// 	}
+			// }
+			char *startup_path = NULL;
+			JSONTokenToString(json, token + 1, &startup_path);
+			if(startup_path != NULL){
+				if(strncmp(startup_path + strlen(startup_path) - 5, ".bndl", 5) == 0){ // Make sure the file is a '.bndl' file
+					app = BundleOpen(startup_path);
+				}
+			}
+			break;
+		default:
+			break;
+	}
+}
 
 void Setup(){
+	// JSONSetErrorFunc(DebugLog);
 	InitDebug();
+
+
+	if(chdir("../assets") != 0){
+		perror("Could not set working directory");
+	}
+
+
 	InitEvents();
 	InitSDL();
 	InitGL();
@@ -85,70 +141,27 @@ void Setup(){
 	InitTilesheets();
 	InitFonts();
 
-	int start = SDL_GetTicks();
-	UI_LoadScene("../ui/ui_tests.uiss");
-	// UI_LoadScene("../ui/tests/color.uiss");
+	// Load startup file
+	JSONState json = JSONOpen("../bin/builtin_assets/startup.conf");
+	JSONSetTokenFunc(&json, NULL, tfunc_startup);
+	JSONParse(&json);
+	JSONFree(&json);
+
+	// int start = SDL_GetTicks();
+	// UI_LoadDomain("ui/minimal.uiss");
+	// UI_LoadDomain("ui/tests/color.uiss");
 	// FindElement(&scene_stack[0], "color")->function = script_onclick;
 	// FindElement(&scene_stack[0], "layout")->function = script_onclick;
 
-	printf("Loading ui took: %dms\n", SDL_GetTicks() - start);
-
-		/*start = SDL_GetTicks();
-		struct Object prnt = {56, 1.48f};
-
-		// Create a script object
-		script = tcc_new();
-		if(!script){
-			printf("Couldnt initialize tcc!\n");
-		}
-
-		// Make sure we compile to memory (must be set before compilation)
-		tcc_set_output_type(script, TCC_OUTPUT_MEMORY);
-		
-		tcc_set_options(script, "g b Wall");
-		tcc_set_error_func(script, NULL, TccDebug);
-		// tcc_add_sysinclude_path(script, "include");
-		// printf("%d\n", script->do_bounds_check);
-		// script->do_bounds_check = true;
-		// script->do_debugging = true;
-
-		// Load the source file
-		if(tcc_add_file(script, "../resources/script.c") == -1){
-			printf("Couldnt load script file\n");
-		}
-
-		Vector3 pos = {5.6, 7.89, 2.731};
-		Vector3 clr = {5, 8, 2};
-		tcc_add_symbol(script, "parent", &prnt);
-		tcc_add_symbol(script, "position", &pos);
-		tcc_add_symbol(script, "color", &clr);
-		tcc_add_symbol(script, "LoadScene", &LoadDiffScene);
-
-		if(tcc_relocate(script, TCC_RELOCATE_AUTO) == -1){
-			printf("Error relocating script code\n");
-		}else{
-			// Successfully compiled! Now we can get the functions we need
-
-
-			script_setup = tcc_get_symbol(script, "Setup");
-			script_loop = tcc_get_symbol(script, "Loop");
-			script_onclick = tcc_get_symbol(script, "OnClick");
-
-			if(script_setup != NULL){
-				script_setup();
-			}
-		}
-		printf("Loading and compiling c took: %dms\n", SDL_GetTicks() - start);*/
-
-
-	// LoadBuiltinResources();
+	// printf("Loading ui took: %dms\n", SDL_GetTicks() - start);
 }
 
 void Quit(){
 	DebugLog(D_ACT, "Shutting down!");
 	// UnloadSandbox();
 	running = false;
-	
+	BundleFree(&app);
+	QuitEvents();
 	SDL_Quit();
 	QuitDebug();
 }
@@ -170,63 +183,14 @@ static void CheckWindowActive(EventData event){
 	}
 }
 
-/*static void ReloadScript(){
-	int start = SDL_GetTicks();
-
-	tcc_delete(script);
-	struct Object prnt = {56, 1.48f};
-
-		// Create a script object
-		script = tcc_new();
-		if(!script){
-			printf("Couldnt initialize tcc!\n");
-		}
-
-		// Make sure we compile to memory (must be set before compilation)
-		tcc_set_output_type(script, TCC_OUTPUT_MEMORY);
-		
-		tcc_set_options(script, "g b Wall");
-		tcc_set_error_func(script, NULL, TccDebug);
-		// tcc_add_sysinclude_path(script, "include");
-		// printf("%d\n", script->do_bounds_check);
-		// script->do_bounds_check = true;
-		// script->do_debugging = true;
-
-		// Load the source file
-		if(tcc_add_file(script, "../resources/script.c") == -1){
-			printf("Couldnt load script file\n");
-		}
-
-
-		if(tcc_relocate(script, TCC_RELOCATE_AUTO) == -1){
-			printf("Error relocating script code\n");
-		}else{
-			// Successfully compiled! Now we can get the functions we need
-
-		Vector3 pos = {5.6, 7.89, 2.731};
-		Vector3 clr = {5, 8, 2};
-		tcc_add_symbol(script, "parent", &prnt);
-		tcc_add_symbol(script, "position", &pos);
-		tcc_add_symbol(script, "color", &clr);
-
-			script_setup = tcc_get_symbol(script, "Setup");
-			script_loop = tcc_get_symbol(script, "Loop");
-			script_onclick = tcc_get_symbol(script, "OnClick");
-
-			if(script_setup != NULL){
-				script_setup();
-			}
-		}
-		printf("Loading and compiling c took: %dms\n", SDL_GetTicks() - start);
-
-}*/
-
 static void ReloadUI(){
-	for(int i = 0; i < num_scenes; i++){
-		UI_FreeScene(&scene_stack[i]);
-	}
-	UI_LoadScene("../ui/ui_tests.uiss");
-	// UI_LoadScene("../ui/tests/color.uiss");
+	// for(int i = 0; i < num_domains; i++){
+	// 	UI_FreeDomain(&scene_stack[i]);
+	// }
+	printf("BYUN DOMAINS: %d\n", num_domains);
+	// UI_LoadDomain("ui/minimal.uiss");
+	// UI_LoadDomain("ui/blenderish.uiss");
+	// UI_LoadDomain("ui/tests/color.uiss");
 	// FindElement(&scene_stack[0], "color")->function = script_onclick;
 	// FindElement(&scene_stack[0], "layout")->function = script_onclick;
 }
@@ -247,6 +211,9 @@ static void ToggleWireframe(EventData event){
 
 int main(int argc, char *argv[]){
 	Setup();
+
+	ShaderOpen_new("shaders/default.shader");
+
 	// startupTime.x = SDL_GetTicks();
 	BindKeyEvent(ToggleWireframe, 'z', SDL_KEYDOWN);
 	BindKeyEvent(ReloadUI, 'i', SDL_KEYDOWN);
@@ -254,6 +221,7 @@ int main(int argc, char *argv[]){
 	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, CheckWindowActive);
 
 	// LoadObj("../models/cube.obj");
+	// UI_LoadDomain("ui/tests/color.uiss");
 
 	while(running){
 		loop_start_ticks = SDL_GetTicks();
@@ -261,16 +229,18 @@ int main(int argc, char *argv[]){
 		if(window_active){
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			if(script_loop != NULL){
-				script_loop();
-			}
+			// if(script_loop != NULL){
+			// 	script_loop();
+			// }
 
 			RenderGL();
 
-			// SetElementText(FindElement(&scene_stack[0], "t1"), "Time: %d", SDL_GetTicks());
-			UI_RenderScene(&scene_stack[0]);
-			UI_RenderScene(&scene_stack[1]);
+			// SetElementText(FindElement(&scene_stack[0], "t1"), "Time: %d", SDL_GetTicks());+
+			// for(int i = 0; i < num_domains; i++){
+			// 	UI_RenderDomain(&scene_stack[i]);
 
+			// }
+			// UI_RenderDomain(&scene_stack[1]);
 			PushRender();
 			SDL_GL_SwapWindow(window);
 		}

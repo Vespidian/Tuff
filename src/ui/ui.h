@@ -1,10 +1,10 @@
 #ifndef UI_H_
 #define UI_H_
 
-#include "../gl_utils.h"
+#include "../shader.h"
 #include "../renderer/render_text.h"
 
-extern ShaderObject ui_shader;
+extern Shader ui_shader;
 
 void InitUI();
 
@@ -22,14 +22,14 @@ typedef enum UI_EaseType{UI_EASE_UNDEFINED, UI_EASE_LINEAR}UI_EaseType; // https
 typedef enum UI_StyleType_et{
 	UI_PIXELS,						// Specifies length in pixels
 	UI_PERCENT,						// Specified length as a percentage of parent element
-	UI_TRANSFORM_ABSOLUTE,			// Position in pixels relative to the body of the scene (does not apply to scale)
+	UI_TRANSFORM_ABSOLUTE,			// Position in pixels relative to the body of the domain (does not apply to scale)
 	UI_TRANSFORM_PIXELS_INVERTED,	// Position in pixels relative to the opposite side of the parent (does not apply to scale)
 									// i.e. if the x position is 5px and 'UI_TRANSFORM_INVERTED_POSITION' is applied
 									// the actual x position will be 5 pixels from the right edge of the parent element
 	UI_STYLE_INHERIT,				// Specified length equal to the parent element's
 	UI_UNDEFINED,					// Specifies value as default if a property is undefined
 }UI_StyleType_et;
-
+bool boop;
 typedef union{
 	struct{int x, y, z, w;};
 	UI_StyleType_et v[4];
@@ -131,7 +131,7 @@ typedef struct UIClass{
 typedef struct UIElement{
 	char *name;
 
-	struct UIScene *scene;
+	struct UIDomain *domain;
 
 	struct UIElement *parent;
 	unsigned int num_children;
@@ -144,7 +144,7 @@ typedef struct UIElement{
 	FontObject *font;
 	float text_size;
 
-	TextureObject *image;
+	Texture *image;
 
 	Vector4 color;
 	Vector4 border_color;
@@ -175,26 +175,26 @@ typedef struct UIElement{
 	// UIAction *actions; // Array of actions that this element triggers
 
 	bool is_active; // Element visibility
-	void (*function)(struct UIElement *element);
+	// void (*function)(struct UIElement *element);
 
 }UIElement;
 
-typedef struct UIScene{
+typedef struct UIDomain{
 	char *path;
 	bool dynamic; // Determines whether or not 'needs_update' is used, if the seen is dynamic we re-compute it every frame no matter what
-	bool needs_update; // Polled every frame to determine whether to re-compute the scene
+	bool needs_update; // Polled every frame to determine whether to re-compute the domain
 
-	unsigned int num_classes; // Number of classes in the current scene
-	UIClass *classes; // Array of all classes in the current scene
+	unsigned int num_classes; // Number of classes in the current domain
+	UIClass *classes; // Array of all classes in the current domain
 	UIElement body; // Root element (similar to 'body' in html)
-}UIScene;
+}UIDomain;
 
 // TMP
-extern UIScene *scene_stack;
-extern unsigned int num_scenes;
-UIScene *UI_LoadScene(char *path);
-void UI_RenderScene(UIScene *scene);
-void UI_FreeScene(UIScene *scene);
+extern UIDomain *scene_stack;
+extern unsigned int num_domains;
+UIDomain *UI_LoadDomain(char *path);
+void UI_RenderDomain(UIDomain *domain);
+void UI_FreeDomain(UIDomain *domain);
 void ResetElement(UIElement *element);
 
 

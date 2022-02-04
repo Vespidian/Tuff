@@ -1,7 +1,4 @@
 *.o
+*.d
 log.txt
 *.exe
-*,*
-saves/
-doxygen/
-models/

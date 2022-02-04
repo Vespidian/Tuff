@@ -1,4 +1,4 @@
 echo off
 cd bin
 cls
-foXandbox.exe
+main.exe

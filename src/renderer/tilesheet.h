@@ -1,7 +1,7 @@
 #ifndef TILESHEET_H_
 #define TILESHEET_H_
 
-#include "../gl_utils.h"
+#include "../textures.h"
 
 /**
  *  Array of tilesheets loaded via 'NewTilesheet()'
@@ -24,7 +24,7 @@ void InitTilesheets();
  *  @param tile_. width and height of a single tile
  *  @return A pointer to the 'TilesheetObject' containing the tilesheet
  */
-TilesheetObject *NewTilesheet(TextureObject texture, int tile_w, int tile_h);
+TilesheetObject *NewTilesheet(Texture texture, int tile_w, int tile_h);
 
 /**
  *  Generate a tilesheet from from a texture file

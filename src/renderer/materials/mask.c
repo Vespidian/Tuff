@@ -1,13 +1,14 @@
 #include "../../global.h"
 #include "../../event.h"
 #include "../../gl_context.h"
-#include "../../gl_utils.h"
+// #include "../../gl_utils.h"
+#include "../../shader.h"
 #include "../renderer.h"
 
 #include "mask.h"
 
 AttribArray mask_vao;
-ShaderObject mask_shader;
+Shader mask_shader;
 
 static void WindowResize(EventData event);
 TilesheetObject autotile_mask_sheet;
@@ -15,7 +16,7 @@ TilesheetObject autotile_mask_sheet;
 void InitMaskedRender(){
 	mask_vao = NewVAO(5, ATTR_MAT4, ATTR_VEC4, ATTR_VEC4, ATTR_VEC4, ATTR_VEC4);
 
-	mask_shader = LoadShaderProgram("mask.shader");
+	mask_shader = ShaderOpen("mask.shader");
 	UniformSetMat4(&mask_shader, "tex_coordinates", default_texture_coordinates);
 	UniformSetInt(&mask_shader, "top_texture_s", 0);
 	UniformSetInt(&mask_shader, "bottom_texture_s", 1);
@@ -63,7 +64,7 @@ void MaskedRender(TilesheetObject top_sheet, unsigned int top_index, TilesheetOb
 	memcpy(&data[28], mask_src, sizeof(vec4));
 
 
-	TextureObject textures[16] = {top_sheet.texture, bottom_sheet.texture, autotile_mask_sheet.texture};
+	Texture textures[16] = {top_sheet.texture, bottom_sheet.texture, autotile_mask_sheet.texture};
 	AppendInstance(mask_vao, data, &mask_shader, 3, textures);
 }
 

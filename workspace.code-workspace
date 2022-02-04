@@ -15,6 +15,7 @@
 			"lib/": true,
 			"bin/": true,
 			"**/*.o": true,
+			"**/*.d": true,
 			"models/": true,
 			"images/": true,
 			"resources/": true,

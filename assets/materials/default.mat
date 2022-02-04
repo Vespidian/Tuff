@@ -1,0 +1,23 @@
+{
+	shader: 0,
+	parameters: [
+		{
+			name: "Albedo",
+			uniform: "albedo_tex",
+			type: TEXTURE,
+			texture: 0,
+		},
+		{
+			name: "Opacity",
+			uniform: "opacity_u",
+			type: VALUE,
+			value: 255,
+		},
+		{
+			name: "Tint",
+			uniform: "tint_u",
+			type: VECTOR3,
+			value: [0, 1.0, 0],
+		},
+	],
+}
