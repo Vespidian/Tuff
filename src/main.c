@@ -95,24 +95,11 @@ static char *startup_dict[] = {
 static void tfunc_startup(JSONState *json, unsigned int token){
 	switch(JSONTokenHash(json, token, startup_dict)){
 		case 0:; // startup_bundle
-			// JSONToken startup_token = JSONTokenValue(json, token + 1);
-			// if(startup_token.type == JSON_STRING){
-			// 	char *startup_path = malloc(strlen(startup_token._string) + 1);
-			// 	if(startup_path != NULL){
-			// 		memcpy(startup_path, startup_token._string, strlen(startup_token._string));
-			// 		startup_path[strlen(startup_token._string)] = 0;
-			// 		if(strncmp(startup_path + strlen(startup_path) - 5, ".bndl", 5) == 0){ // Make sure the file is a '.bndl' file
-			// 			app = BundleOpen(startup_path);
-			// 		}
-			// 		free(startup_path);
-			// 		startup_path = NULL;
-			// 	}
-			// }
 			char *startup_path = NULL;
 			JSONTokenToString(json, token + 1, &startup_path);
 			if(startup_path != NULL){
 				if(strncmp(startup_path + strlen(startup_path) - 5, ".bndl", 5) == 0){ // Make sure the file is a '.bndl' file
-					app = BundleOpen(startup_path);
+					// app = BundleOpen(startup_path);
 				}
 			}
 			break;

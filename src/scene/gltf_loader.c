@@ -284,10 +284,8 @@ static GLTFState *gltf_ptr = NULL;
 				case 1: // uri 
 					// (only for .gltf not .glb)
 					if(t_value.type == JSON_STRING){
-						buffer_ptr->uri = malloc(strlen(t_value._string) + 1);
-						memcpy(buffer_ptr->uri, t_value._string, strlen(t_value._string));
-						buffer_ptr->uri[strlen(t_value._string)] = 0;
-
+						buffer_ptr->uri = NULL;
+						JSONTokenToString(json, token + 1, &buffer_ptr->uri);
 						printf("Buffer uri: '%s'\n", buffer_ptr->uri);
 					}
 					break;

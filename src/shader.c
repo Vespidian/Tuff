@@ -223,6 +223,159 @@ static Shader ShaderParseUniforms(char *name, unsigned int id, char *vertex, cha
 	return shader;
 }
 
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+// Returns a pointer to the first character that is not 'not_char'
+static char *strchr_not(char *str, char not_char){
+	while(str[0] != 0 && str[0] == not_char){
+		str++;
+	}
+	return str;
+}
+
+static void ShaderStageParseUniforms_new(Shader *shader, unsigned int stage_id){
+	ShaderStage *stage = &shader->stages[stage_id];
+	char *source_ptr = stage->source;
+	while((source_ptr = strstr(source_ptr, "uniform ")) != NULL){
+		if(strchr(source_ptr, '{') < strchr(source_ptr, ';')){
+			source_ptr = strchr(source_ptr, ' '); // Jump the pointer over the 'uniform' keyword
+			continue;
+		}
+	
+		ShaderUniformObject *tmp_uniforms = realloc(stage->uniforms, sizeof(ShaderUniformObject) * (stage->num_uniforms + 1));
+		if(tmp_uniforms != NULL){
+			stage->uniforms = tmp_uniforms;
+
+			source_ptr = strchr(source_ptr, ' ');
+
+			if(strncmp(source_ptr, "vec", 3) == 0){
+				source_ptr += 3;
+				switch((source_ptr)[0]){
+					case '2':
+						// printf("VEC2\n");
+						memset(stage->uniforms[stage->num_uniforms].value._vec2.v, 0, sizeof(Vector2));
+						stage->uniforms[stage->num_uniforms].type = UNI_VEC2;
+						break;
+					case '3':
+						// printf("VEC3\n");
+						memset(stage->uniforms[stage->num_uniforms].value._vec3.v, 0, sizeof(Vector2));
+						stage->uniforms[stage->num_uniforms].type = UNI_VEC3;
+						break;
+					case '4':
+						// printf("VEC4\n");
+						memset(stage->uniforms[stage->num_uniforms].value._vec4.v, 0, sizeof(Vector2));
+						stage->uniforms[stage->num_uniforms].type = UNI_VEC4;
+						break;
+				}
+				source_ptr += 1;
+			}else if(strncmp(source_ptr, "mat", 3) == 0){
+				source_ptr += 3;
+				switch((source_ptr)[0]){
+					case '2':
+						// printf("MAT2\n");
+						memset(stage->uniforms[stage->num_uniforms].value._mat2, 0, sizeof(mat2));
+						stage->uniforms[stage->num_uniforms].type = UNI_MAT2;
+						break;
+					case '3':
+						// printf("MAT3\n");
+						memset(stage->uniforms[stage->num_uniforms].value._mat3, 0, sizeof(mat3));
+						stage->uniforms[stage->num_uniforms].type = UNI_MAT3;
+						break;
+					case '4':
+						// printf("MAT4\n");
+						memset(stage->uniforms[stage->num_uniforms].value._mat4, 0, sizeof(mat4));
+						stage->uniforms[stage->num_uniforms].type = UNI_MAT4;
+						break;
+				}
+				source_ptr += 1;
+			}else if(strncmp(source_ptr, "sampler", 7) == 0){
+				source_ptr += 7;
+				switch((source_ptr)[0]){
+					case '1':
+						stage->uniforms[stage->num_uniforms].type = UNI_SAMPLER1D;
+						break;
+					case '2':
+						stage->uniforms[stage->num_uniforms].type = UNI_SAMPLER2D;
+						break;
+					case '3':
+						stage->uniforms[stage->num_uniforms].type = UNI_SAMPLER3D;
+						break;
+				}
+				source_ptr += 2;
+			}else{
+				stage->uniforms[stage->num_uniforms].value._float = 0;
+				if(strncmp(source_ptr, "float", 5) == 0){
+					// printf("FLOAT\n");
+					source_ptr += 5;
+					stage->uniforms[stage->num_uniforms].type = UNI_FLOAT;
+				}else if(strncmp(source_ptr, "int", 3) == 0){
+					// printf("INT\n");
+					source_ptr += 3;
+					stage->uniforms[stage->num_uniforms].type = UNI_INT;
+				}else if(strncmp(source_ptr, "bool", 4) == 0){
+					// printf("BOOL\n");
+					source_ptr += 4;
+					stage->uniforms[stage->num_uniforms].type = UNI_BOOL;
+				}
+			}
+			source_ptr = strchr_not(source_ptr + 1, ' '); // Go to the first character of the uniform's name
+
+			int uniform_name_length = 
+				((strchr(source_ptr, ';') > strchr(source_ptr, ' ')) ? strchr(source_ptr, ' ') : strchr(source_ptr, ';'))
+				- 
+				source_ptr
+			;
+
+			// Alloc and copy uniform name
+			stage->uniforms[stage->num_uniforms].name = NULL;
+			stage->uniforms[stage->num_uniforms].name = malloc(uniform_name_length + 1);
+			memcpy(stage->uniforms[stage->num_uniforms].name, source_ptr, uniform_name_length);
+			stage->uniforms[stage->num_uniforms].name[uniform_name_length] = 0;
+
+
+			// Make sure this uniform doesnt already exist in this stage
+			bool found_copy = false;
+			for(int j = 0; j < stage->num_uniforms; j++){
+				if(strcmp(stage->uniforms[j].name, stage->uniforms[stage->num_uniforms].name) == 0){
+					if(stage->uniforms[j].is_exposed){
+						stage->uniforms[j].is_exposed_valid = true;
+					}
+					found_copy = true;
+					break;
+				}
+			}
+
+			// If this is a copy, remove it
+			if(found_copy){
+				free(stage->uniforms[stage->num_uniforms].name);
+				ShaderUniformObject *tmp_uniforms = realloc(stage->uniforms, sizeof(ShaderUniformObject) * (stage->num_uniforms));
+				if(tmp_uniforms != NULL){
+					stage->uniforms = tmp_uniforms;
+				}else{
+					DebugLog(D_WARN, "%s: Parsing shader uniforms: realloc could not deallocate space of duplicate uniform", shader->name);
+				}
+			}else{
+				stage->num_uniforms++;
+			}
+		}
+	}
+
+	// Now we loop through internal and exposed uniforms and delete any exposed uniforms that are not marked to have an internal counterpart
+	for(int i = 0; i < stage->num_uniforms; i++){
+		if(stage->uniforms[i].is_exposed){
+			if(!stage->uniforms[i].is_exposed_valid){
+				free(stage->uniforms[i].name);
+				free(stage->uniforms[i].description);
+				memcpy(stage->uniforms, stage->uniforms + i, stage->num_uniforms - i);
+				stage->num_uniforms--;
+			}
+		}else{
+			// All exposed uniforms are at the start of the array
+			break;
+		}
+	}
+}
+
 static char *dict_uniform[] = {
 	"uniform",
 	"description",
@@ -264,7 +417,7 @@ Shader *shader_ptr = NULL;
 					// This is the name of the uniform as taken directly from the source
 					uniform_ptr->name = NULL;
 					JSONTokenToString(json, token + 1, &uniform_ptr->name);
-					DebugLog(D_ACT, "Found uniform: '%s'\n", uniform_ptr->name);
+					DebugLog(D_ACT, "Found uniform: '%s'", uniform_ptr->name);
 					break;
 				case 1: // description
 					// Description of the uniform
@@ -275,8 +428,10 @@ Shader *shader_ptr = NULL;
 
 					break;
 				case 3: // range
-					// Allowed range for the value of the uniform
+					// Allowed range for the value of the uniform (must be an array of length 2)
+					// if((json->tokens[token + 1].type = JSMN_ARRAY) && (json->tokens[token + 1].size == 2)){
 
+					// }
 					break;
 			}
 		}
@@ -306,14 +461,14 @@ static void tfunc_shader(JSONState *json, unsigned int token){
 		if(json->tokens[token].type == JSMN_OBJECT){
 			// New shader stage here
 			
-			ShaderStage *tmp_shader_stages = realloc(shader_ptr->stages, sizeof(ShaderStage) * (shader_ptr->num_uniforms + 1));
+			ShaderStage *tmp_shader_stages = realloc(shader_ptr->stages, sizeof(ShaderStage) * (shader_ptr->num_stages + 1));
 			if(tmp_shader_stages != NULL){
 				shader_ptr->stages = tmp_shader_stages;
 				stage_ptr = &shader_ptr->stages[shader_ptr->num_stages];
 
 				stage_ptr->is_compiled = false;
 				stage_ptr->source = NULL;
-				stage_ptr->stage = STAGE_UNDEFINED;
+				stage_ptr->stage_type = STAGE_UNDEFINED;
 				stage_ptr->num_uniforms = 0;
 				stage_ptr->uniforms = NULL;
 
@@ -336,28 +491,28 @@ static void tfunc_shader(JSONState *json, unsigned int token){
 					if(token_value.type == JSON_STRING){
 						switch(JSONTokenHash(json, token + 1, dict_stage)){
 							case 0: // VERTEX
-								stage_ptr->stage = STAGE_VERTEX;
+								stage_ptr->stage_type = STAGE_VERTEX;
 								break;
 							case 1: // FRAGMENT
-								stage_ptr->stage = STAGE_FRAGMENT;
+								stage_ptr->stage_type = STAGE_FRAGMENT;
 								break;
 							case 2: // GEOMETRY
-								stage_ptr->stage = STAGE_GEOMETRY;
+								stage_ptr->stage_type = STAGE_GEOMETRY;
 								break;
 							case 3: // TESSELATE_CONTROL
-								stage_ptr->stage = STAGE_TESSELATE_CONT;
+								stage_ptr->stage_type = STAGE_TESSELATE_CONT;
 								break;
 							case 4: // TESSELATE_EVALUATE
-								stage_ptr->stage = STAGE_TESSELATE_EVAL;
+								stage_ptr->stage_type = STAGE_TESSELATE_EVAL;
 								break;
 							case 5: // COMPUTE
-								stage_ptr->stage = STAGE_COMPUTE;
+								stage_ptr->stage_type = STAGE_COMPUTE;
 								break;
 							default: // UNDEFINED
-								stage_ptr->stage = STAGE_UNDEFINED;
+								stage_ptr->stage_type = STAGE_UNDEFINED;
 								break;
 						}
-						printf("Stage of type '%s':'%d'\n", token_value._string, stage_ptr->stage);
+						printf("Stage of type '%d'\n", stage_ptr->stage_type);
 					}
 					break;
 				case 2: // uniforms
@@ -369,7 +524,7 @@ static void tfunc_shader(JSONState *json, unsigned int token){
 					stage_ptr->source = NULL;
 					JSONTokenToString(json, token + 1, &stage_ptr->source);
 					// printf("\n\n----- Found shader source: -----\n%s\n\n", stage_ptr->source);
-					DebugLog(D_ACT,"\n\n----- Found shader source: -----\n%s\n\n", stage_ptr->source);
+					// DebugLog(D_ACT,"\n\n----- Found shader source: -----\n%s\n\n", stage_ptr->source);
 					break;
 			}
 		}
@@ -393,7 +548,18 @@ Shader ShaderOpen_new(char *path){
 			JSONParse(&json);
 			JSONFree(&json);
 
+			//Parse internal uniforms from the source code
+			for(int i = 0; i < shader.num_stages; i++){
+				ShaderStageParseUniforms_new(&shader, i);
+			}
 
+			// Checking for uniforms that are BOTH exposed and internal is done within the 'ShaderStageParseUniforms' function
+
+			// Put all uniforms into shader uniform array and check for redundancies
+
+			// Compile each stage
+
+			// Compile shader program
 		}
 
 		shader_ptr = NULL;
@@ -402,6 +568,8 @@ Shader ShaderOpen_new(char *path){
 	}
 	return shader;
 }
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Shader ShaderOpen(char *filename){ // TODO: This whole function must be reworked to support the new json shader format
     SDL_RWops *shader_file;

@@ -28,11 +28,6 @@ typedef struct JSONState{
 	// Current depth of the json parser
 	unsigned int depth;
 
-	// Strings parsed by 'JSONTokenValue' function are stored here (Internal)
-	char **parsed_strings;
-	// Number of strings stored using 'JSONTokenValue'
-	unsigned int num_strings;
-
 	// The source string containing raw json data
 	char *json_string;
 
@@ -65,7 +60,6 @@ typedef struct JSONToken{
 	bool _bool;
 	int _int;
 	float _float;
-	char *_string;
 }JSONToken;
 
 
@@ -163,9 +157,9 @@ void JSONFree(JSONState *json);
 void JSONPrint(JSONState *json, unsigned int token);
 
 /**
- *  @brief Utility function to copy a token to a string
- *  @param dest NULL initialized non allocated char pointer to be allocated with the token string (ie: char *d = NULL;)
+ *  @brief Utility function to copy a token to a string, this function ALLOCATES and COPIES the string into the char pointer specified
+ *  @param string_ptr NULL initialized non allocated char pointer to be allocated with the token string (ie: char *d = NULL;)
  */
-void JSONTokenToString(JSONState *json, unsigned int token, char **dest);
+void JSONTokenToString(JSONState *json, unsigned int token, char **string_ptr);
 
 #endif

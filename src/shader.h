@@ -28,6 +28,7 @@ typedef struct ShaderUniformObject{
 		int _sampler3d;
 	}value;
 
+	bool is_exposed_valid;
 	bool is_exposed;
 
 	union{
@@ -53,7 +54,7 @@ typedef struct ShaderUniformObject{
 enum SHADER_STAGE{STAGE_UNDEFINED, STAGE_VERTEX, STAGE_FRAGMENT, STAGE_GEOMETRY, STAGE_TESSELATE_CONT, STAGE_TESSELATE_EVAL, STAGE_COMPUTE};
 typedef struct ShaderStage{
 	bool is_compiled;
-	enum SHADER_STAGE stage;
+	enum SHADER_STAGE stage_type;
 	char *source;
 
 	unsigned int num_uniforms;

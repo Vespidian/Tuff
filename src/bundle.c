@@ -81,21 +81,17 @@ static Bundle *bundle_ptr = NULL;;
 			switch(JSONTokenHash(json, token, dict_model)){
 				case 0: // path
 					if(t_value.type == JSON_STRING){
-						ptr_models->path = malloc(strlen(t_value._string) + 1);
-						if(ptr_models->path != NULL){
-							memcpy(ptr_models->path, t_value._string, strlen(t_value._string));
-							ptr_models->path[strlen(t_value._string)] = 0;
-							
-							// Make sure we didnt already load this same model file
-							for(int i = 0; i < bundle_ptr->num_models; i++){
-								if(strcmp(ptr_models->path, bundle_ptr->models[i].path) == 0){
-									bundle_ptr->num_models--;
-									break;
-								}
+						ptr_models->path = NULL;
+						JSONTokenToString(json, token + 1, &ptr_models->path);
+
+						// Make sure we didnt already load this same model file
+						for(int i = 0; i < bundle_ptr->num_models; i++){
+							if(strcmp(ptr_models->path, bundle_ptr->models[i].path) == 0){
+								bundle_ptr->num_models--;
+								break;
 							}
-						}else{
-							bundle_ptr->num_models--;
 						}
+
 					}else{
 						bundle_ptr->num_models--;
 					}

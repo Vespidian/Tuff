@@ -134,11 +134,8 @@ static GLTFState *gltf_ptr;
 				case 0:; // name
 					JSONToken t_value = JSONTokenValue(json, token + 1);
 					if(t_value.type == JSON_STRING){
-						mesh_ptr->name = malloc(strlen(t_value._string) + 1);
-						if(mesh_ptr->name != NULL){
-							memcpy(mesh_ptr->name, t_value._string, strlen(t_value._string));
-							mesh_ptr->name[strlen(t_value._string)] = 0;
-						}
+						mesh_ptr->name = NULL;
+						JSONTokenToString(json, token + 1, &mesh_ptr->name);
 					}
 					break;
 				case 1: // primitives

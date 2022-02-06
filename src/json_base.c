@@ -129,9 +129,6 @@ JSONState JSONNew(){
 	json.num_tokens = 0;
 	json.tokens = NULL;
 	
-	json.num_strings = 0;
-	json.parsed_strings = NULL;
-
 	return json;
 }
 
@@ -193,8 +190,6 @@ JSONState JSONRead(char *string, char *path){
 
 		if(json.tokens[0].type == JSMN_OBJECT){
 			// Define values
-			json.parsed_strings = NULL;
-			json.num_strings = 0;
 			json.is_loaded = true;
 			json.funcs = malloc(sizeof(JSONFuncObject*));
 			// if(json.funcs == NULL){
@@ -458,16 +453,8 @@ void JSONFree(JSONState *json){
 		free(json->funcs);
 		json->funcs = NULL;
 
-		for(int i = 0; i < json->num_strings; i++){
-			free(json->parsed_strings[i]);
-			json->parsed_strings[i] = NULL;
-		}
-
 		free(json->path);
 		json->path = NULL;
-
-		free(json->parsed_strings);
-		json->parsed_strings = NULL;
 
 		free(json->json_string);
 		json->json_string = NULL;
@@ -537,29 +524,14 @@ JSONToken JSONTokenValue(JSONState *json, unsigned int token){
 		token_object._bool = false;
 		token_object._int = 0;
 		token_object._float = 0;
-		token_object._string = NULL;
 
 		char *token_string = json->json_string + json->tokens[token].start;
 		int token_string_length = JSONTokenLength(json, token) + 1;
 
 		// Convert the data to the specified type
 		if(is_string){
+			// Strings are no longer allocated inside this function, if you want to get a string from the json file, use 'JSONTokenToString'
 			token_object.type = JSON_STRING;
-			char **tmp = realloc(json->parsed_strings, sizeof(char*) * (json->num_strings + 1));
-			if(tmp != NULL){
-				json->parsed_strings = tmp;
-				json->parsed_strings[json->num_strings] = malloc(token_string_length);
-				if(json->parsed_strings[json->num_strings] != NULL){
-					strncpy(json->parsed_strings[json->num_strings], token_string, token_string_length - 1);
-					json->parsed_strings[json->num_strings][token_string_length - 1] = 0;
-					token_object._string = json->parsed_strings[json->num_strings];
-				}else{
-					Error("%s: error: Could not allocate return string for 'JSONTokenValue'", json->path);
-				}
-				json->num_strings++;
-			}else{
-				Error("%s: error: Could not reallocate strings array for 'JSONTokenValue'", json->path);
-			}
 			// printf("STRING!\n");
 		}else if(is_int){
 			token_object.type = JSON_INT;
@@ -591,14 +563,14 @@ JSONToken JSONTokenValue(JSONState *json, unsigned int token){
 	}
 }
 
-void JSONTokenToString(JSONState *json, unsigned int token, char **dest){
+void JSONTokenToString(JSONState *json, unsigned int token, char **string_ptr){
 	if(json != NULL){
-		if(*dest == NULL){
-			*dest = malloc(JSONTokenLength(json, token) + 1);
-			memcpy(*dest, json->json_string + json->tokens[token].start, JSONTokenLength(json, token));
-			*(*dest + JSONTokenLength(json, token)) = 0;
+		if(*string_ptr == NULL){
+			*string_ptr = malloc(JSONTokenLength(json, token) + 1);
+			memcpy(*string_ptr, json->json_string + json->tokens[token].start, JSONTokenLength(json, token));
+			*(*string_ptr + JSONTokenLength(json, token)) = 0;
 		}else{
-			Error("%s: error: 'dest' string passed to 'JSONTokenToString' must be initialized to NULL", json->path);
+			Error("%s: error: string passed to 'JSONTokenToString' must be initialized to NULL", json->path);
 		}
 	}
 }
