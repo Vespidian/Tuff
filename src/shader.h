@@ -5,6 +5,10 @@
 #include <cglm/cglm.h>
 
 enum ShaderTypes { UNI_BOOL = 0, UNI_INT, UNI_FLOAT, UNI_VEC2, UNI_VEC3, UNI_VEC4, UNI_MAT2, UNI_MAT3, UNI_MAT4, UNI_SAMPLER1D, UNI_SAMPLER2D, UNI_SAMPLER3D};
+
+/**
+ * 
+ */
 typedef struct ShaderUniformObject{
 	char *name;
 	char *description;
@@ -28,7 +32,6 @@ typedef struct ShaderUniformObject{
 		int _sampler3d;
 	}value;
 
-	bool is_exposed_valid;
 	bool is_exposed;
 
 	union{
@@ -40,19 +43,29 @@ typedef struct ShaderUniformObject{
 		Vector4 _vec4;
 	}value_default;
 
-	union{
-		int _int;
-		float _float;
-	}min;
 
-	union{
-		int _int;
-		float _float;
-	}max;
+	// union{
+	// 	int _int;
+	// 	float _float;
+	// }min;
+
+	// union{
+	// 	int _int;
+	// 	float _float;
+	// }max;
+	float min, max;
 }ShaderUniformObject;
 
-enum SHADER_STAGE{STAGE_UNDEFINED, STAGE_VERTEX, STAGE_FRAGMENT, STAGE_GEOMETRY, STAGE_TESSELATE_CONT, STAGE_TESSELATE_EVAL, STAGE_COMPUTE};
+/**
+ * 
+ */
+enum SHADER_STAGE{STAGE_UNDEFINED, STAGE_VERTEX, STAGE_FRAGMENT, STAGE_GEOMETRY, STAGE_TESSELLATE_CONT, STAGE_TESSELLATE_EVAL, STAGE_COMPUTE};
+
+/**
+ * 
+ */
 typedef struct ShaderStage{
+	unsigned int gl_id;
 	bool is_compiled;
 	enum SHADER_STAGE stage_type;
 	char *source;
@@ -61,13 +74,16 @@ typedef struct ShaderStage{
 	ShaderUniformObject *uniforms;
 }ShaderStage;
 
+/**
+ * 
+ */
 typedef struct Shader{
 	char *name; // TODO: Unsure yet whether to use a custom name or shader file path
 	char *path;
 	bool is_loaded;
 	unsigned int id;
 
-	unsigned char num_stages;
+	unsigned int num_stages;
 	ShaderStage *stages;
 
 	unsigned int num_uniforms;
@@ -81,18 +97,32 @@ typedef struct Shader{
  */
 extern unsigned int current_shader;
 
-// Shader ShaderParseUniforms(char *name, unsigned int id, char *vertex, char *fragment);
+/**
+ * 
+ */
 Shader ShaderOpen(char *filename);
+
+/**
+ * 
+ */
 void ShaderFree(Shader *shader);
 
+/**
+ * 
+ */
 void ShaderPassUniforms(Shader *shader);
+
+/**
+ * 
+ */
 void ShaderSet(Shader *shader);
 
+// Primitives
 void UniformSetBool(Shader *shader, char *uniform_name, bool value);
 void UniformSetInt(Shader *shader, char *uniform_name, int value);
 void UniformSetFloat(Shader *shader, char *uniform_name, float value);
 
-// Vectors (datatype)
+// Vectors (typedef)
 void UniformSetVec2(Shader *shader, char *uniform_name, vec2 value);
 void UniformSetVec3(Shader *shader, char *uniform_name, vec3 value);
 void UniformSetVec4(Shader *shader, char *uniform_name, vec4 value);
@@ -111,10 +141,6 @@ void UniformSetMat4(Shader *shader, char *uniform_name, mat4 mat);
 void UniformSetSampler1D(Shader *shader, char *uniform_name, int sampler);
 void UniformSetSampler2D(Shader *shader, char *uniform_name, int sampler);
 void UniformSetSampler3D(Shader *shader, char *uniform_name, int sampler);
-
-
-// TMP
-Shader ShaderOpen_new(char *path);
 
 
 #endif

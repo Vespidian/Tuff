@@ -50,11 +50,20 @@
 				default: 100,
 				range: [0, 512],
 			},
+			{
+				uniform: color_u;
+				description: "Vector3 testing",
+				default: [128, 56, 75];
+				range: [0, 255];
+			}
 		],
 		source: "
 			
 			#version 130
 			out vec4 FragColor;
+			
+			uniform int seed_u;
+			uniform vec3 color_u;
 
 			in vec3 color_v;
 

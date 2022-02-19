@@ -199,7 +199,7 @@ static void ToggleWireframe(EventData event){
 int main(int argc, char *argv[]){
 	Setup();
 
-	ShaderOpen_new("shaders/default.shader");
+	// ShaderOpen_new("shaders/default.shader");
 
 	// startupTime.x = SDL_GetTicks();
 	BindKeyEvent(ToggleWireframe, 'z', SDL_KEYDOWN);
