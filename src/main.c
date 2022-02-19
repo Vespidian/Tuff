@@ -99,7 +99,7 @@ static void tfunc_startup(JSONState *json, unsigned int token){
 			JSONTokenToString(json, token + 1, &startup_path);
 			if(startup_path != NULL){
 				if(strncmp(startup_path + strlen(startup_path) - 5, ".bndl", 5) == 0){ // Make sure the file is a '.bndl' file
-					// app = BundleOpen(startup_path);
+					app = BundleOpen(startup_path);
 				}
 			}
 			break;

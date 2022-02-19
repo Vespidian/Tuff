@@ -614,10 +614,12 @@ Shader ShaderOpen(char *path){
 
 				shader.is_loaded = true;
 			}
+			DebugLog(D_ACT, "%s: Done loading shader", shader.path);
+		}else{
+			DebugLog(D_ERR, "%s: Could not open shader file", path);
 		}
 
 		shader_ptr = NULL;
-		DebugLog(D_ACT, "%s: Done loading shader", shader.path);
 	}
 	return shader;
 }

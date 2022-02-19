@@ -3,7 +3,7 @@
 
 #include "scene/gltf_loader.h"				// Meshes
 #include "textures.h" 		// Textures
-// #include "" 				// Shaders
+#include "shader.h"		// Shaders
 // #include "" 				// Materials
 // #include "" 				// Scripts
 // #include "ui/ui_parser.h" 	// Domains
@@ -23,6 +23,9 @@ typedef struct Bundle{
 
 	unsigned int num_models;
 	Model *models;
+
+	unsigned int num_shaders;
+	Shader *shaders;
 }Bundle;
 
 Bundle BundleOpen(char *path);

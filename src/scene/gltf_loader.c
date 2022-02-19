@@ -370,7 +370,7 @@ GLTFState GLTFOpen(char *path){
 				memcpy(buffer_path + path_length, tmp_buffer_ptr->uri, strlen(tmp_buffer_ptr->uri)); // Now copy the filename
 				buffer_path[(path_length) + strlen(tmp_buffer_ptr->uri)] = 0;
 
-				FILE *fp = fopen(buffer_path, "rb"); // TODO: This currently takes the path relative to the parent .gltf file (we either fix this OR only support .glb files)
+				FILE *fp = fopen(buffer_path, "rb");
 				if(fp != NULL){
 					fseek(fp, 0, SEEK_END);
 					long file_length = ftell(fp);

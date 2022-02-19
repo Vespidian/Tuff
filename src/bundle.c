@@ -58,46 +58,68 @@ static Bundle *bundle_ptr = NULL;;
 		NULL
 	};
 	static void tfunc_models(JSONState *json, unsigned int token){
-		Model *ptr_models = &bundle_ptr->models[bundle_ptr->num_models];
-		if(json->tokens[token].type == JSMN_OBJECT){
+		if(bundle_ptr != NULL){
+			Model *ptr_models = &bundle_ptr->models[bundle_ptr->num_models];
+			if(json->tokens[token].type == JSMN_OBJECT){
 
-			Model *tmp_models = realloc(bundle_ptr->models, sizeof(Model) * (bundle_ptr->num_models + 1));
-			if(tmp_models != NULL){
-				bundle_ptr->models = tmp_models;
+				Model *tmp_models = realloc(bundle_ptr->models, sizeof(Model) * (bundle_ptr->num_models + 1));
+				if(tmp_models != NULL){
+					bundle_ptr->models = tmp_models;
 
-				ptr_models = &bundle_ptr->models[bundle_ptr->num_models];
-				ptr_models->path = NULL;
-				ptr_models->gltf = GLTFNew();
+					ptr_models = &bundle_ptr->models[bundle_ptr->num_models];
+					ptr_models->path = NULL;
+					ptr_models->gltf = GLTFNew();
 
-				JSONSetTokenFunc(json, NULL, tfunc_models);
-				JSONParse(json);
+					JSONSetTokenFunc(json, NULL, tfunc_models);
+					JSONParse(json);
 
-				bundle_ptr->num_models++;
+					bundle_ptr->num_models++;
+				}else{
+					bundle_ptr->num_models--;
+				}
 			}else{
-				bundle_ptr->num_models--;
-			}
-		}else{
-			JSONToken t_value = JSONTokenValue(json, token + 1);
-			switch(JSONTokenHash(json, token, dict_model)){
-				case 0: // path
-					if(t_value.type == JSON_STRING){
-						ptr_models->path = NULL;
-						JSONTokenToString(json, token + 1, &ptr_models->path);
+				JSONToken t_value = JSONTokenValue(json, token + 1);
+				switch(JSONTokenHash(json, token, dict_model)){
+					case 0: // path
+						if(t_value.type == JSON_STRING){
+							ptr_models->path = NULL;
+							JSONTokenToString(json, token + 1, &ptr_models->path);
 
-						// Make sure we didnt already load this same model file
-						for(int i = 0; i < bundle_ptr->num_models; i++){
-							if(strcmp(ptr_models->path, bundle_ptr->models[i].path) == 0){
-								bundle_ptr->num_models--;
-								break;
+							// Make sure we didnt already load this same model file
+							for(int i = 0; i < bundle_ptr->num_models; i++){
+								if(strcmp(ptr_models->path, bundle_ptr->models[i].path) == 0){
+									bundle_ptr->num_models--;
+									break;
+								}
 							}
-						}
 
-					}else{
-						bundle_ptr->num_models--;
-					}
-					break;
-				case 1: // 
-					break;
+						}else{
+							bundle_ptr->num_models--;
+						}
+						break;
+					case 1: // 
+						break;
+				}
+			}
+		}
+	}
+
+	static void tfunc_shaders(JSONState *json, unsigned int token){
+		if(bundle_ptr != NULL){
+
+			Shader *tmp_shaders = realloc(bundle_ptr->shaders, sizeof(Shader) * (bundle_ptr->num_shaders + 1));
+			if(tmp_shaders != NULL){
+				bundle_ptr->shaders = tmp_shaders;
+
+				char *path = NULL;
+				JSONTokenToString(json, token, &path);
+
+			// Shader *ptr_shaders = &bundle_ptr->shaders[bundle_ptr->num_shaders];
+				bundle_ptr->shaders[bundle_ptr->num_shaders] = ShaderOpen(path);
+				bundle_ptr->num_shaders++;
+
+				free(path);
+				path = NULL;
 			}
 		}
 	}
@@ -123,6 +145,9 @@ static void tfunc_bundle(JSONState *json, unsigned int token){
 			case 1:; // textures
 				break;
 			case 2:; // shaders
+				bundle_ptr->shaders = malloc(sizeof(Shader));
+				JSONSetTokenFunc(json, NULL, tfunc_shaders);
+				JSONParse(json);
 				break;
 			case 3:; // materials
 				break;
@@ -136,19 +161,11 @@ static void tfunc_bundle(JSONState *json, unsigned int token){
 	}
 }
 
-void BundleGLTFDelete(Bundle *bundle, unsigned int gltf_index){
-	if(bundle != NULL){
-		if(gltf_index <= bundle->num_models){
-			// Free model's data
-			free(bundle->models[gltf_index].path);
-			bundle->models[gltf_index].path = NULL;
-			GLTFFree(&bundle->models[gltf_index].gltf);
-
-			// Now shift over the rest of the models
-			memcpy(&bundle->models[gltf_index], &bundle->models[gltf_index + 1], sizeof(Model) * (bundle->num_models - gltf_index));
-
-			bundle->num_models--;
-		}
+void BundleModelFree(Model *model){
+	if(model != NULL){
+		free(model->path);
+		model->path = NULL;
+		GLTFFree(&model->gltf);
 	}
 }
 
@@ -172,29 +189,30 @@ Bundle BundleOpen(char *path){
 		bundle_ptr = &bundle;
 
 		JSONState json = JSONOpen(path);
-		JSONSetTokenFunc(&json, NULL, tfunc_bundle);
-		JSONParse(&json);
-		JSONFree(&json);
+		if(json.is_loaded){
+			JSONSetTokenFunc(&json, NULL, tfunc_bundle);
+			JSONParse(&json);
+			JSONFree(&json);
 
-		bundle_ptr = NULL;
+			bundle_ptr = NULL;
 
-		// Now we load sub-files
+			// Now we load sub-files
 
-		/* --- TEXTURES --- */
-		/* --- MODELS --- */
-		for(int i = 0; i < bundle.num_models; i++){
-			int tmp = SDL_GetTicks();
-			bundle.models[i].gltf = GLTFOpen(bundle.models[i].path);
-			if(!bundle.models[i].gltf.is_loaded){
-				BundleGLTFDelete(&bundle, i);
-				i--;
-				continue;
+			/* --- TEXTURES --- */
+			/* --- MODELS --- */
+			for(int i = 0; i < bundle.num_models; i++){
+				int tmp = SDL_GetTicks();
+				bundle.models[i].gltf = GLTFOpen(bundle.models[i].path);
+				if(!bundle.models[i].gltf.is_loaded){
+					BundleModelFree(&bundle.models[i]);
+					continue;
+				}
+				printf("Took %dms to load gltf file '%s'\n", SDL_GetTicks() - tmp, bundle.models[i].path);
 			}
-			printf("Took %dms to load gltf file '%s'\n", SDL_GetTicks() - tmp, bundle.models[i].path);
-		}
 
-		bundle.is_loaded = true;
-		DebugLog(D_ACT, "Loaded bundle '%s'", path);
+			bundle.is_loaded = true;
+			DebugLog(D_ACT, "Loaded bundle '%s'", path);
+		}
 	}
 	bundle_ptr = NULL;
 	return bundle;
@@ -222,6 +240,14 @@ void BundleFree(Bundle *bundle){
 		free(bundle->models);
 		bundle->models = NULL;
 		bundle->num_models = 0;
+
+/* --- SHADERS --- */
+		for(int i = 0; i < bundle->num_shaders; i++){
+			ShaderFree(&bundle->shaders[i]);
+		}
+		free(bundle->shaders);
+		bundle->shaders = NULL;
+		bundle->num_shaders = 0;
 
 	}
 }
