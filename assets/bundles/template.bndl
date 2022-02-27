@@ -28,7 +28,7 @@
 	],
 	
 	"shaders" : [
-		"default.glsl",
+		"shaders/default.shader",
 	],
 	
 	"materials": [

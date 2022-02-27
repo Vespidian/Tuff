@@ -179,6 +179,9 @@ Bundle BundleOpen(char *path){
 	bundle.models = NULL;
 	bundle.num_models = 0;
 
+	bundle.shaders = NULL;
+	bundle.num_shaders = 0;
+
 	if(path != NULL){
 		bundle.path = malloc(strlen(path) + 1);
 		if(bundle.path != NULL){

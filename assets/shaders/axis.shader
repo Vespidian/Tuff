@@ -3,6 +3,7 @@
 	{
 		stage: VERTEX,
 		source: "
+			/* --- AXIS VERTEX SHADER --- */
 			#version 140
 			#extension GL_ARB_uniform_buffer_object : enable
 			#extension GL_ARB_explicit_attrib_location : enable
@@ -39,6 +40,7 @@
 	{
 		stage: FRAGMENT,
 		source: "
+			/* --- AXIS FRAGMENT SHADER --- */
 			#version 130
 
 			out vec4 FragColor;
@@ -55,9 +57,7 @@
 				if(fract(length(pos_f - pos_v) * 400 / 20 / zoom) > 0.5){
 					discard;
 				}
-
 				FragColor = vec4(color_v, 1);
-
 			}
 		",
 	}

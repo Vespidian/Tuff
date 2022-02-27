@@ -12,7 +12,9 @@ enum ShaderTypes { UNI_BOOL = 0, UNI_INT, UNI_FLOAT, UNI_VEC2, UNI_VEC3, UNI_VEC
 typedef struct ShaderUniformObject{
 	char *name;
 	char *description;
-	unsigned int uniform;
+	int uniform;
+	bool is_uploaded;
+
 	enum ShaderTypes type;
 	union value{
 		bool _bool;

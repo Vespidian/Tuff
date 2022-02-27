@@ -44,6 +44,9 @@ void DebugLog(int type, const char *format, ...){
 				fprintf(log_file, "%d-%d-%d %d:%d:%d: ", 1900 + currentTime->tm_year, currentTime->tm_mon,
 				currentTime->tm_mday, currentTime->tm_hour, currentTime->tm_min, currentTime->tm_sec);
 			}
+			if(formatted_text[strlen(formatted_text) - 1] == '\n'){
+				formatted_text[strlen(formatted_text) - 1] = 0;
+			}
 			
 			//Insert corresponding debug log type depending on defined log complexity
 			if(type <= log_complexity){

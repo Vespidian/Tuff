@@ -92,14 +92,16 @@ static char *startup_dict[] = {
 	"startup_bundle",
 	NULL
 };
+char *startup_path = NULL;
 static void tfunc_startup(JSONState *json, unsigned int token){
 	switch(JSONTokenHash(json, token, startup_dict)){
 		case 0:; // startup_bundle
-			char *startup_path = NULL;
 			JSONTokenToString(json, token + 1, &startup_path);
 			if(startup_path != NULL){
 				if(strncmp(startup_path + strlen(startup_path) - 5, ".bndl", 5) == 0){ // Make sure the file is a '.bndl' file
+					int start_time = SDL_GetTicks();
 					app = BundleOpen(startup_path);
+					printf("Loaded bundle.. Took %dms\n", SDL_GetTicks() - start_time);
 				}
 			}
 			break;
@@ -112,27 +114,27 @@ void Setup(){
 	// JSONSetErrorFunc(DebugLog);
 	InitDebug();
 
-
 	if(chdir("../assets") != 0){
 		perror("Could not set working directory");
 	}
 
-
 	InitEvents();
 	InitSDL();
+
+
+	JSONState json = JSONOpen("../bin/builtin_assets/startup.conf");
+	JSONSetTokenFunc(&json, NULL, tfunc_startup);
+	JSONParse(&json);
+	JSONFree(&json);
+
+
 	InitGL();
-
 	InitRenderers();
-
 	InitTextures();
 	InitTilesheets();
 	InitFonts();
 
 	// Load startup file
-	JSONState json = JSONOpen("../bin/builtin_assets/startup.conf");
-	JSONSetTokenFunc(&json, NULL, tfunc_startup);
-	JSONParse(&json);
-	JSONFree(&json);
 
 	// int start = SDL_GetTicks();
 	// UI_LoadDomain("ui/minimal.uiss");
@@ -170,6 +172,14 @@ static void CheckWindowActive(EventData event){
 	}
 }
 
+static void ReloadApp(EventData event){
+	BundleFree(&app);
+	app = BundleOpen(startup_path);
+
+	ShaderFree(&axis_shader);
+	axis_shader = ShaderOpen("shaders/axis.shader");
+}
+
 static void ReloadUI(){
 	// for(int i = 0; i < num_domains; i++){
 	// 	UI_FreeDomain(&scene_stack[i]);
@@ -204,6 +214,7 @@ int main(int argc, char *argv[]){
 	// startupTime.x = SDL_GetTicks();
 	BindKeyEvent(ToggleWireframe, 'z', SDL_KEYDOWN);
 	BindKeyEvent(ReloadUI, 'i', SDL_KEYDOWN);
+	BindKeyEvent(ReloadApp, 'm', SDL_KEYDOWN);
 	// BindKeyEvent(ReloadScript, 'l', SDL_KEYDOWN);
 	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, CheckWindowActive);
 

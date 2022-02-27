@@ -11,4 +11,3 @@ Todo:
 - Work out bundle parsing and loading of each element within the bundle
 - Rework ui parsing to use new JSONParser
 - Create seperate functions for setting each parameter of all structs (MODEL_SetParent, MODEL_SetTransform) and have one giant New* function that incorporates all necessary ones (ModelObject *NewModel(char *name, ModelObject *parent, TransformObject *transform, unsigned int mesh_file, unsigned int mesh_index, unsigned int material);)
-- Trying to load a non existent shader should not crash the application

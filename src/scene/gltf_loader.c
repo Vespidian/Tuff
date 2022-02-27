@@ -12,6 +12,8 @@
 
 #include "gltf_loader.h"
 
+// #define GLTF_DEBUG
+
 static GLTFState *gltf_ptr = NULL;
 		static char *dict_meshes_attributes[] = {
 			"POSITION",
@@ -56,7 +58,9 @@ static GLTFState *gltf_ptr = NULL;
 						mesh_ptr->attributes = tmp_attr;
 						mesh_ptr->attributes[mesh_ptr->num_attributes].type = type;
 						mesh_ptr->attributes[mesh_ptr->num_attributes].accessor = attr_token._int;
-						printf("Set mesh attribute for attr '%d' to to value '%d'\n", type, attr_token._int);
+						#ifdef GLTF_DEBUG
+							printf("Set mesh attribute for attr '%d' to to value '%d'\n", type, attr_token._int);
+						#endif
 						mesh_ptr->num_attributes++;
 					}
 				}
@@ -115,7 +119,9 @@ static GLTFState *gltf_ptr = NULL;
 				case 0:; // name
 					mesh_ptr->name = NULL;
 					JSONTokenToString(json, token + 1, &mesh_ptr->name);
-					printf("model: name: '%s'\n", mesh_ptr->name);
+					#ifdef GLTF_DEBUG
+						printf("model: name: '%s'\n", mesh_ptr->name);
+					#endif
 					break;
 				case 1:; // primitives
 					JSONSetTokenFunc(json, NULL, tfunc_meshes_primitives);
@@ -166,19 +172,25 @@ static GLTFState *gltf_ptr = NULL;
 					if(t_value.type == JSON_INT){
 						accessor_ptr->buffer_view = t_value._int;
 					}
-					printf("Accessor leading to bufferview: '%d'\n", accessor_ptr->buffer_view);
+					#ifdef GLTF_DEBUG
+						printf("Accessor leading to bufferview: '%d'\n", accessor_ptr->buffer_view);
+					#endif
 					break;
 				case 1: // componentType
 					if(t_value.type == JSON_INT){
 						accessor_ptr->component_type = t_value._int;
 					}
-					printf("Accessor componenttype: '%d'\n", accessor_ptr->component_type);
+					#ifdef GLTF_DEBUG
+						printf("Accessor componenttype: '%d'\n", accessor_ptr->component_type);
+					#endif
 					break;
 				case 2: // count
 					if(t_value.type == JSON_INT){
 						accessor_ptr->count = t_value._int;
 					}
-					printf("Accessor count: '%d'\n", accessor_ptr->count);
+					#ifdef GLTF_DEBUG
+						printf("Accessor count: '%d'\n", accessor_ptr->count);
+					#endif
 					break;
 				case 3: // max	< TODO: To be used eventually (Bounding box)
 					break;
@@ -196,7 +208,9 @@ static GLTFState *gltf_ptr = NULL;
 							accessor_ptr->type = VEC3;
 							break;
 					}
-					printf("Accessor type: '%d'\n", accessor_ptr->type);
+					#ifdef GLTF_DEBUG
+						printf("Accessor type: '%d'\n", accessor_ptr->type);
+					#endif
 					break;
 			}
 		}
@@ -233,15 +247,21 @@ static GLTFState *gltf_ptr = NULL;
 				switch(JSONTokenHash(json, token, dict_bufferviews)){
 					case 0: // buffer
 						bufferview_ptr->buffer = t_value._int;
-						printf("BufferView buffer: '%d'\n", bufferview_ptr->buffer);
+						#ifdef GLTF_DEBUG
+							printf("BufferView buffer: '%d'\n", bufferview_ptr->buffer);
+						#endif
 						break;
 					case 1: // byteLength
 						bufferview_ptr->byte_length = t_value._int;
-						printf("BufferView bytelength: '%d'\n", bufferview_ptr->byte_length);
+						#ifdef GLTF_DEBUG
+							printf("BufferView bytelength: '%d'\n", bufferview_ptr->byte_length);
+						#endif
 						break;
 					case 2: // byteOffset
 						bufferview_ptr->byte_offset = t_value._int;
-						printf("BufferView byteoffset: '%d'\n", bufferview_ptr->byte_offset);
+						#ifdef GLTF_DEBUG
+							printf("BufferView byteoffset: '%d'\n", bufferview_ptr->byte_offset);
+						#endif
 						break;
 				}
 			}
@@ -279,14 +299,18 @@ static GLTFState *gltf_ptr = NULL;
 					if(t_value.type == JSON_INT){
 						buffer_ptr->byte_length = t_value._int;
 					}
-					printf("Buffer bytelength: '%d'\n", buffer_ptr->byte_length);
+					#ifdef GLTF_DEBUG
+						printf("Buffer bytelength: '%d'\n", buffer_ptr->byte_length);
+					#endif
 					break;
 				case 1: // uri 
 					// (only for .gltf not .glb)
 					if(t_value.type == JSON_STRING){
 						buffer_ptr->uri = NULL;
 						JSONTokenToString(json, token + 1, &buffer_ptr->uri);
-						printf("Buffer uri: '%s'\n", buffer_ptr->uri);
+						#ifdef GLTF_DEBUG
+							printf("Buffer uri: '%s'\n", buffer_ptr->uri);
+						#endif
 					}
 					break;
 			}

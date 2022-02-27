@@ -9,6 +9,7 @@
 #define GLCall
 #endif
 
+#include "shader.h"
 extern SDL_GLContext gl_context;
 int InitGL();
 
@@ -22,6 +23,8 @@ extern int z_depth;
 
 void InitRenderers();
 extern unsigned int uniform_buffer;
+
+extern Shader axis_shader;
 
 //tmp
 // #include "gl_utils.h"

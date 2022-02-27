@@ -21,8 +21,15 @@
 
 			out vec3 color_v;
 
+			float PHI = 1.61803398874989484820459;  // Φ = Golden Ratio  
+
+			float gold_noise(in vec2 xy, in float seed){
+				return fract(tan(distance(xy*PHI, xy)*seed)*xy.x);
+			}
+
 			void main(){
 				gl_Position = projection_persp * view * vec4(pos_a, 1);
+				// gl_Position = projection_persp * view * vec4(pos_a + vec3(gold_noise(vec2(pos_a.x, pos_a.z) * time, 5)) * 0.1, 1);
 
 				if(pos_a.z == 0){
 					color_v = vec3(1, 0.2, 0.322);
@@ -31,6 +38,8 @@
 				}else{
 					color_v = color_a;
 				}
+				
+				
 			}
 		",
 	},

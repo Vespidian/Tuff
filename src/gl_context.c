@@ -10,6 +10,7 @@
 
 #include "gl_context.h"
 #include "scene/scene.h"
+#include "bundle.h"
 
 
 #include "scene/gltf_loader.h"
@@ -184,7 +185,6 @@ int InitGL(){
 	mesh_shader = ShaderOpen("shaders/mesh.shader");
 	axis_shader = ShaderOpen("shaders/axis.shader");
 	grid_shader = ShaderOpen("shaders/grid.shader");
-
 
 	glGenBuffers(1, &uniform_buffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
@@ -376,7 +376,6 @@ void RenderUI(){
 
     // // GLCall;
 }
-
 void RenderGL(){
 	RenderUI();
 
@@ -414,10 +413,10 @@ void RenderGL(){
 	glDrawArrays(GL_LINES, 0, 26);
 	
 	// Mesh axis
-	SetVAO(axis_vao);
-    UniformSetMat4(&axis_shader, "model", mesh_transform.result);
-	ShaderPassUniforms(&axis_shader);
-	glDrawArrays(GL_LINES, 0, 26);
+	// SetVAO(axis_vao);
+    // UniformSetMat4(&axis_shader, "model", mesh_transform.result);
+	// ShaderPassUniforms(&axis_shader);
+	// glDrawArrays(GL_LINES, 0, 26);
 
 	// parent axis
 	// SetVAO(mesh_vao);

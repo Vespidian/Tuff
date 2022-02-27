@@ -202,7 +202,7 @@ JSONState JSONRead(char *string, char *path){
 			json.current_token = 1;
 
 		}else{
-			Error("%s: error: The entire JSON file must be surrounded by {} to be valid", path);
+			Error("%s: error: The entire JSON file must be surrounded by {} to be valid\n", path);
 			exit_error:
 			json.is_loaded = false;
 			free(json.path);
@@ -210,6 +210,9 @@ JSONState JSONRead(char *string, char *path){
 			
 			free(json.json_string);
 			json.json_string = NULL;
+			
+			free(json.tokens);
+			json.tokens = NULL;
 		}
 
 	}
@@ -221,14 +224,14 @@ JSONState JSONOpen(char *path){
 	if(path != NULL){
 		FILE *fp = fopen(path, "rb");
 		if(fp == NULL){
-			Error("%s: error opening file", path);
+			Error("%s: error opening file\n", path);
 			return json;
 		}
 		fseek(fp, 0, SEEK_END);
 		long file_length = ftell(fp);
 		fseek(fp, 0, SEEK_SET);
 		if(file_length == -1){
-			Error("%s: error reading length of file", path);
+			Error("%s: error reading length of file\n", path);
 			return json;
 		}
 		#ifdef JSON_DEBUG
@@ -237,7 +240,7 @@ JSONState JSONOpen(char *path){
 
 		char *json_string = malloc(file_length + 1);
 		if(json_string == NULL){
-			Error("%s: error: Could not allocate space for file string", path);
+			Error("%s: error: Could not allocate space for file string\n", path);
 
 			free(json_string);
 			json_string = NULL;
@@ -250,7 +253,7 @@ JSONState JSONOpen(char *path){
 		json_string[file_length] = 0;
 
 		if(read_error_check != file_length){
-			Error("%s: error reading data from file", path);
+			Error("%s: error reading data from file\n", path);
 
 			free(json_string);
 			json_string = NULL;
@@ -327,7 +330,9 @@ int CountFuncs(JSONState *json, unsigned int depth){
 static void FreeFuncDepth(JSONState *json, unsigned int depth){
 	if(json != NULL){
 		if(json->is_loaded && json->depth <= depth){
-			printf("%d functions at depth '%d'\n", CountFuncs(json, depth), depth);
+			#ifdef JSON_DEBUG
+				printf("%d functions at depth '%d'\n", CountFuncs(json, depth), depth);
+			#endif
 			for(int i = 1; !json->funcs[depth][i].is_null; i++){
 				free(json->funcs[depth][i].name); // LEAK
 				json->funcs[depth][i].name = NULL;
@@ -367,7 +372,7 @@ void JSONParse(JSONState *json){
 				if(tmp != NULL){
 					json->funcs = tmp;
 				}else{
-					Error("%s: error: Could not allocate space for another nested 'JSONParse'", json->path);
+					Error("%s: error: Could not allocate space for another nested 'JSONParse'\n", json->path);
 					return;
 				}
 
@@ -550,7 +555,7 @@ JSONToken JSONTokenValue(JSONState *json, unsigned int token){
 				free(tmp_float_string);
 				tmp_float_string = NULL;
 			}else{
-				Error("%s: error: Could not allocate string for float conversion", json->path);
+				Error("%s: error: Could not allocate string for float conversion\n", json->path);
 			}
 			// printf("FLOAT!\n");
 		}else{
@@ -558,7 +563,7 @@ JSONToken JSONTokenValue(JSONState *json, unsigned int token){
 		}
 		return token_object;
 	}else{
-		Error("%s: error: Attempting to get value from an uninitialized 'JSONState'", json->path);
+		Error("%s: error: Attempting to get value from an uninitialized 'JSONState'\n", json->path);
 		return (JSONToken){JSON_UNDEFINED};
 	}
 }
@@ -570,7 +575,7 @@ void JSONTokenToString(JSONState *json, unsigned int token, char **string_ptr){
 			memcpy(*string_ptr, json->json_string + json->tokens[token].start, JSONTokenLength(json, token));
 			*(*string_ptr + JSONTokenLength(json, token)) = 0;
 		}else{
-			Error("%s: error: string passed to 'JSONTokenToString' must be initialized to NULL", json->path);
+			Error("%s: error: string passed to 'JSONTokenToString' must be initialized to NULL\n", json->path);
 		}
 	}
 }
