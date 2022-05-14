@@ -18,7 +18,7 @@
 				mat4 view;
 				float time;
 			};
-
+			flat out float time_f;
 			uniform mat4 model;
 
 			out vec3 vert_v;
@@ -36,6 +36,8 @@
 			}
 
 			void main(){
+				time_f = time;
+				
 				vec3 T = normalize(vec3(model * vec4(tangent_a, 0)));
 				vec3 B = normalize(vec3(model * vec4(cross(normal_a, tangent_a), 0)));
 				vec3 N = normalize(vec3(model * vec4(normal_a, 0)));
@@ -48,7 +50,10 @@
 
 				// float value = time * gold_noise(pos_a.xz, 502);
 				// gl_Position = projection * view * model * vec4(pos_a + vec3(sin(value / 300.0) / 2), 1);
-				gl_Position = projection_persp * view * model * vec4(pos_a, 1);
+				// gl_Position = projection_persp * view * model * vec4(pos_a, 1);
+				float zval = (sin(time + pos_a.x*2 + pos_a.y*3) + 1)*0.2 + pos_a.z;
+				float yval = (sin(time + pos_a.x*5) + 1)*0.1 + pos_a.y;
+				gl_Position = projection_persp * view * model * vec4(pos_a.x, yval, zval, 1);
 				// gl_Position = projection * view * model * vec4(normal_a, 1);
 				// gl_Position = projection * view * model * vec4(texture_a, 1);
 				frag_pos_v = vec3(model * vec4(pos_a, 1));
@@ -64,6 +69,8 @@
 
 			out vec4 FragColor;
 
+			flat in float time_f;
+
 			in vec3 vert_v;
 			in vec3 normal_v;
 			in vec2 texture_v;
@@ -77,12 +84,13 @@
 			uniform vec3 light_pos;
 			uniform vec3 light_color;
 			uniform vec3 view_position;
-
+			uniform float checker_size;
 			uniform float normal_map_intensity;
 
 			void main(){
 				vec2 tv = mod(texture_v, 1.0);
 				vec3 new_normal = normalize(normal_v + (texture(normal_map, tv)).rgb);
+				// vec3 new_normal = normalize(normal_v + (texture(tex, tv)).rgb);
 				// new_normal *= 2.0 - 1.0;
 				// new_normal = normalize(TBN_v * new_normal);
 				// vec3 new_normal = normalize(normal_v);
@@ -90,7 +98,8 @@
 
 				vec3 ambient = vec3(0.25);
 				vec3 sun_dir = normalize(radians(vec3(20, 45, 0)));
-				ambient += (dot(sun_dir, normalize(new_normal)) + 1) / 4;
+				// ambient += (dot(sun_dir, normalize(new_normal)) + 1) / 4;
+				ambient += (dot(sun_dir, normalize(normal_v)) + 1) / 4;
 				// if(dot(sun_dir, normalize(normal_v)) <= 0.0){
 				// 	ambient = vec3(max(dot(sun_dir, normalize(normal_v)), 0) + 0.25);
 				// }
@@ -115,13 +124,18 @@
 				specular += vec3(specular_strength * spec);
 				// vec3 specular = specular_strength * spec * light_color;
 				// vec3 specular = vec3(specular_strength * spec);
-				FragColor = texture(tex, tv);
+				// FragColor = texture(tex, tv);
+				FragColor = vec4(1);
+				float grid_size = 50;
+				FragColor *= vec4(vec3(mod(floor(tv.x * grid_size) + floor(tv.y * grid_size), 2.0) == 0 ? 0.8 : 1), 1);
+				// FragColor *= vec4(vec3(mod(floor((tv.x + tv.y) * 50), 2.0) == 0), 1);
 				// FragColor = vec4(abs(vert_v.zzz), 1);
 				// FragColor = vec4(abs(vert_v.zzz), 1) + texture(tex, tv.xy);
 				// FragColor = vec4(vec3(0.75), 1);
 				// FragColor *= vec4(diffuse, 1);
-				FragColor *= vec4(diffuse + specular + ambient, 1);
+				// FragColor *= vec4(diffuse + specular + ambient, 1);
 				// FragColor *= vec4(diffuse + ambient, 1);
+				FragColor *= vec4(ambient + vec3(sin(time_f)*0.5, cos(time_f)*0.5, sin(time_f)*0.5 + cos(time_f)*0.5), 1);
 				// FragColor = vec4(diffuse + specular + ambient, 1);
 				// FragColor *= vec4(ambient + specular, 1);
 				// FragColor = vec4(light_pos, 1);

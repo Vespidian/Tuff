@@ -12,5 +12,9 @@ Requires both a fragment and vertex stage
 ### Uniforms support each of the following subsections:
 - uniform	(Uniform to reference in the source code)
 - name		(Custom name to be displayed in editor)
+- type		(Type of the uniform (INT, FLOAT, VEC3, ...))
 - default	(Default value to be assigned to materials only for certain types (int, float, bool, vec1/2/3))
 - range		(Allowable range for integer and floating point values)
+
+### Notes:
+- When specifying values for 'default' and 'range' if 'type' is float then you must explicitly specify this in the number by adding a .0 to any whole numbers (i.e. 50.0 rather than 50)

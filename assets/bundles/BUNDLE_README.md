@@ -5,7 +5,7 @@ Check out bundles/template.bndl to see an example of a bundle
 ###References inside a bundle:
 - Textures		*
 - Shaders		*
-- Materials		
+- Materials		*
 - Meshes		*
 - Scripts		
 - UI Domains	.5

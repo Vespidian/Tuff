@@ -1,23 +1,31 @@
 {
+	name: "Default Material",
 	shader: "shaders/default.shader",
-	parameters: [
+	uniforms: [
 		{
-			name: "Albedo",
-			uniform: "albedo_tex",
-			type: TEXTURE,
-			texture: 0,
+			name: "albedo_tex",
+			type: SAMPLER2D,
+			value: "images/image.png",
 		},
 		{
-			name: "Opacity",
-			uniform: "opacity_u",
-			type: VALUE,
+			name: "opacity_u",
+			type: INT,
 			value: 255,
 		},
 		{
-			name: "Tint",
-			uniform: "tint_u",
-			type: VECTOR3,
-			value: [0, 1.0, 0],
+			name: "tint_u",
+			type: VEC3,
+			value: [1.0, 1.0, 0],
+		},
+		{
+			name: "light_pos",
+			type: VEC3,
+			value: [1, 0.5, 0.2],
+		},
+		{
+			name: "checker_size",
+			type: FLOAT,
+			value: 50.0,
 		},
 	],
 }
