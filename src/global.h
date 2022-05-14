@@ -28,4 +28,7 @@ extern int target_framerate;
 
 void Quit();
 
+#include "bundle.h"
+extern Bundle app;
+
 #endif

@@ -4,18 +4,26 @@
 #include "vectorlib.h"
 #include <cglm/cglm.h>
 
-enum ShaderTypes { UNI_BOOL = 0, UNI_INT, UNI_FLOAT, UNI_VEC2, UNI_VEC3, UNI_VEC4, UNI_MAT2, UNI_MAT3, UNI_MAT4, UNI_SAMPLER1D, UNI_SAMPLER2D, UNI_SAMPLER3D};
+enum UNIFORM_TYPE{ UNI_BOOL = 0, UNI_INT, UNI_FLOAT, UNI_VEC2, UNI_VEC3, UNI_VEC4, UNI_MAT2, UNI_MAT3, UNI_MAT4, UNI_SAMPLER1D, UNI_SAMPLER2D, UNI_SAMPLER3D};
 
 /**
- * 
+ *  @brief Shader uniform containing value, name and other flags
  */
-typedef struct ShaderUniformObject{
+typedef struct ShaderUniform{
+	// Uniform's name straight from the shader's source code
 	char *name;
+
+	// Description of the uniform (set in the .shader file)
 	char *description;
+
+	// OpenGL ID of the uniform
 	int uniform;
+
+	// Whether or not the current value matches the OpenGL contexts value
 	bool is_uploaded;
 
-	enum ShaderTypes type;
+	// Uniform type (float, vec3, ..)
+	enum UNIFORM_TYPE type;
 	union value{
 		bool _bool;
 		int _int;
@@ -34,6 +42,7 @@ typedef struct ShaderUniformObject{
 		int _sampler3d;
 	}value;
 
+	// Whether or not this uniform has defined value limits and a default value
 	bool is_exposed;
 
 	union{
@@ -55,69 +64,106 @@ typedef struct ShaderUniformObject{
 	// 	int _int;
 	// 	float _float;
 	// }max;
+	bool has_range;
 	float min, max;
-}ShaderUniformObject;
+}ShaderUniform;
 
 /**
- * 
+ *  @brief Shader stage type
  */
 enum SHADER_STAGE{STAGE_UNDEFINED, STAGE_VERTEX, STAGE_FRAGMENT, STAGE_GEOMETRY, STAGE_TESSELLATE_CONT, STAGE_TESSELLATE_EVAL, STAGE_COMPUTE};
 
 /**
- * 
+ *  @brief Shader stage context containing information on a single stage of a shader program
  */
 typedef struct ShaderStage{
+	// Stage's OpenGL ID
 	unsigned int gl_id;
+
+	// Whether or not the stage was successfully compiled
 	bool is_compiled;
+
+	// Type of stage (FRAG, VERT, ..)
 	enum SHADER_STAGE stage_type;
+
+	// String containing shader stage's source code
 	char *source;
 
+	// Number of uniforms found in stage source
 	unsigned int num_uniforms;
-	ShaderUniformObject *uniforms;
+
+	// Stage + Exposed uniforms
+	ShaderUniform *uniforms;
 }ShaderStage;
 
 /**
- * 
+ *  @brief Shader context containing information on an entire shader program
  */
 typedef struct Shader{
-	char *name; // TODO: Unsure yet whether to use a custom name or shader file path
+	// Descriptive memorable name defined in .shader file
+	char *name;
+
+	// Path to .shader file
 	char *path;
+
+	// Whether or not the shader was correctly loaded
 	bool is_loaded;
+
+	// Shader's OpenGL ID
 	unsigned int id;
 
+	// Number of shader stages within the shader
 	unsigned int num_stages;
+
+	// Array of shader stages
 	ShaderStage *stages;
 
+	// Number of unique uniforms throughout all shader stages
 	unsigned int num_uniforms;
-	ShaderUniformObject *uniforms;
 
+	// Array of unique uniforms from all stages
+	ShaderUniform *uniforms;
+
+	// Number of texture slots the shader makes use of
 	uint8_t num_texture_slots;
 }Shader;
 
 /**
- *  Active shader
+ *  Active shader (in the OpenGL state)
+ *  ( Must be set by the renderer )
  */
 extern unsigned int current_shader;
 
 /**
- * 
+ *  @brief Open, parse, and compile the specified shader file
+ *  @param path - Path to file to be read
+ *  @return A Shader ready to be used
  */
 Shader ShaderOpen(char *filename);
 
 /**
- * 
+ *  @brief Free a shader
+ *  @param shader Pointer to the shader to be freed
  */
 void ShaderFree(Shader *shader);
 
 /**
- * 
+ *  @brief Set the active shader in the OpenGL context - 'current_shader' is the currently active shader
+ */
+void ShaderSet(Shader *shader);
+
+/**
+ *  @brief Send the specified shader's uniforms to the OpenGL context
+ *  @param shader - Shader whose uniforms are to be sent to OpenGL
  */
 void ShaderPassUniforms(Shader *shader);
 
 /**
- * 
+ * 	@brief Retrieve the index of a uniform by name from 'shader'
+ * 	@return Index of 'shader.uniforms[]' or -1 upon error (uniform name doesnt exist)
  */
-void ShaderSet(Shader *shader);
+int ShaderUniformFind(Shader *shader, char *name);
+
 
 // Primitives
 void UniformSetBool(Shader *shader, char *uniform_name, bool value);

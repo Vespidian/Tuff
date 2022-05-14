@@ -17,11 +17,6 @@ typedef struct TilesheetObject{
 }TilesheetObject;
 
 /**
- *  Array of textures loaded via 'LoadTextureToStack()'
- */
-// extern Texture *texture_stack;
-
-/**
  *  Texture to be used in error cases
  */
 extern Texture undefined_texture;
@@ -32,18 +27,18 @@ extern Texture undefined_texture;
 void InitTextures();
 
 /**
- *  @brief Load a texture from file and place it into the texture stack
- *  @return A pointer to the 'Texture' containing the texture
+ * 
  */
-// Texture *LoadTextureToStack(const char *path);
+Texture TextureOpen(char *path);
 
 /**
- *  @return A pointer to the texture with id 'id' from the texture stack
+ * 
  */
-Texture *TextureFind(unsigned int texture);
-
-Texture TextureOpen(char *path);
 void TextureFree(Texture *texture);
+
+/**
+ * 
+ */
 TilesheetObject LoadTilesheet(char *path, int tile_width, int tile_height);
 
 #endif

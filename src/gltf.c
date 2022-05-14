@@ -3,14 +3,11 @@
 #include <stdbool.h>
 #include <string.h>
 
-// #include <SDL2/SDL.h>
+#include "debug.h"
+#include "vectorlib.h"
+#include "json_base.h"
 
-// #include "cgltf.h"
-#include "../debug.h"
-#include "../vectorlib.h"
-#include "../json_base.h"
-
-#include "gltf_loader.h"
+#include "gltf.h"
 
 // #define GLTF_DEBUG
 
@@ -73,7 +70,7 @@ static GLTFState *gltf_ptr = NULL;
 			NULL
 		};
 		static void tfunc_meshes_primitives(JSONState *json, unsigned int token){
-			// GLTFMesh *mesh_ptr = &gltf_ptr->meshes[gltf_ptr->num_meshes];
+			GLTFMesh *mesh_ptr = &gltf_ptr->meshes[gltf_ptr->num_meshes];
 
 			if(json->tokens[token].type == JSMN_OBJECT){
 				JSONSetTokenFunc(json, NULL, tfunc_meshes_primitives);
@@ -85,7 +82,12 @@ static GLTFState *gltf_ptr = NULL;
 						JSONSetTokenFunc(json, NULL, tfunc_meshes_primitives_attributes);
 						JSONParse(json);
 						break;
-					case 1: // indices
+					case 1:; // indices
+						JSONToken token_value = JSONTokenValue(json, token + 1);
+						if(token_value.type == JSON_INT){
+							mesh_ptr->has_indices = true;
+							mesh_ptr->indices = token_value._int;
+						}
 						break;
 				}
 			}
@@ -138,12 +140,20 @@ static GLTFState *gltf_ptr = NULL;
 		"max",
 		"min",
 		"type",
+		NULL
+	};
 
+	static char *dict_accessors_type[] = {
 		"SCALAR",
 		"VEC2",
 		"VEC3",
+		"VEC4",
+		"MAT2",
+		"MAT3",
+		"MAT4",
 		NULL
 	};
+
 	static void tfunc_accessors(JSONState *json, unsigned int token){
 		GLTFAccessor *accessor_ptr = &gltf_ptr->accessors[gltf_ptr->num_accessors];
 		if(json->tokens[token].type == JSMN_OBJECT){
@@ -197,16 +207,29 @@ static GLTFState *gltf_ptr = NULL;
 				case 4: // min	< TODO: To be used eventually (Bounding box)
 					break;
 				case 5: // type
-					switch(JSONTokenHash(json, token + 1, dict_accessors)){
-						case 6: // SCALAR
-							accessor_ptr->type = SCALAR;
+					switch(JSONTokenHash(json, token + 1, dict_accessors_type)){
+						case 0: // SCALAR
+							accessor_ptr->type = COMPONENT_SCALAR;
 							break;
-						case 7: // VEC2
-							accessor_ptr->type = VEC2;
+						case 1: // VEC2
+							accessor_ptr->type = COMPONENT_VEC2;
 							break;
-						case 8: // VEC3
-							accessor_ptr->type = VEC3;
+						case 2: // VEC3
+							accessor_ptr->type = COMPONENT_VEC3;
 							break;
+						case 3: // VEC3
+							accessor_ptr->type = COMPONENT_VEC4;
+							break;
+						case 4: // MAT2
+							accessor_ptr->type = COMPONENT_MAT2;
+							break;
+						case 5: // MAT3
+							accessor_ptr->type = COMPONENT_MAT3;
+							break;
+						case 6: // MAT3
+							accessor_ptr->type = COMPONENT_MAT3;
+							break;
+						
 					}
 					#ifdef GLTF_DEBUG
 						printf("Accessor type: '%d'\n", accessor_ptr->type);
@@ -353,7 +376,7 @@ void tfunc_gltf(JSONState *json, unsigned int token){
 	}
 }
 
-GLTFState GLTFOpen(char *path){
+static GLTFState GLTFStateOpen(char *path){
 	GLTFState gltf;
 	gltf.is_loaded = false;
 
@@ -431,7 +454,7 @@ GLTFState GLTFOpen(char *path){
 	return gltf;
 }
 
-GLTFState GLTFNew(){
+static GLTFState GLTFStateNew(){
 	GLTFState gltf;
 	gltf.is_loaded = false;
 
@@ -452,7 +475,7 @@ GLTFState GLTFNew(){
 	return gltf;
 }
 
-void GLTFFree(GLTFState *gltf){
+static void GLTFStateFree(GLTFState *gltf){
 	if(gltf != NULL){
 		if(gltf->is_loaded){
 			gltf->is_loaded = false;
@@ -489,5 +512,230 @@ void GLTFFree(GLTFState *gltf){
 				gltf->buffers = NULL;
 			}
 		}
+	}
+}
+
+
+static unsigned short ComponentTypeToSize(unsigned short component_type){
+	unsigned short size = 0; // Size in bytes
+	switch(component_type){
+		case 5120: size = 1; break; // signed 	byte
+		case 5121: size = 1; break; // unsigned byte
+		case 5122: size = 2; break; // signed 	short
+		case 5123: size = 2; break; // unsigned short
+		case 5124: size = 4; break; // signed 	int
+		case 5125: size = 4; break; // unsigned int
+		case 5126: size = 4; break; // float
+		case 5130: size = 8; break; // double
+	}
+	return size;
+}
+
+GLTF GLTFNew(){
+	GLTF gltf;
+	gltf.gltf_state = GLTFStateNew();
+	gltf.path = NULL;
+	gltf.num_meshes = 0;
+	gltf.meshes = NULL;
+	return gltf;
+}
+
+Mesh MeshNew(){
+	Mesh mesh;
+
+	mesh.data = NULL;
+	mesh.data_length = 0;
+
+	mesh.name = NULL;
+	mesh.path = NULL;
+	mesh.gltf = NULL;
+	mesh.mesh_index = 0;
+
+	// size = (size of a single component) * (number of components in an element)
+
+	mesh.index_exists = false;
+	mesh.index_size = 1; 
+	mesh.index_type = 4;
+	mesh.index_gl_type = 5126; // GL_FLOAT
+	mesh.index_count = 0;
+	mesh.index_bytelength = 0;
+	mesh.index_offset = 0;
+
+	mesh.position_exists = false;
+	mesh.position_size = 1; 
+	mesh.position_type = 4;
+	mesh.position_gl_type = 5126; // GL_FLOAT
+	mesh.position_count = 0;
+	mesh.position_bytelength = 0;
+	mesh.position_offset = 0;
+
+	mesh.uv0_exists = false;
+	mesh.uv0_size = 1; 
+	mesh.uv0_type = 4;
+	mesh.uv0_gl_type = 5126; // GL_FLOAT
+	mesh.uv0_count = 0;
+	mesh.uv0_bytelength = 0;
+	mesh.uv0_offset = 0;
+
+	mesh.uv1_exists = false;
+	mesh.uv1_size = 1; 
+	mesh.uv1_type = 4;
+	mesh.uv1_gl_type = 5126; // GL_FLOAT
+	mesh.uv1_count = 0;
+	mesh.uv1_bytelength = 0;
+	mesh.uv1_offset = 0;
+
+	mesh.normal_exists = false;
+	mesh.normal_size = 1; 
+	mesh.normal_type = 4;
+	mesh.normal_gl_type = 5126; // GL_FLOAT
+	mesh.normal_count = 0;
+	mesh.normal_bytelength = 0;
+	mesh.normal_offset = 0;
+
+	mesh.tangent_exists = false;
+	mesh.tangent_size = 1; 
+	mesh.tangent_type = 4;
+	mesh.tangent_gl_type = 5126; // GL_FLOAT
+	mesh.tangent_count = 0;
+	mesh.tangent_bytelength = 0;
+	mesh.tangent_offset = 0;
+
+
+	return mesh;
+}
+
+Mesh MeshFromGLTF(GLTFState *gltf, unsigned int mesh_index){
+	Mesh mesh = MeshNew();
+	if(gltf != NULL && mesh_index < gltf->num_meshes){
+		// TODO: Add support for multiple buffers (*.bin files)
+		mesh.data = gltf->buffers[0].data;
+		mesh.data_length = gltf->buffers[0].byte_length;
+
+		mesh.name = gltf->meshes[mesh_index].name;
+		mesh.path = gltf->path;
+		mesh.gltf = gltf;
+		mesh.mesh_index = mesh_index;
+
+		// Copy index data only if the data exists..
+		if((mesh.index_exists = gltf->meshes[mesh_index].has_indices)){
+			unsigned int accessor_index = gltf->meshes[mesh_index].indices;
+			unsigned int bufferview_index = gltf->accessors[accessor_index].buffer_view;
+
+			unsigned int gl_type = gltf->accessors[accessor_index].component_type;
+			unsigned char type = ComponentTypeToSize(gl_type);
+			unsigned char size = gltf->accessors[accessor_index].type;
+			unsigned int count = gltf->accessors[accessor_index].count;
+			unsigned int byte_length = gltf->buffer_views[bufferview_index].byte_length;
+			unsigned int offset = gltf->buffer_views[bufferview_index].byte_offset;
+
+			mesh.index_exists = true;
+			mesh.index_size = size; 
+			mesh.index_type = type;
+			mesh.index_gl_type = gl_type;
+			mesh.index_count = count;
+			mesh.index_bytelength = byte_length;
+			mesh.index_offset = offset;
+		}
+
+		for(int i = 0; i < gltf->meshes[mesh_index].num_attributes; i++){
+			unsigned int accessor_index = gltf->meshes[mesh_index].attributes[i].accessor;
+			unsigned int bufferview_index = gltf->accessors[accessor_index].buffer_view;
+
+			unsigned int gl_type = gltf->accessors[accessor_index].component_type;
+			unsigned char type = ComponentTypeToSize(gl_type);
+			unsigned char size = gltf->accessors[accessor_index].type;
+			unsigned int count = gltf->accessors[accessor_index].count;
+			unsigned int byte_length = gltf->buffer_views[bufferview_index].byte_length;
+			unsigned int offset = gltf->buffer_views[bufferview_index].byte_offset;
+
+			// To calculate byte_length of a section you simply have to do (num_elements * size);
+
+			switch(gltf->meshes[mesh_index].attributes[i].type){
+				case GLTF_POSITION:
+					mesh.position_exists = true;
+					mesh.position_size = size; 
+					mesh.position_type = type;
+					mesh.position_gl_type = gl_type;
+					mesh.position_count = count;
+					mesh.position_bytelength = byte_length;
+					mesh.position_offset = offset;
+					break;
+				case GLTF_NORMAL:
+					mesh.normal_exists = true;
+					mesh.normal_size = size; 
+					mesh.normal_type = type;
+					mesh.normal_gl_type = gl_type;
+					mesh.normal_count = count;
+					mesh.normal_bytelength = byte_length;
+					mesh.normal_offset = offset;
+					break;
+				case GLTF_TEXCOORD_0:
+					mesh.uv0_exists = true;
+					mesh.uv0_size = size; 
+					mesh.uv0_type = type;
+					mesh.uv0_gl_type = gl_type;
+					mesh.uv0_count = count;
+					mesh.uv0_bytelength = byte_length;
+					mesh.uv0_offset = offset;
+					break;
+				case GLTF_TEXCOORD_1:
+					mesh.uv1_exists = true;
+					mesh.uv1_size = size; 
+					mesh.uv1_type = type;
+					mesh.uv1_gl_type = gl_type;
+					mesh.uv1_count = count;
+					mesh.uv1_bytelength = byte_length;
+					mesh.uv1_offset = offset;
+					break;
+				case GLTF_TANGENT:
+					mesh.tangent_exists = true;
+					mesh.tangent_size = size; 
+					mesh.tangent_type = type;
+					mesh.tangent_gl_type = gl_type;
+					mesh.tangent_count = count;
+					mesh.tangent_bytelength = byte_length;
+					mesh.tangent_offset = offset;
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	return mesh;
+}
+
+
+GLTF GLTFOpen(char *path){
+	GLTF gltf = GLTFNew();
+
+	if(path != NULL){
+		GLTFState state = GLTFStateOpen(path);
+		if(state.is_loaded){
+			gltf.gltf_state = state;
+			gltf.path = state.path;
+			gltf.num_meshes = state.num_meshes;
+
+			gltf.meshes = malloc(sizeof(Mesh) * (gltf.num_meshes + 1));
+			if(gltf.meshes != NULL){
+				for(int i = 0; i < gltf.num_meshes; i++){
+					gltf.meshes[i] = MeshFromGLTF(&state, i);
+				}
+			}
+		}
+	}
+
+	return gltf;
+}
+
+void GLTFFree(GLTF *gltf){
+	if(gltf != NULL){
+		free(gltf->meshes);
+		gltf->meshes = NULL;
+		gltf->num_meshes = 0;
+
+		GLTFStateFree(&gltf->gltf_state);
+
+		gltf->path = NULL;
 	}
 }

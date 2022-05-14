@@ -1,44 +1,44 @@
-#include "global.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
+#include <GL/glew.h>
+#include <SDL2/SDL_image.h>
+
 #include "debug.h"
-#include "gl_context.h"
-#include "gl_utils.h"
-#include "renderer/renderer.h"
 
 #include "textures.h"
 
+#ifdef DEBUG_BUILD
+#define GLCall CheckGLErrors(__FILE__, __LINE__);
+#else
+#define GLCall
+#endif
+
+// #define TEXTURE_NOOPENGL
+
 Texture undefined_texture;
-
-Texture *texture_stack;
-
-// Number of textures currently loaded into the 'texture_stack'
-unsigned int num_textures = 0;
 
 void InitTextures(){
     undefined_texture = TextureOpen("../bin/builtin_assets/undefined.png");
     DebugLog(D_ACT, "Initialized texture subsystem");
 }
 
-Texture *TextureFind(unsigned int texture){ // Not currently used
-    for(int i = 0; i < num_textures; i++){
-        if(texture_stack[i].gl_tex == texture){
-            return &texture_stack[i];
-        }
-    }
-    return &undefined_texture;
-}
-
 void TextureFree(Texture *texture){
 	if(texture != NULL){
-		if(texture->is_loaded){
-			unsigned int *id = &texture->gl_tex;
-			glDeleteTextures(1, id);
+		// if(texture->is_loaded){
+			#ifndef TEXTURE_NOOPENGL
+				unsigned int *id = &texture->gl_tex;
+				glDeleteTextures(1, id);
+			#endif
 			texture->is_loaded = false;
 			texture->w = 0;
 			texture->h = 0;
 
 			free(texture->path);
 			texture->path = NULL;
-		}
+		// }
 	}
 }
 
@@ -90,6 +90,7 @@ static int InvertSurfaceVertical(SDL_Surface *surface)
 
 Texture TextureOpen(char *path){
     Texture texture;
+	texture.path = NULL;
 	texture.is_loaded = false;
 	texture.gl_tex = 0;
 	texture.w = 0;
@@ -100,59 +101,68 @@ Texture TextureOpen(char *path){
 		memcpy(texture.path, path, strlen(path));
 		texture.path[strlen(path)] = 0;
 
-		unsigned int gl_texture;
-		SDL_Surface *tmp_surface;
 		
-		GLCall(glGenTextures(1, &gl_texture));
-		GLCall(glBindTexture(GL_TEXTURE_2D, gl_texture));
+		SDL_Surface *tmp_surface = NULL;
+		#ifndef TEXTURE_NOOPENGL
+			unsigned int gl_texture;
 
-		GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-		GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-		// GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-		// GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-		GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-		GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+			GLCall(glGenTextures(1, &gl_texture));
+			GLCall(glBindTexture(GL_TEXTURE_2D, gl_texture));
+
+			GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+			GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+			// GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+			// GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+			GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+			GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+		#endif
 
 		tmp_surface = IMG_Load(texture.path);
 		if(tmp_surface == NULL){
-			DebugLog(D_ERR, "Error reading image: '%s'", texture.path);
+			printf("%s: Error opening image\n", texture.path);
+			DebugLog(D_ERR, "%s: Error opening image\n", texture.path);
 			return undefined_texture;
 		}
 		InvertSurfaceVertical(tmp_surface);
 
-		texture.gl_tex = gl_texture;
+		#ifndef TEXTURE_NOOPENGL
+			texture.gl_tex = gl_texture;
+		#endif
 		texture.w = tmp_surface->w;
 		texture.h = tmp_surface->h;
 		if(tmp_surface != NULL){
 			// TODO: Support more image formats / image color formats without crashing
-			int internal_format;
-			int image_format;
-			if(SDL_ISPIXELFORMAT_ALPHA(tmp_surface->format->format)){
-				internal_format = GL_RGBA8;
-				image_format = GL_RGBA;
-			}else{
-				internal_format = GL_RGB8;
-				image_format = GL_RGB;
-			}
-			// switch(tmp_surface->format->format){
-			// 	case 
-			// }
-			// // if(format == GL_RGB){
-			// 	internal = GL_RGB8;
-			// // }
-			// printf("name: %s --- format: %s\n", path, SDL_GetPixelFormatName(tmp_surface->format->format));
-			// int internal = GL_RGBA8;
-			// if(format == GL_RGB){
-			// 	internal = GL_RGB8;
-			// }
-			// GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tmp_surface->w, tmp_surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp_surface->pixels));
-			GLCall(glTexImage2D(GL_TEXTURE_2D, 0, internal_format, tmp_surface->w, tmp_surface->h, 0, image_format, GL_UNSIGNED_BYTE, tmp_surface->pixels));
-			GLCall(glGenerateMipmap(GL_TEXTURE_2D));
+			#ifndef TEXTURE_NOOPENGL
+				int internal_format;
+				int image_format;
+				if(SDL_ISPIXELFORMAT_ALPHA(tmp_surface->format->format)){
+					internal_format = GL_RGBA8;
+					image_format = GL_RGBA;
+				}else{
+					internal_format = GL_RGB8;
+					image_format = GL_RGB;
+				}
+				// switch(tmp_surface->format->format){
+				// 	case 
+				// }
+				// // if(format == GL_RGB){
+				// 	internal = GL_RGB8;
+				// // }
+				// printf("name: %s --- format: %s\n", path, SDL_GetPixelFormatName(tmp_surface->format->format));
+				// int internal = GL_RGBA8;
+				// if(format == GL_RGB){
+				// 	internal = GL_RGB8;
+				// }
+				// GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tmp_surface->w, tmp_surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp_surface->pixels));
+				GLCall(glTexImage2D(GL_TEXTURE_2D, 0, internal_format, tmp_surface->w, tmp_surface->h, 0, image_format, GL_UNSIGNED_BYTE, tmp_surface->pixels));
+				GLCall(glGenerateMipmap(GL_TEXTURE_2D));
+			#endif
 			DebugLog(D_ACT, "Loaded texture: '%s'", texture.path);
 			texture.is_loaded = true;
 		}else{
 			DebugLog(D_ERR, "Could not load image: '%s'", texture.path);
 			texture = undefined_texture;
+
 		}
 		SDL_FreeSurface(tmp_surface);
 	}

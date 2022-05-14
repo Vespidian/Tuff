@@ -25,6 +25,7 @@ void InitRenderers();
 extern unsigned int uniform_buffer;
 
 extern Shader axis_shader;
+extern Shader mesh_shader;
 
 //tmp
 // #include "gl_utils.h"

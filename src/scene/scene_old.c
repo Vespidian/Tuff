@@ -2,7 +2,7 @@
 #include "../shader.h"
 #include "../textures.h"
 
-#include "scene.h"
+#include "scene_old.h"
 
 SceneObject active_scene;
 
@@ -21,7 +21,7 @@ void CalculateTransform(TransformObject *transform){
 	mat4 scale;
 
 	glm_mat4_identity(translation);
-	// glm_mat4_identity(rotation);
+	glm_mat4_identity(rotation);
 	glm_mat4_identity(scale);
 	glm_mat4_identity(transform->result);
 

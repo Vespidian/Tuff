@@ -9,11 +9,12 @@
 #include "renderer/quad.h"
 
 #include "gl_context.h"
-#include "scene/scene.h"
+#include "scene/scene_old.h"
 #include "bundle.h"
 
 
-#include "scene/gltf_loader.h"
+#include "gltf.h"
+#include "scene.h"
 
 SDL_GLContext gl_context;
 
@@ -154,6 +155,8 @@ void PrintShaderUniforms(Shader *shader){
 	}
 }
 
+Model model;
+
 int InitGL(){
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -213,14 +216,17 @@ int InitGL(){
 	GenerateGrid();
 	glGenVertexArrays(1, &grid_vao);
 	glBindVertexArray(grid_vao);
+
 	glGenBuffers(1, &grid_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, grid_vbo);
 	glBufferData(GL_ARRAY_BUFFER, grid_vertex_count, grid, GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)(0));
-	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)(sizeof(float) * 3));
+	glEnableVertexAttribArray(1);
+
+	// glBindVertexArray(0);
 
 // Shader shad = ShaderParseUniforms("test", 0, "uniform vec2 finding_nemo_is_a_sad_story;", "");
 // 	printf("nam: %s\n", shad.name);
@@ -228,11 +234,16 @@ int InitGL(){
 
 
 	// int start = SDL_GetTicks();
-	// LoadObj("../models/cube.obj", &mesh);
-	// GLTFState gltf = GLTFOpen("meshes/entrance.gltf");
+	// LoadObj("../meshes/cube.obj", &mesh);
+	// GLTFState gltf = GLTFOpen("meshes/entrance");
 	// GLTFFree(&gltf);
 	// printf("Loaded mesh in %dms\n", SDL_GetTicks() - start);
-	/*glGenVertexArrays(1, &mesh_vao);
+
+
+
+
+	
+	glGenVertexArrays(1, &mesh_vao);
 	glBindVertexArray(mesh_vao);
 
 	glGenBuffers(1, &vert_vbo);
@@ -244,39 +255,48 @@ int InitGL(){
 
 
 	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, 72, data->meshes->primitives->indices->buffer_view->buffer->data, GL_STATIC_DRAW);
+	// GLTFBufferView *buffer_view = &app.meshes[0].buffer_views[app.meshes[0].accessors[app.meshes[0].meshes[0].indices].buffer_view];
+	// GLTFBuffer *buffer = &app.meshes[0].buffers[0];
+	// Mesh *mesh = &app.gltfs[0].meshes[0];
 
-	glBindBuffer(GL_ARRAY_BUFFER, vert_vbo);
-	// glBufferData(GL_ARRAY_BUFFER, pos->size + norm->size, pos->buffer->data, GL_STATIC_DRAW);
-	glBufferData(GL_ARRAY_BUFFER, pos->size + norm->size, pos->buffer->data, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)(0));
+	// // Position
+	// glBindBuffer(GL_ARRAY_BUFFER, vert_vbo);
+	// glBufferData(GL_ARRAY_BUFFER, mesh->position_bytelength, mesh->data + mesh->position_offset, GL_STATIC_DRAW);
+	// glEnableVertexAttribArray(0);
+	// glVertexAttribPointer(0, mesh->position_size, mesh->position_gl_type, GL_FALSE, 0, (void*)(0));
 
-	glBindBuffer(GL_ARRAY_BUFFER, norm_vbo);
-	glBufferData(GL_ARRAY_BUFFER, norm->size, norm->buffer->data + norm->offset, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)(0));
+	// // Normal
+	// glBindBuffer(GL_ARRAY_BUFFER, norm_vbo);
+	// glBufferData(GL_ARRAY_BUFFER, mesh->normal_bytelength, mesh->data + mesh->normal_offset, GL_STATIC_DRAW);
+	// glEnableVertexAttribArray(1);
+	// glVertexAttribPointer(1, mesh->normal_size, mesh->normal_gl_type, GL_FALSE, 0, (void*)(0));
 
-	glBindBuffer(GL_ARRAY_BUFFER, texc_vbo);
-	glBufferData(GL_ARRAY_BUFFER, texc->size, texc->buffer->data + texc->offset, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)(0));
+	// // UV0
+	// glBindBuffer(GL_ARRAY_BUFFER, texc_vbo);
+	// glBufferData(GL_ARRAY_BUFFER, mesh->uv0_bytelength, mesh->data + mesh->uv0_offset, GL_STATIC_DRAW);
+	// glEnableVertexAttribArray(2);
+	// glVertexAttribPointer(2, mesh->uv0_size, mesh->uv0_gl_type, GL_FALSE, 0, (void*)(0));
+	
+	// // UV1
+	// glBindBuffer(GL_ARRAY_BUFFER, texc_vbo);
+	// glBufferData(GL_ARRAY_BUFFER, mesh->uv0_bytelength, mesh->data + mesh->uv0_offset, GL_STATIC_DRAW);
+	// glEnableVertexAttribArray(2);
+	// glVertexAttribPointer(2, mesh->uv0_size, mesh->uv0_gl_type, GL_FALSE, 0, (void*)(0));
 
-	glBindBuffer(GL_ARRAY_BUFFER, tanv_vbo);
-	glBufferData(GL_ARRAY_BUFFER, tanv_size, tanv, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)(0));
+	// // Indices
+	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_ebo);
+	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->index_bytelength, mesh->data + mesh->index_offset, GL_STATIC_DRAW);
+	model = ModelNew(NULL, &app.gltfs[0].meshes[0], BundleMaterialFind(&app, "materials/default.mat"));
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, ind->size, data->buffers->data + ind->offset, GL_STATIC_DRAW);
-*/
+
     glm_mat4_identity(perspective_projection);
     glm_mat4_identity(view_matrix);
 
     // set projection transform
     glm_perspective(glm_rad(90), SCREEN_WIDTH / SCREEN_HEIGHT, 0.01, 100, perspective_projection);
 
-	UniformSetSampler2D(&mesh_shader, "tex", 0);
-	UniformSetSampler2D(&mesh_shader, "normal_map", 1);
+	UniformSetSampler2D(BundleShaderFind(&app, "shaders/default.shader"), "tex", 0);
+	UniformSetSampler2D(BundleShaderFind(&app, "shaders/default.shader"), "normal_map", 1);
 	UniformSetSampler2D(&grid_shader, "texture_0", 0);
 
 
@@ -291,6 +311,9 @@ int InitGL(){
 	InitScene(&active_scene);
 	parent = NewModel("parent", NULL, NULL, 0, 0, 0);
 	child = NewModel("child", parent, NULL, 0, 0, 0);
+
+
+	MaterialShaderSet(BundleMaterialFind(&app, "materials/default.mat"));
     GLCall;
 
 	// PrintShaderUniforms(&mesh_shader);
@@ -308,7 +331,7 @@ static Vector3 direction = {0, 0, 0};
 static Vector3 view_position = {0, 0, 0};
 // static Vector3 mesh_position = {0, 0.01, 0};
 // static Vector3 light_position = {1, 0.6, 1.2};
-static float view_distance = 2;
+static float view_distance = 5;
 static float yaw, pitch = 0.25;
 static float normal_intense = 1;
 void RenderUI(){
@@ -319,10 +342,10 @@ void RenderUI(){
 	// float w = view_distance * cos(pitch);
 	glm_vec3_add(view_position.v, tmp.v, tmp.v);
 	// UniformSetVec3(mesh_shader, "view_position", tmp.v);
-	UniformSetVec3(&mesh_shader, "view_position", tmp.v);
+	UniformSetVec3(BundleShaderFind(&app, "shaders/default.shader"), "view_position", tmp.v);
 
 
-	UniformSetFloat(&mesh_shader, "normal_map_intensity", normal_intense);
+	UniformSetFloat(BundleShaderFind(&app, "shaders/default.shader"), "normal_map_intensity", normal_intense);
 
     glm_mat4_identity(view_matrix);
 	// glm_mat4_identity(mesh_matrix);
@@ -356,11 +379,11 @@ void RenderUI(){
 	glm_vec3_rotate(light_transform.position.v, 0.1, (vec3){0, 1, 0});
 	// light_transform.position.y = cos(light_time * 7.5) / 1.5;
 	glm_scale_uni(light_transform.result, 0.25);
-	UniformSetVec3(&mesh_shader, "light_pos", light_transform.position.v);
+	// UniformSetVec3(BundleShaderFind(&app, "shaders/default.shader"), "light_pos", light_transform.position.v);
 
 	// Vector3 color = {sin(1), cos(1), 1.2};
 	Vector3 color = {0.5, 0.5, 0.5};
-	UniformSetVec3(&mesh_shader, "light_color", color.v);
+	UniformSetVec3(BundleShaderFind(&app, "shaders/default.shader"), "light_color", color.v);
 
 
 	// glm_vec3_rotate(light_transform.position.v, -light_time, (vec3){0, 1, 0});
@@ -379,6 +402,8 @@ void RenderUI(){
 void RenderGL(){
 	RenderUI();
 
+	// RETURN: Something weird is happening when reloading the bundle / shaders
+	// the normal map texture slot is being set to the regular brick texture
 	glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, crate_tex.gl_tex);
 	current_texture_unit = 0;
@@ -390,15 +415,16 @@ void RenderGL(){
 	bound_textures[1] = normal_map.gl_tex;
 
 
-	SetVAO(mesh_vao);
-	CalculateTransform(&mesh_transform);
-    UniformSetMat4(&mesh_shader, "model", mesh_transform.result);
-	ShaderPassUniforms(&mesh_shader);
+	// SetVAO(mesh_vao);
+	// CalculateTransform(&mesh_transform);
+    // UniformSetMat4(BundleShaderFind(&app, "shaders/default.shader"), "model", mesh_transform.result);
+	// // ShaderPassUniforms(&mesh_shader);
+	// ShaderPassUniforms(BundleShaderFind(&app, "shaders/default.shader"));
 	// int type;
 	// if(data->meshes->primitives->indices->component_type == cgltf_component_type_r_16u){
-	// 	type = GL_UNSIGNED_SHORT;
+		// type = GL_UNSIGNED_SHORT;
 	// }else{
-	// 	type = GL_UNSIGNED_INT;
+		// type = GL_UNSIGNED_INT;
 	// }
 	// glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
 
@@ -406,47 +432,35 @@ void RenderGL(){
 	glEnable(GL_LINE_SMOOTH);
 
 	// Scene axis
-	SetVAO(axis_vao);
-	UniformSetFloat(&axis_shader, "zoom", view_distance);
-    UniformSetMat4(&axis_shader, "model", origin_transform.result);
-	ShaderPassUniforms(&axis_shader);
-	glDrawArrays(GL_LINES, 0, 26);
-	
-	// Mesh axis
-	// SetVAO(axis_vao);
-    // UniformSetMat4(&axis_shader, "model", mesh_transform.result);
-	// ShaderPassUniforms(&axis_shader);
-	// glDrawArrays(GL_LINES, 0, 26);
+	{
+		SetVAO(axis_vao);
+		UniformSetFloat(&axis_shader, "zoom", view_distance);
+		UniformSetMat4(&axis_shader, "model", origin_transform.result);
+		ShaderPassUniforms(&axis_shader);
+		glDrawArrays(GL_LINES, 0, 26);
+	}
 
-	// parent axis
-	// SetVAO(mesh_vao);
-	// child->transform.rotation_e.z = -child->parent->transform.rotation_e.z; // Cancels object rotation inherited from its parent on the z axis
-	child->transform.position.y = 1;
-	// child->parent->transform.position.y = sin(SDL_GetTicks() / 200.0) / 8;
-	// child->parent->transform.position.x = sin(SDL_GetTicks() / 100.0) / 128;
-	// child->parent->transform.position.z = cos(SDL_GetTicks() / 100.0) / 128;
-	// child->parent->transform.position.z = cos(SDL_GetTicks() / 200.0) / 48;
-	CalculateModelTransform(parent);
-	// CalculateTransform(&parent->transform);
-    UniformSetMat4(&mesh_shader, "model", parent->transform.result);
-	// ShaderPassUniforms(&mesh_shader);
-	// glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
-	// child axis
-	// SetVAO(mesh_vao);
-	// CalculateModelTransform(child);
-	// CalculateTransform(&child->transform);
-    // UniformSetMat4(&axis_shader, "model", child->transform.result);
-	// ShaderPassUniforms(&axis_shader);
-	// glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
-
+	// child->transform.position.y = 1;
+	// CalculateModelTransform(parent);
 	if(grid_enabled){
 		SetVAO(grid_vao);
+		// glBindVertexArray(grid_vbo);
 		ShaderPassUniforms(&grid_shader);
+		glBindVertexBuffer(0, grid_vbo, 0, sizeof(float) * 6);
+		glBindVertexBuffer(1, grid_vbo, sizeof(float) * 3, sizeof(float) * 6);
 		glDrawArrays(GL_LINES, 0, grid_vertex_count);
 	}
+
 	glDisable(GL_MULTISAMPLE);
 	glDisable(GL_LINE_SMOOTH);
 
+	SetVAO(mesh_vao);
+	// ShaderPassUniforms(&mesh_shader);
+    UniformSetMat4(BundleShaderFind(&app, "shaders/default.shader"), "model", parent->transform.result);
+	ShaderPassUniforms(BundleShaderFind(&app, "shaders/default.shader"));
+	// glDrawElements(GL_TRIANGLES, app.meshes->accessors[app.meshes->meshes[0].indices].count, app.meshes->accessors[app.meshes->meshes[0].indices].component_type, NULL);
+	// glDrawElements(GL_TRIANGLES, app.gltfs[0].meshes[0].index_count, app.gltfs[0].meshes[0].index_gl_type, NULL);
+	ModelRender(&model);
 	// SDL_Rect mouse = {mouse_pos.x, mouse_pos.y, 16, 16};
 }
 

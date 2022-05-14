@@ -122,10 +122,12 @@ void Setup(){
 	InitSDL();
 
 
+	int timer = SDL_GetTicks();
 	JSONState json = JSONOpen("../bin/builtin_assets/startup.conf");
 	JSONSetTokenFunc(&json, NULL, tfunc_startup);
 	JSONParse(&json);
 	JSONFree(&json);
+	printf("Loaded bundle in '%d' ms\n", SDL_GetTicks() - timer);
 
 
 	InitGL();
@@ -173,11 +175,15 @@ static void CheckWindowActive(EventData event){
 }
 
 static void ReloadApp(EventData event){
+	int timer = SDL_GetTicks();
 	BundleFree(&app);
 	app = BundleOpen(startup_path);
 
 	ShaderFree(&axis_shader);
 	axis_shader = ShaderOpen("shaders/axis.shader");
+	ShaderFree(&mesh_shader);
+	mesh_shader = ShaderOpen("shaders/mesh.shader");
+	printf("Loaded bundle in '%d' ms\n", SDL_GetTicks() - timer);
 }
 
 static void ReloadUI(){
@@ -223,7 +229,6 @@ int main(int argc, char *argv[]){
 
 	while(running){
 		loop_start_ticks = SDL_GetTicks();
-		EventListener();
 		if(window_active){
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -242,6 +247,7 @@ int main(int argc, char *argv[]){
 			PushRender();
 			SDL_GL_SwapWindow(window);
 		}
+		EventListener();
 		
 		SDL_Delay(1000 / target_framerate);
 		deltatime = (SDL_GetTicks() - loop_start_ticks) / 10.0;
