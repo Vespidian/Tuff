@@ -260,6 +260,15 @@ Bundle BundleOpen(char *path){
 	return bundle;
 }
 
+/**
+ * 	Reloading bundle items:
+ * 		Create a new instance of that item - ShaderNew()
+ * 		Call the load function for that item - ShaderOpen()
+ * 		Copy data from instance into the original item
+ * 	
+ * 	This leaves the pointer address untouched so anything referncing this item still works
+ */
+
 Shader *BundleShaderFind(Bundle *bundle, char *shader_path){
 	Shader *shader = NULL;
 	if(bundle != NULL && shader_path != NULL){
