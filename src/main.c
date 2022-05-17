@@ -174,6 +174,8 @@ static void CheckWindowActive(EventData event){
 	}
 }
 
+#include "scene.h"
+extern Model model;
 static void ReloadApp(EventData event){
 	int timer = SDL_GetTicks();
 	BundleFree(&app);
@@ -184,6 +186,9 @@ static void ReloadApp(EventData event){
 	ShaderFree(&mesh_shader);
 	mesh_shader = ShaderOpen("shaders/mesh.shader");
 	printf("Loaded bundle in '%d' ms\n", SDL_GetTicks() - timer);
+
+	model.material = &app.materials[0];
+	model.mesh = &app.gltfs->meshes[0];
 }
 
 static void ReloadUI(){

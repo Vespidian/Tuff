@@ -105,7 +105,7 @@
 			uniform float normal_map_intensity;
 
 			void main(){
-				vec2 tv = mod(texture_v, 1.0);
+				vec2 tv = mod(texture_v*2, 1.0);
 				vec3 new_normal = normalize(normal_v + (texture(normal_map, tv)).rgb);
 				// vec3 new_normal = normalize(normal_v + (texture(tex, tv)).rgb);
 				// new_normal *= 2.0 - 1.0;
@@ -143,6 +143,7 @@
 				// vec3 specular = vec3(specular_strength * spec);
 				// FragColor = texture(tex, tv);
 				FragColor = vec4(vec3(light_pos), 1);
+				FragColor *= vec4(diffuse + specular + ambient, 1);
 				float grid_size = checker_size;
 				FragColor *= vec4(vec3(mod(floor(tv.x * grid_size) + floor(tv.y * grid_size), 2.0) == 0 ? 0.8 : 1), 1);
 				// FragColor *= vec4(vec3(mod(floor((tv.x + tv.y) * 50), 2.0) == 0), 1);
@@ -150,7 +151,6 @@
 				// FragColor = vec4(abs(vert_v.zzz), 1) + texture(tex, tv.xy);
 				// FragColor = vec4(vec3(0.75), 1);
 				// FragColor *= vec4(diffuse, 1);
-				// FragColor *= vec4(diffuse + specular + ambient, 1);
 				// FragColor *= vec4(diffuse + ambient, 1);
 				// FragColor *= vec4(ambient + vec3(sin(time_f)*0.5, cos(time_f)*0.5, sin(time_f)*0.5 + cos(time_f)*0.5), 1);
 				// FragColor = vec4(diffuse + specular + ambient, 1);

@@ -268,7 +268,7 @@ MaterialUniform *MaterialUniformGet(Material *material, char *uniform_name){
 }
 
 void MaterialShaderSet(Material *material){
-	if(material != NULL && material->shader != NULL){
+	if(material != NULL && material->shader != NULL && material->shader->is_loaded){
 		// Call 'BundleFindShader' to make sure the path we have is correct
 		// ^ Possibly dont do this, and just have a MaterialShaderValidate function we call once every few frames or so for all materials
 

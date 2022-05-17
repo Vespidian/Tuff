@@ -261,13 +261,46 @@ Bundle BundleOpen(char *path){
 }
 
 /**
+ *  TODO: Add flag in Bundles to determine when resources need their references refreshed
+ *  This shouldnt be necessary if we stick to using bundles and no seperate variables
+ *  Although if we ever need to shift things around in each resource stack this could be useful
+ *  Having gaps in the stack could also be an alternative
+ */
+
+/**
  * 	Reloading bundle items:
  * 		Create a new instance of that item - ShaderNew()
  * 		Call the load function for that item - ShaderOpen()
  * 		Copy data from instance into the original item
  * 	
  * 	This leaves the pointer address untouched so anything referncing this item still works
+ * 
+ * 	A ModuleReload() function is to be implemented into every module as appropriate 
+ * 	(e.g. ShaderReload())
  */
+
+
+/*
+void BundleReload(Bundle *bundle){
+	if(bundle != NULL){
+		for(int i = 0; i < bundle->num_textures; i++){
+			TextureReload(&bundle->textures[i]);
+		}
+
+		for(int i = 0; i < bundle->num_gltfs; i++){
+			GLTFReload(&bundle->gltfs[i]);
+		}
+
+		for(int i = 0; i < bundle->num_shaders; i++){
+			ShaderReload(&bundle->shaders[i]);
+		}
+
+		for(int i = 0; i < bundle->num_materials; i++){
+			MaterialReload(&bundle->materials[i]);
+		}
+	}
+}
+*/
 
 Shader *BundleShaderFind(Bundle *bundle, char *shader_path){
 	Shader *shader = NULL;
