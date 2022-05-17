@@ -1,7 +1,7 @@
 # GameFramework
 3D game / software engine built upon SDL2 and OpenGL
 
-![Engine Example](/screenshots/squish_cube.png)
+![Engine Example](/screenshots/squishcube.gif)
 
 ### Dependencies for compiling:
 - libglew         (OpenGL)
