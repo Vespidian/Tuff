@@ -169,6 +169,19 @@ Texture TextureOpen(char *path){
     return texture;
 }
 
+void TextureReload(Texture *texture){
+	if(texture != NULL){
+		char *path = malloc(strlen(texture->path) + 1);
+		memcpy(path, texture->path, strlen(texture->path));
+		path[strlen(texture->path)] = 0;
+
+		TextureFree(texture);
+		*texture = TextureOpen(path);
+
+		free(path);
+	}
+}
+
 TilesheetObject LoadTilesheet(char *path, int tile_width, int tile_height){
     return (TilesheetObject){0, TextureOpen(path), tile_width, tile_height};
 }

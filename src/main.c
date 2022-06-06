@@ -176,6 +176,8 @@ static void CheckWindowActive(EventData event){
 
 #include "scene.h"
 extern Model model;
+extern Texture crate_tex;
+extern Texture normal_map;
 static void ReloadApp(EventData event){
 	int timer = SDL_GetTicks();
 	BundleFree(&app);
@@ -189,6 +191,9 @@ static void ReloadApp(EventData event){
 
 	model.material = &app.materials[0];
 	model.mesh = &app.gltfs->meshes[0];
+
+	TextureReload(&crate_tex);
+	TextureReload(&normal_map);
 }
 
 static void ReloadUI(){

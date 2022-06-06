@@ -3,8 +3,6 @@
 
 #include <GL/glew.h>
 
-#include "cgltf.h"
-
 #include "json_base.h"
 #include "vectorlib.h"
 #include "material.h"

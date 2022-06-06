@@ -39,6 +39,11 @@ void TextureFree(Texture *texture);
 /**
  * 
  */
+void TextureReload(Texture *texture);
+
+/**
+ * 
+ */
 TilesheetObject LoadTilesheet(char *path, int tile_width, int tile_height);
 
 #endif
