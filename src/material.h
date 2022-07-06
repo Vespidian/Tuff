@@ -39,33 +39,40 @@ typedef struct Material{
 	MaterialUniform *uniforms;
 }Material;
 
-
+/**
+ *  @brief Load a material from a file (Material's shader must be specified using 'MaterialShaderSet()' function)
+ *  @param path - Path to material file (*.mat)
+ */
 Material MaterialOpen(char *path);
+
+/**
+ *  @brief Reload the file specified in 'material->path' back into '*material'
+ */
+void MaterialReload(Material *material);
+
+/**
+ *  @brief Free a material
+ */
 void MaterialFree(Material *material);
+
+/**
+ *  @brief Find a uniform in a material by name
+ */
 MaterialUniform *MaterialUniformGet(Material *material, char *uniform_name);
+
+/**
+ *  @brief Clean up useless uniforms and mark exposed uniforms (defined by the shader) (Must be called AFTER 'MaterialShaderSet()')
+ */
 void MaterialUniformsValidate(Material *material);
-void MaterialSetShader(Material *material, Shader *shader);
-void MaterialShaderSet(Material *material);
 
-/*
-	=== PLAN ===
+/**
+ *  @brief Set the material's parent shader to 'shader'
+ */
+void MaterialShaderSet(Material *material, Shader *shader);
 
-	Start by finding the shader (deal with failure case) and setting the shader pointer
-	-> Every time we use the material, we check 'shader_path' against 'shader->path' to make sure the correct shader is loaded
-
-	Copy the shader's uniforms over to the material
-	(only the exposed uniforms)
-
-	Now uniforms are edited per material.
-
-	When we want to render a mesh with a material, we copy the material's uniforms back to the shader
-	and send the uniforms to the shader program (ShaderPassUniforms)
-	-> The function that copies the data into the shader should check if the value of a uniform changes to keep track of OpenGL state
-		(if the value does not change we dont want to upload the uniform again)
-
-	When reloading a shader, the material also needs to be reloaded to gain access to any new uniforms
-
-	All of the above assumes the uniform array never changes once the shader is loaded in
-*/
+/**
+ *  @brief Pass the uniforms stored in 'material' to its parent shader for the values to be given to OpenGL (Essentially sets 'material' as the active material)
+ */
+void MaterialShaderPassUniforms(Material *material);
 
 #endif

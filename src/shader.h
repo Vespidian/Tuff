@@ -142,6 +142,11 @@ extern unsigned int current_shader;
 Shader ShaderOpen(char *filename);
 
 /**
+ *  @brief Reload the file specified in 'shader->path' back into '*shader'
+ */
+void ShaderReload(Shader *shader);
+
+/**
  *  @brief Free a shader
  *  @param shader Pointer to the shader to be freed
  */

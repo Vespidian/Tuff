@@ -4,10 +4,13 @@
 
 #include "json_base.h"
 #include "shader.h"
-#include "bundle.h"
-
 
 #include "material.h"
+
+#define MATERIAL_NOOPENGL
+#ifdef MATERIAL_NOOPENGL
+	#define SHADER_NOOPENGL
+#endif
 
 Material *material_ptr = NULL;
 
@@ -176,18 +179,24 @@ void MaterialUniformsValidate(Material *material){
 			}
 			material->is_validated = true;
 		}else{
-			DebugLog(D_ERR, "%s: Cannot validate uniforms, shader must first be set using 'MaterialSetShader'\n", material->path);
+			DebugLog(D_ERR, "%s: Cannot validate uniforms, shader must first be set using 'MaterialShaderSet'\n", material->path);
 		}
 	}
 }
 
-void MaterialSetShader(Material *material, Shader *shader){
+void MaterialShaderSet(Material *material, Shader *shader){
 	if(material != NULL && shader != NULL){
 		if(strcmp(material->shader_path, shader->path) == 0){
 			material->shader = shader;
 		}else{
 			DebugLog(D_ERR, "%s: Trying to set material's shader to the incorrect shader (shader paths must match)\n", material->path);
 		}
+	}
+}
+
+void MaterialUniformTextureSet(MaterialUniform *uniform, unsigned int texture_gl_id){
+	if(uniform != NULL){
+
 	}
 }
 
@@ -209,7 +218,7 @@ Material MaterialOpen(char *path){
 
 			if(material.shader_path != NULL){
 				/** 
-				 * Shader must be set after opening the material using 'MaterialSetShader' and then 
+				 * Shader must be set after opening the material using 'MaterialShaderSet' and then 
 				 * getting rid of / marking unused uniform with 'MaterialUniformsValidate'
 				 */
 				material.is_loaded = true;
@@ -223,6 +232,22 @@ Material MaterialOpen(char *path){
 	}
 
 	return material;
+}
+
+void MaterialReload(Material *material){
+	if(material != NULL){
+		char *path = malloc(strlen(material->path) + 1);
+		memcpy(path, material->path, strlen(material->path));
+		path[strlen(material->path)] = 0;
+
+		Shader *shader = material->shader;
+
+		MaterialFree(material);
+		*material = MaterialOpen(path);
+		MaterialShaderSet(material, shader);
+
+		free(path);
+	}
 }
 
 void MaterialFree(Material *material){
@@ -249,6 +274,8 @@ void MaterialFree(Material *material){
 			free(material->uniforms[i].texture_path);
 			material->uniforms[i].texture_path = NULL;
 		}
+		free(material->uniforms);
+		material->uniforms = NULL;
 	}
 }
 
@@ -267,7 +294,7 @@ MaterialUniform *MaterialUniformGet(Material *material, char *uniform_name){
 	return uniform;
 }
 
-void MaterialShaderSet(Material *material){
+void MaterialShaderPassUniforms(Material *material){
 	if(material != NULL && material->shader != NULL && material->shader->is_loaded){
 		// Call 'BundleFindShader' to make sure the path we have is correct
 		// ^ Possibly dont do this, and just have a MaterialShaderValidate function we call once every few frames or so for all materials
@@ -318,3 +345,5 @@ void MaterialShaderSet(Material *material){
 		ShaderPassUniforms(material->shader);
 	}
 }
+
+//TODO: Add setters and getters for each uniform type (int, float, vec3, texture)

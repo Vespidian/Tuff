@@ -21,7 +21,7 @@
 // #define SHADER_DEBUG
 
 // Only to be defined for testing the library (useful so valgrind doesnt show false leaks)
-// #define SHADER_NOOPENGL
+#define SHADER_NOOPENGL
 
 const char *shader_types[] = {
 	"UNDEFINED",
@@ -48,6 +48,22 @@ Shader ShaderNew(){
 
 	shader.num_texture_slots = 0;
 	return shader;
+}
+
+static ShaderUniform UniformNew(){
+	ShaderUniform uniform;
+	uniform.name = NULL;
+	uniform.description = NULL;
+	uniform.uniform = -1;
+	uniform.is_exposed = true;
+	uniform.has_range = false;
+	uniform.is_uploaded = false;
+	uniform.type = UNI_FLOAT;
+	uniform.min = 0;
+	uniform.max = 0;
+	uniform.value_default._float = 0;
+	uniform.value._float = 0;
+	return uniform;
 }
 
 void ShaderPassUniforms(Shader *shader){
@@ -136,13 +152,7 @@ static void ShaderStageParseUniforms(Shader *shader, unsigned int stage_id){
 			if(tmp_uniforms != NULL){
 				stage_ptr->uniforms = tmp_uniforms;
 
-				stage_ptr->uniforms[stage_ptr->num_uniforms].name = NULL;
-				stage_ptr->uniforms[stage_ptr->num_uniforms].description = NULL;
-				stage_ptr->uniforms[stage_ptr->num_uniforms].is_exposed = false;
-				stage_ptr->uniforms[stage_ptr->num_uniforms].is_uploaded = false;
-				stage_ptr->uniforms[stage_ptr->num_uniforms].uniform = -1;
-				stage_ptr->uniforms[stage_ptr->num_uniforms].value_default._float = 0;
-				stage_ptr->uniforms[stage_ptr->num_uniforms].type = UNI_FLOAT;
+				stage_ptr->uniforms[stage_ptr->num_uniforms] = UniformNew();
 
 				source_ptr = strchr(source_ptr, ' ') + 1;
 
@@ -336,7 +346,7 @@ static void ShaderCompile(Shader *shader){
 			DebugLog(D_ACT, "%s: Compilation successfull!\n", shader->path);
 		}
 	#else
-		DebugLog(D_ACT, "%s: Shader compilation failed: Since 'SHADER_NOOPENGL' is defined, no opengl functions will be called\n");
+		DebugLog(D_ACT, "%s: Shader compilation failed: Since 'SHADER_NOOPENGL' is defined, no opengl functions will be called\n", shader->path);
 	#endif
 }
 
@@ -376,17 +386,7 @@ Shader *shader_ptr = NULL;
 					stage_ptr->uniforms = tmp_uniforms;
 					uniform_ptr = &stage_ptr->uniforms[stage_ptr->num_uniforms];
 
-					uniform_ptr->name = NULL;
-					uniform_ptr->description = NULL;
-					uniform_ptr->uniform = -1;
-					uniform_ptr->is_exposed = true;
-					uniform_ptr->has_range = false;
-					uniform_ptr->is_uploaded = false;
-					uniform_ptr->type = UNI_FLOAT;
-					uniform_ptr->min = 0;
-					uniform_ptr->max = 0;
-					uniform_ptr->value_default._float = 0;
-					uniform_ptr->value._float = 0;
+					*uniform_ptr = UniformNew();
 
 					JSONSetTokenFunc(json, NULL, tfunc_uniforms);
 					JSONParse(json);
@@ -738,12 +738,15 @@ Shader ShaderOpen(char *path){
 	return shader;
 }
 
-void ShaderSet(Shader *shader){
-	if(current_shader != shader->id){
-		#ifndef SHADER_NOOPENGL
-			glUseProgram(shader->id);
-		#endif
-		current_shader = shader->id;
+void ShaderReload(Shader *shader){
+	if(shader != NULL){
+		char *path = malloc(strlen(shader->path) + 1);
+		memcpy(path, shader->path, strlen(shader->path));
+		path[strlen(shader->path)] = 0;
+
+		ShaderFree(shader);
+		*shader = ShaderOpen(path);
+		free(path);
 	}
 }
 
@@ -780,6 +783,15 @@ void ShaderFree(Shader *shader){
 		shader->stages = NULL;
 
 		shader->is_loaded = false;
+	}
+}
+
+void ShaderSet(Shader *shader){
+	if(current_shader != shader->id){
+		#ifndef SHADER_NOOPENGL
+			glUseProgram(shader->id);
+		#endif
+		current_shader = shader->id;
 	}
 }
 

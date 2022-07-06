@@ -105,21 +105,21 @@ typedef struct Mesh{
 	unsigned int	position_bytelength; 	// Length in bytes of the section (_size * _type * _count)
 	unsigned int 	position_offset;		// Offset in bytes from the start of 'data'
 
-	bool 			uv0_exists; 	// Set to true if this section exists within the gltf file
-	unsigned char 	uv0_size; 		// Number of primitives in an element (SCALAR, VEC2, VEC3, MAT3, MAT4, ...)
-	unsigned int 	uv0_type; 		// Size in bytes of the type (short = 2, int = 4, double = 8)
-	unsigned int 	uv0_gl_type; 	// eg. GL_FLOAT, GL_INT, ...
-	unsigned int 	uv0_count; 		// Number of elements
-	unsigned int	uv0_bytelength; // Length in bytes of the section (_size * _type * _count)
-	unsigned int 	uv0_offset;		// Offset in bytes from the start of 'data'
-
-	bool 			uv1_exists; 	// Set to true if this section exists within the gltf file
-	unsigned char 	uv1_size; 		// Number of primitives in an element (SCALAR, VEC2, VEC3, MAT3, MAT4, ...)
-	unsigned int 	uv1_type; 		// Size in bytes of the type (short = 2, int = 4, double = 8)
-	unsigned int 	uv1_gl_type; 	// eg. GL_FLOAT, GL_INT, ...
-	unsigned int 	uv1_count; 		// Number of elements
-	unsigned int	uv1_bytelength; // Length in bytes of the section (_size * _type * _count)
-	unsigned int 	uv1_offset;		// Offset in bytes from the start of 'data'
+	bool 			uv0_exists; 		// Set to true if this section exists within the gltf file
+	unsigned char 	uv0_size; 			// Number of primitives in an element (SCALAR, VEC2, VEC3, MAT3, MAT4, ...)	
+	unsigned int 	uv0_type; 			// Size in bytes of the type (short = 2, int = 4, double = 8)
+	unsigned int 	uv0_gl_type; 		// eg. GL_FLOAT, GL_INT, ...
+	unsigned int 	uv0_count; 			// Number of elements
+	unsigned int	uv0_bytelength; 	// Length in bytes of the section (_size * _type * _count)
+	unsigned int 	uv0_offset;			// Offset in bytes from the start of 'data'
+	
+	bool 			uv1_exists; 		// Set to true if this section exists within the gltf file
+	unsigned char 	uv1_size; 			// Number of primitives in an element (SCALAR, VEC2, VEC3, MAT3, MAT4, ...)	
+	unsigned int 	uv1_type; 			// Size in bytes of the type (short = 2, int = 4, double = 8)
+	unsigned int 	uv1_gl_type; 		// eg. GL_FLOAT, GL_INT, ...
+	unsigned int 	uv1_count; 			// Number of elements
+	unsigned int	uv1_bytelength; 	// Length in bytes of the section (_size * _type * _count)
+	unsigned int 	uv1_offset;			// Offset in bytes from the start of 'data'
 
 	bool 			normal_exists; 		// Set to true if this section exists within the gltf file
 	unsigned char 	normal_size; 		// Number of primitives in an element (SCALAR, VEC2, VEC3, MAT3, MAT4, ...)
@@ -150,17 +150,23 @@ typedef struct GLTF{
 
 
 /**
- * 
- */
-GLTF GLTFOpen(char *path);
-
-/**
  *  @return An initialized empty GLTFState
  */
 GLTF GLTFNew();
 
 /**
- * 
+ *  @brief Open, parse, and seperate .gltf file into meshes
+ *  @param path - Path to .gltf file to be read
+ */
+GLTF GLTFOpen(char *path);
+
+/**
+ *  @brief Reload the gltf file specified in 'gltf->path' back into '*gltf'
+ */
+void GLTFReload(GLTF *gltf);
+
+/**
+ *  @brief Free gltf data (Meshes array and buffers)
  */
 void GLTFFree(GLTF *gltf);
 

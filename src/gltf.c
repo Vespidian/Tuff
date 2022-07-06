@@ -427,18 +427,21 @@ static GLTFState GLTFStateOpen(char *path){
 						if(tmp_buffer_ptr->data != NULL){
 							size_t read_error_check = fread(tmp_buffer_ptr->data, 1, file_length, fp);
 							if(read_error_check != file_length){
-								DebugLog(D_WARN, "%s: error reading data from file", buffer_path);
+								DebugLog(D_WARN, "%s: error reading data from .bin file", path);
 								free(tmp_buffer_ptr->data);
 								tmp_buffer_ptr->data = NULL;
 							}
 						}
 					}else{
-						DebugLog(D_WARN, "%s: error reading length of JSON file", buffer_path);
+						DebugLog(D_WARN, "%s: error reading length of gltf .bin file", path);
 					}
 					fclose(fp);
+					fp = NULL;
 				}else{
-					DebugLog(D_WARN, "%s: error opening gltf .bin file", buffer_path);
+					DebugLog(D_WARN, "%s: error opening gltf .bin file", path);
 				}
+				free(buffer_path);
+				buffer_path = NULL;
 			}
 
 			// Once the json is loaded, we can use the data to calculate other attributes (tangents, normals, etc)
@@ -726,6 +729,18 @@ GLTF GLTFOpen(char *path){
 	}
 
 	return gltf;
+}
+
+void GLTFReload(GLTF *gltf){
+	if(gltf != NULL){
+		char *path = malloc(strlen(gltf->path) + 1);
+		memcpy(path, gltf->path, strlen(gltf->path));
+		path[strlen(gltf->path)] = 0;
+
+		GLTFFree(gltf);
+		*gltf = GLTFOpen(path);
+		free(path);
+	}
 }
 
 void GLTFFree(GLTF *gltf){

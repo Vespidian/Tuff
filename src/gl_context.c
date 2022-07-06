@@ -180,7 +180,7 @@ int InitGL(){
 
 	RendererInit();
 
-	// FILE LOADING SHOULD NOT HAPPEN IN THIS FUNCTION
+	// FILE LOADING SHOULD NOT HAPPEN IN THIS FUNCTION (should all be in the bundles)
 	// crate_tex = TextureOpen("../images/brick_diffuse.png");
 	crate_tex = TextureOpen("images/brick_diffuse.png");
 	normal_map = TextureOpen("images/brick_normal.png");
