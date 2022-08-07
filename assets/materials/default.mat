@@ -4,28 +4,27 @@
 	uniforms: [
 		{
 			name: "albedo_tex",
-			type: SAMPLER2D,
 			value: "images/image.png",
 		},
 		{
 			name: "opacity_u",
-			type: INT,
 			value: 255,
 		},
 		{
 			name: "tint_u",
-			type: VEC3,
-			value: [1.0, 1.0, 0],
+			value: [0, 1.0, 745.692],
 		},
 		{
-			name: "light_pos",
-			type: VEC3,
-			value: [1, 0.5, 0.2],
+			name: "tex",
+			value: "images/brick_diffuse.png",
 		},
 		{
-			name: "checker_size",
-			type: FLOAT,
-			value: 50.0,
+			name: "normal_map",
+			value: "images/brick_diffuse.png",
+		},
+		{
+			name: "light_color",
+			value: [0.1, 0.25, 0.1],
 		},
 	],
 }

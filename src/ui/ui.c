@@ -32,7 +32,7 @@ void InitUI(){
 	ui_shader = ShaderOpen("shaders/ui.shader");
 	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
 	glUniformBlockBinding(ui_shader.id, glGetUniformBlockIndex(ui_shader.id, "ShaderGlobals"), 0);
-	UniformSetMat4(&ui_shader, "tex_coordinates", default_texture_coordinates);
+	ShaderUniformSetMat4(&ui_shader, "tex_coordinates", default_texture_coordinates);
 
 	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, WindowResize);
 

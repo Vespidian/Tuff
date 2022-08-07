@@ -10,9 +10,7 @@
 #include "renderer/tilesheet.h"
 #include "renderer/renderer.h"
 #include "renderer/render_text.h"
-#include "renderer/render_text.h"
 #include "renderer/quad.h"
-#include "renderer/materials/mask.h"
 
 #include "ui/ui.h"
 #include "ui/ui_utility.h"
@@ -21,7 +19,6 @@
 
 #include "json_base.h"
 #include "bundle.h"
-
 
 int loop_start_ticks = 0;
 float deltatime = 0;
@@ -39,10 +36,6 @@ bool window_active = true;
 
 
 Bundle app;
-// TilesheetObject builtin_tilesheet;
-// void LoadBuiltinResources(){
-// 	builtin_tilesheet = LoadTilesheet("../images/builtin.png", 16, 16);
-// }
 
 void InitSDL(){
 	if(SDL_Init(SDL_INIT_EVERYTHING) < 0){
@@ -79,14 +72,7 @@ void InitSDL(){
 
 void InitRenderers(){
 	InitQuadRender();
-	// InitUI();
-	
 }
-
-// void LoadDiffDomain(char *path){
-// 	printf("Loading: %s\n", path);
-// 	UI_LoadDomain(path);
-// }
 
 static char *startup_dict[] = {
 	"startup_bundle",
@@ -119,8 +105,12 @@ void Setup(){
 	}
 
 	InitEvents();
-	InitSDL();
 
+	#ifndef NOOPENGL
+		InitSDL();
+	#endif
+	// InitTextures();
+	InitUndefined();
 
 	int timer = SDL_GetTicks();
 	JSONState json = JSONOpen("../bin/builtin_assets/startup.conf");
@@ -129,41 +119,34 @@ void Setup(){
 	JSONFree(&json);
 	printf("Loaded bundle in '%d' ms\n", SDL_GetTicks() - timer);
 
+	#ifndef NOOPENGL
+		InitGL();
+	#endif
 
-	InitGL();
-	InitRenderers();
-	InitTextures();
-	InitTilesheets();
-	InitFonts();
-
-	// Load startup file
-
-	// int start = SDL_GetTicks();
-	// UI_LoadDomain("ui/minimal.uiss");
-	// UI_LoadDomain("ui/tests/color.uiss");
-	// FindElement(&scene_stack[0], "color")->function = script_onclick;
-	// FindElement(&scene_stack[0], "layout")->function = script_onclick;
-
-	// printf("Loading ui took: %dms\n", SDL_GetTicks() - start);
+	// InitRenderers();
+	// InitTilesheets();
+	// InitFonts();
 }
 
 void Quit(){
 	DebugLog(D_ACT, "Shutting down!");
-	// UnloadSandbox();
 	running = false;
 	BundleFree(&app);
+
+	// Eventually unnecessary
+	{
+		ExitGL();
+		ShaderFree(&quad_shader);
+		// TextureFree(&undefined_texture);
+		FreeUndefined();
+		free(startup_path);
+		startup_path = NULL;
+	}
+	RendererQuit();
+	
 	QuitEvents();
 	SDL_Quit();
 	QuitDebug();
-}
-
-void GameLoop(){
-
-	
-	
-	// RenderText(&default_font, 1, SCREEN_WIDTH - 10, 10, TEXT_ALIGN_RIGHT, "Number of render appends: %d", num_append_instance_calls);
-
-
 }
 
 static void CheckWindowActive(EventData event){
@@ -176,36 +159,29 @@ static void CheckWindowActive(EventData event){
 
 #include "scene.h"
 extern Model model;
-extern Texture crate_tex;
-extern Texture normal_map;
-static void ReloadApp(EventData event){
+extern Model light_model;
+// extern Texture crate_tex;
+// extern Texture normal_map;
+static void ReloadApp(){
+	DebugLog(D_ACT, "\n\nReloading Bundle\n\n");
 	int timer = SDL_GetTicks();
 	BundleFree(&app);
 	app = BundleOpen(startup_path);
 
-	ShaderFree(&axis_shader);
-	axis_shader = ShaderOpen("shaders/axis.shader");
-	ShaderFree(&mesh_shader);
-	mesh_shader = ShaderOpen("shaders/mesh.shader");
+	// ShaderFree(&axis_shader);
+	// axis_shader = ShaderOpen("shaders/axis.shader");
+	// ShaderFree(&mesh_shader);
+	// mesh_shader = ShaderOpen("shaders/mesh.shader");
 	printf("Loaded bundle in '%d' ms\n", SDL_GetTicks() - timer);
 
 	model.material = &app.materials[0];
-	model.mesh = &app.gltfs->meshes[0];
+	// model.mesh = &app.gltfs[4].meshes[0];
+	model.mesh = &BundleGLTFFind(&app, "meshes/entrance.gltf")->meshes[0];
 
-	TextureReload(&crate_tex);
-	TextureReload(&normal_map);
-}
-
-static void ReloadUI(){
-	// for(int i = 0; i < num_domains; i++){
-	// 	UI_FreeDomain(&scene_stack[i]);
-	// }
-	printf("BYUN DOMAINS: %d\n", num_domains);
-	// UI_LoadDomain("ui/minimal.uiss");
-	// UI_LoadDomain("ui/blenderish.uiss");
-	// UI_LoadDomain("ui/tests/color.uiss");
-	// FindElement(&scene_stack[0], "color")->function = script_onclick;
-	// FindElement(&scene_stack[0], "layout")->function = script_onclick;
+	light_model.material = BundleMaterialFind(&app, "materials/light.mat");
+	// light_model.mesh = BundleGLTFFind(&app, "meshes/sphere.gltf");
+	light_model.mesh = &app.gltfs[0].meshes[0];
+	
 }
 
 bool wireframe = false;
@@ -225,43 +201,35 @@ static void ToggleWireframe(EventData event){
 int main(int argc, char *argv[]){
 	Setup();
 
-	// ShaderOpen_new("shaders/default.shader");
-
-	// startupTime.x = SDL_GetTicks();
 	BindKeyEvent(ToggleWireframe, 'z', SDL_KEYDOWN);
-	BindKeyEvent(ReloadUI, 'i', SDL_KEYDOWN);
 	BindKeyEvent(ReloadApp, 'm', SDL_KEYDOWN);
-	// BindKeyEvent(ReloadScript, 'l', SDL_KEYDOWN);
 	BindEvent(EV_POLL_ACCURATE, SDL_WINDOWEVENT, CheckWindowActive);
 
-	// LoadObj("../models/cube.obj");
-	// UI_LoadDomain("ui/tests/color.uiss");
-
+#ifndef NOOPENGL
 	while(running){
+#endif
 		loop_start_ticks = SDL_GetTicks();
 		if(window_active){
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			#ifndef NOOPENGL
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				RenderGL();
+			#endif
 
-			// if(script_loop != NULL){
-			// 	script_loop();
-			// }
-
-			RenderGL();
-
-			// SetElementText(FindElement(&scene_stack[0], "t1"), "Time: %d", SDL_GetTicks());+
-			// for(int i = 0; i < num_domains; i++){
-			// 	UI_RenderDomain(&scene_stack[i]);
-
-			// }
-			// UI_RenderDomain(&scene_stack[1]);
 			PushRender();
-			SDL_GL_SwapWindow(window);
+			
+			#ifndef NOOPENGL
+				SDL_GL_SwapWindow(window);
+			#endif
 		}
 		EventListener();
 		
 		SDL_Delay(1000 / target_framerate);
 		deltatime = (SDL_GetTicks() - loop_start_ticks) / 10.0;
+#ifndef NOOPENGL
 	}
+#else
+	ReloadApp();
 	Quit();
+#endif
 	return 0;
 }

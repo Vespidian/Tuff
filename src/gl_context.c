@@ -1,6 +1,6 @@
 #include <math.h>
+#include <cglm/cglm.h>
 #include "global.h"
-// #include "gl_utils.h"
 #include "shader.h"
 
 #include "event.h"
@@ -9,7 +9,6 @@
 #include "renderer/quad.h"
 
 #include "gl_context.h"
-#include "scene/scene_old.h"
 #include "bundle.h"
 
 
@@ -31,25 +30,22 @@ static void MouseEvent(EventData event);
 //testing
 mat4 perspective_projection;
 mat4 view_matrix;
-unsigned int mesh_vao;
-unsigned int mesh_ebo;
+// unsigned int mesh_vao;
+// unsigned int mesh_ebo;
 
 unsigned int vert_vbo;
 unsigned int norm_vbo;
 unsigned int texc_vbo;
 unsigned int tanv_vbo;
 
-Shader mesh_shader;
+// Shader mesh_shader;
 mat4 mesh_matrix;
-TransformObject mesh_transform;
-TransformObject origin_transform;
-ModelObject *parent;
-ModelObject *child;
 
 unsigned int uniform_buffer;
 
+
 float axis[] = {
-	// x1, y1, z1, r, g, b, x2, y2, z2, r, g, b,
+//  x  y  z   r  g  b   x  y  z   r  g  b 
 	1, 0, 0,  1, 0, 0,	0, 0, 0,  1, 0, 0, // x axis
 	0, 1, 0,  0, 1, 0,	0, 0, 0,  0, 1, 0, // y axis
 	0, 0, 1,  0, 0, 1,	0, 0, 0,  0, 0, 1, // z axis
@@ -156,6 +152,7 @@ void PrintShaderUniforms(Shader *shader){
 }
 
 Model model;
+Model light_model;
 
 int InitGL(){
     glEnable(GL_DEPTH_TEST);
@@ -182,10 +179,9 @@ int InitGL(){
 
 	// FILE LOADING SHOULD NOT HAPPEN IN THIS FUNCTION (should all be in the bundles)
 	// crate_tex = TextureOpen("../images/brick_diffuse.png");
-	crate_tex = TextureOpen("images/brick_diffuse.png");
-	normal_map = TextureOpen("images/brick_normal.png");
+	// crate_tex = TextureOpen("images/brick_diffuse.png");
+	// normal_map = TextureOpen("images/brick_normal.png");
 
-	mesh_shader = ShaderOpen("shaders/mesh.shader");
 	axis_shader = ShaderOpen("shaders/axis.shader");
 	grid_shader = ShaderOpen("shaders/grid.shader");
 
@@ -195,7 +191,6 @@ int InitGL(){
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(float) * (16 * 3 + 4), NULL, GL_STATIC_DRAW);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniform_buffer);
 
-	glUniformBlockBinding(mesh_shader.id, glGetUniformBlockIndex(mesh_shader.id, "ShaderGlobals"), 0);
 	glUniformBlockBinding(axis_shader.id, glGetUniformBlockIndex(axis_shader.id, "ShaderGlobals"), 0);
 	glUniformBlockBinding(grid_shader.id, glGetUniformBlockIndex(grid_shader.id, "ShaderGlobals"), 0);
 	// glUniformBlockBinding(ui_shader.id, glGetUniformBlockIndex(ui_shader.id, "ShaderGlobals"), 0);
@@ -226,67 +221,20 @@ int InitGL(){
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)(sizeof(float) * 3));
 	glEnableVertexAttribArray(1);
 
-	// glBindVertexArray(0);
-
-// Shader shad = ShaderParseUniforms("test", 0, "uniform vec2 finding_nemo_is_a_sad_story;", "");
-// 	printf("nam: %s\n", shad.name);
-// 	printf("uni[0] name: %s\n", shad.uniforms[0].name);
-
-
-	// int start = SDL_GetTicks();
-	// LoadObj("../meshes/cube.obj", &mesh);
-	// GLTFState gltf = GLTFOpen("meshes/entrance");
-	// GLTFFree(&gltf);
-	// printf("Loaded mesh in %dms\n", SDL_GetTicks() - start);
-
-
-
-
 	
-	glGenVertexArrays(1, &mesh_vao);
-	glBindVertexArray(mesh_vao);
+	// glGenVertexArrays(1, &mesh_vao);
+	// glBindVertexArray(mesh_vao);
 
 	glGenBuffers(1, &vert_vbo);
 	glGenBuffers(1, &norm_vbo);
 	glGenBuffers(1, &texc_vbo);
 	glGenBuffers(1, &tanv_vbo);
 
-	glGenBuffers(1, &mesh_ebo);
+	// glGenBuffers(1, &mesh_ebo);
 
 
-	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, 72, data->meshes->primitives->indices->buffer_view->buffer->data, GL_STATIC_DRAW);
-	// GLTFBufferView *buffer_view = &app.meshes[0].buffer_views[app.meshes[0].accessors[app.meshes[0].meshes[0].indices].buffer_view];
-	// GLTFBuffer *buffer = &app.meshes[0].buffers[0];
-	// Mesh *mesh = &app.gltfs[0].meshes[0];
-
-	// // Position
-	// glBindBuffer(GL_ARRAY_BUFFER, vert_vbo);
-	// glBufferData(GL_ARRAY_BUFFER, mesh->position_bytelength, mesh->data + mesh->position_offset, GL_STATIC_DRAW);
-	// glEnableVertexAttribArray(0);
-	// glVertexAttribPointer(0, mesh->position_size, mesh->position_gl_type, GL_FALSE, 0, (void*)(0));
-
-	// // Normal
-	// glBindBuffer(GL_ARRAY_BUFFER, norm_vbo);
-	// glBufferData(GL_ARRAY_BUFFER, mesh->normal_bytelength, mesh->data + mesh->normal_offset, GL_STATIC_DRAW);
-	// glEnableVertexAttribArray(1);
-	// glVertexAttribPointer(1, mesh->normal_size, mesh->normal_gl_type, GL_FALSE, 0, (void*)(0));
-
-	// // UV0
-	// glBindBuffer(GL_ARRAY_BUFFER, texc_vbo);
-	// glBufferData(GL_ARRAY_BUFFER, mesh->uv0_bytelength, mesh->data + mesh->uv0_offset, GL_STATIC_DRAW);
-	// glEnableVertexAttribArray(2);
-	// glVertexAttribPointer(2, mesh->uv0_size, mesh->uv0_gl_type, GL_FALSE, 0, (void*)(0));
-	
-	// // UV1
-	// glBindBuffer(GL_ARRAY_BUFFER, texc_vbo);
-	// glBufferData(GL_ARRAY_BUFFER, mesh->uv0_bytelength, mesh->data + mesh->uv0_offset, GL_STATIC_DRAW);
-	// glEnableVertexAttribArray(2);
-	// glVertexAttribPointer(2, mesh->uv0_size, mesh->uv0_gl_type, GL_FALSE, 0, (void*)(0));
-
-	// // Indices
-	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_ebo);
-	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->index_bytelength, mesh->data + mesh->index_offset, GL_STATIC_DRAW);
-	model = ModelNew(NULL, &app.gltfs[0].meshes[0], BundleMaterialFind(&app, "materials/default.mat"));
+	model = ModelNew(NULL, &app.gltfs[4].meshes[0], BundleMaterialFind(&app, "materials/default.mat"));
+	light_model = ModelNew(NULL, &app.gltfs[0].meshes[0], BundleMaterialFind(&app, "materials/light.mat"));
 
 
     glm_mat4_identity(perspective_projection);
@@ -295,9 +243,8 @@ int InitGL(){
     // set projection transform
     glm_perspective(glm_rad(90), SCREEN_WIDTH / SCREEN_HEIGHT, 0.01, 100, perspective_projection);
 
-	UniformSetSampler2D(BundleShaderFind(&app, "shaders/default.shader"), "tex", 0);
-	UniformSetSampler2D(BundleShaderFind(&app, "shaders/default.shader"), "normal_map", 1);
-	UniformSetSampler2D(&grid_shader, "texture_0", 0);
+	// ShaderUniformSetSampler2D(BundleShaderFind(&app, "shaders/default.shader"), "tex", 0);
+	// ShaderUniformSetSampler2D(BundleShaderFind(&app, "shaders/default.shader"), "normal_map", 1);
 
 
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float) * 16, &perspective_projection);
@@ -305,60 +252,64 @@ int InitGL(){
 
     DebugLog(D_ACT, "Initialized OpenGL");
 
-	mesh_transform.scale = (Vector3){0.5, 0.5, 0.5};
-	InitTransform(&origin_transform);
+	// mesh_transform.scale = (Vector3){0.5, 0.5, 0.5};
+	// InitTransform(&origin_transform);
 
-	InitScene(&active_scene);
-	parent = NewModel("parent", NULL, NULL, 0, 0, 0);
-	child = NewModel("child", parent, NULL, 0, 0, 0);
+	// InitScene(&active_scene);
+	// parent = NewModel("parent", NULL, NULL, 0, 0, 0);
+	// child = NewModel("child", parent, NULL, 0, 0, 0);
 
 
-	MaterialShaderSet(BundleMaterialFind(&app, "materials/default.mat"));
+	// MaterialShaderPassUniforms(BundleMaterialFind(&app, "materials/default.mat"));
+
     GLCall;
-
 	// PrintShaderUniforms(&mesh_shader);
 
     return 0;
+}
+
+void ExitGL(){
+
+	ShaderFree(&axis_shader);
+	ShaderFree(&grid_shader);
+
 }
 
 #include "renderer/render_text.h"
 
 // static float value = 0;
 float light_time = 0;
-Vector3 light_color = {1, 1, 1};
-TransformObject light_transform = {{1, 0.6, 1.2}, {1, 1, 1}, {0, 0, 0}};
+// Vector3 light_color = {0, 1, 0};
+Vector3 light_color = {0.98, 0.839, 0.647};
+// TransformObject light_transform = {{1, 0.6, 1.2}, {1, 1, 1}, {0, 0, 0}};
 static Vector3 direction = {0, 0, 0};
 static Vector3 view_position = {0, 0, 0};
 // static Vector3 mesh_position = {0, 0.01, 0};
-// static Vector3 light_position = {1, 0.6, 1.2};
+Vector3 light_position = {1, 0.6, 1.2};
 static float view_distance = 5;
 static float yaw, pitch = 0.25;
 static float normal_intense = 1;
-void RenderUI(){
-	// RenderText(&default_font, 1, 0, 0, TEXT_ALIGN_LEFT, "TESTING TEXT!");
+
+void RenderGL(){
+	// RenderUI();
+
 	Vector3 tmp = {0, 0, view_distance};
 	glm_vec3_rotate(tmp.v, -pitch * 2, (vec3){1, 0, 0});
 	glm_vec3_rotate(tmp.v, -yaw, (vec3){0, 1, 0});
 	// float w = view_distance * cos(pitch);
 	glm_vec3_add(view_position.v, tmp.v, tmp.v);
-	// UniformSetVec3(mesh_shader, "view_position", tmp.v);
-	UniformSetVec3(BundleShaderFind(&app, "shaders/default.shader"), "view_position", tmp.v);
+	// ShaderUniformSetVec3(mesh_shader, "view_position", tmp.v);
+	ShaderUniformSetVec3(BundleShaderFind(&app, "shaders/default.shader"), "view_position", tmp.v);
 
 
-	UniformSetFloat(BundleShaderFind(&app, "shaders/default.shader"), "normal_map_intensity", normal_intense);
+	ShaderUniformSetFloat(BundleShaderFind(&app, "shaders/default.shader"), "normal_map_intensity", normal_intense);
 
     glm_mat4_identity(view_matrix);
-	// glm_mat4_identity(mesh_matrix);
-
-	
 	glm_translate(view_matrix, (vec3){0, 0, -view_distance});
 	glm_rotate(view_matrix, pitch * 2, (vec3){1, 0, 0});
 	glm_rotate(view_matrix, yaw, (vec3){0, 1, 0});
 	glm_translate(view_matrix, view_position.v);
 	
-	// UniformSetMat4(mesh_shader, "view", view_matrix);
-	// UniformSetMat4(unlit_shader, "view", view_matrix);
-	// UniformSetMat4(grid_shader, "view", view_matrix);
 	glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
 	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 16 * 2, sizeof(float) * 16, &view_matrix);
 
@@ -368,80 +319,33 @@ void RenderUI(){
 	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 16 * 3, sizeof(float) * 4, &time);
 
 
-    // glm_translate(mesh_matrix, mesh_position.v);
-	// glm_scale_uni(mesh_matrix, 0.5f);
-    // UniformSetMat4(&mesh_shader, "model", mesh_matrix);
-
-	// light_time = (SDL_GetTicks() % 1000) / 1000.0;
-	// glm_scale_uni(mesh_matrix, 0.1);
-	glm_mat4_identity(light_transform.result);
-	glm_translate(light_transform.result, light_transform.position.v);
-	glm_vec3_rotate(light_transform.position.v, 0.1, (vec3){0, 1, 0});
-	// light_transform.position.y = cos(light_time * 7.5) / 1.5;
-	glm_scale_uni(light_transform.result, 0.25);
-	// UniformSetVec3(BundleShaderFind(&app, "shaders/default.shader"), "light_pos", light_transform.position.v);
-
-	// Vector3 color = {sin(1), cos(1), 1.2};
-	Vector3 color = {0.5, 0.5, 0.5};
-	UniformSetVec3(BundleShaderFind(&app, "shaders/default.shader"), "light_color", color.v);
-
-
-	// glm_vec3_rotate(light_transform.position.v, -light_time, (vec3){0, 1, 0});
-
-	// Vector3 tmp = view_position;
-	// Vector3 tmp = {0, 0, -view_distance};
-	// glm_vec3_rotate(tmp.v, pitch * 2, (vec3){1, 0, 0});
-	// glm_vec3_rotate(tmp.v, yaw, (vec3){0, 1, 0});
-	// // float w = view_distance * cos(pitch);
-	// glm_vec3_add(view_position.v, tmp.v, tmp.v);
-	// // UniformSetVec3(mesh_shader, "view_position", tmp.v);
-	// UniformSetVec3(mesh_shader, "view_position", tmp.v);
-
-    // // GLCall;
-}
-void RenderGL(){
-	RenderUI();
-
 	// RETURN: Something weird is happening when reloading the bundle / shaders
 	// the normal map texture slot is being set to the regular brick texture
-	glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, crate_tex.gl_tex);
-	current_texture_unit = 0;
-	bound_textures[0] = crate_tex.gl_tex;
+	// glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, crate_tex.gl_tex);
+	// current_texture_unit = 0;
+	// bound_textures[0] = crate_tex.gl_tex;
 
-	glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, normal_map.gl_tex);
-	current_texture_unit = 1;
-	bound_textures[1] = normal_map.gl_tex;
+	// glActiveTexture(GL_TEXTURE1);
+    // glBindTexture(GL_TEXTURE_2D, normal_map.gl_tex);
+	// current_texture_unit = 1;
+	// bound_textures[1] = normal_map.gl_tex;
 
-
-	// SetVAO(mesh_vao);
-	// CalculateTransform(&mesh_transform);
-    // UniformSetMat4(BundleShaderFind(&app, "shaders/default.shader"), "model", mesh_transform.result);
-	// // ShaderPassUniforms(&mesh_shader);
-	// ShaderPassUniforms(BundleShaderFind(&app, "shaders/default.shader"));
-	// int type;
-	// if(data->meshes->primitives->indices->component_type == cgltf_component_type_r_16u){
-		// type = GL_UNSIGNED_SHORT;
-	// }else{
-		// type = GL_UNSIGNED_INT;
-	// }
-	// glDrawElements(GL_TRIANGLES, data->meshes->primitives->indices->count, type, NULL);
 
 	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_LINE_SMOOTH);
-
+	mat4 model_matrix;
+	glm_mat4_identity(model_matrix);
 	// Scene axis
 	{
 		SetVAO(axis_vao);
-		UniformSetFloat(&axis_shader, "zoom", view_distance);
-		UniformSetMat4(&axis_shader, "model", origin_transform.result);
+		ShaderUniformSetFloat(&axis_shader, "zoom", view_distance);
+		ShaderUniformSetMat4(&axis_shader, "model", model_matrix);
 		ShaderPassUniforms(&axis_shader);
 		glDrawArrays(GL_LINES, 0, 26);
 	}
 
-	// child->transform.position.y = 1;
-	// CalculateModelTransform(parent);
+
 	if(grid_enabled){
 		SetVAO(grid_vao);
 		// glBindVertexArray(grid_vbo);
@@ -454,13 +358,36 @@ void RenderGL(){
 	glDisable(GL_MULTISAMPLE);
 	glDisable(GL_LINE_SMOOTH);
 
-	SetVAO(mesh_vao);
+	light_position.x = 2 * sin(time);
+	light_position.z = 2 * cos(time);
+
+	// SetVAO(mesh_vao);
 	// ShaderPassUniforms(&mesh_shader);
-    UniformSetMat4(BundleShaderFind(&app, "shaders/default.shader"), "model", parent->transform.result);
-	ShaderPassUniforms(BundleShaderFind(&app, "shaders/default.shader"));
+	// ShaderUniformSetVec3(BundleShaderFind(&app, "shaders/default.shader"), "")
+    // ShaderUniformSetMat4(BundleShaderFind(&app, "shaders/default.shader"), "model", model_matrix);
+    // ShaderUniformSetMat4(BundleShaderFind(&app, "shaders/default.shader"), "model", model_matrix);
+	// ShaderPassUniforms(BundleShaderFind(&app, "shaders/default.shader"));
 	// glDrawElements(GL_TRIANGLES, app.meshes->accessors[app.meshes->meshes[0].indices].count, app.meshes->accessors[app.meshes->meshes[0].indices].component_type, NULL);
 	// glDrawElements(GL_TRIANGLES, app.gltfs[0].meshes[0].index_count, app.gltfs[0].meshes[0].index_gl_type, NULL);
+	
+	// Works
+	MaterialUniformSetVec3(model.material, "light_color", light_color.v);
+	model.transform.position = (Vector3){0, 1, 0};
+	
+	// Doesnt
+	MaterialUniformSetVec3(model.material, "light_pos", light_position.v);
+
 	ModelRender(&model);
+
+
+	// Works
+	light_model.transform.position = light_position;
+	light_model.transform.scale = (Vector3){0.2, 0.2, 0.2};
+	
+	// Doesnt
+	MaterialUniformSetVec3(light_model.material, "light_color", light_color.v);
+	
+	ModelRender(&light_model);
 	// SDL_Rect mouse = {mouse_pos.x, mouse_pos.y, 16, 16};
 }
 
@@ -468,13 +395,11 @@ float movement_speed = 0.01f;
 float rotation_speed = 0.3f;
 float zoom_speed = 0.075f;
 static void Zoom(EventData event){
-	// if(!ui_hovered){
-		if(event.e->wheel.y > 0){
-			view_distance -= zoom_speed * view_distance;
-		}else if(event.e->wheel.y < 0){
-			view_distance += zoom_speed * view_distance;
-		}
-	// }
+	if(event.e->wheel.y > 0){
+		view_distance -= zoom_speed * view_distance;
+	}else if(event.e->wheel.y < 0){
+		view_distance += zoom_speed * view_distance;
+	}
 }
 
 static void KeyPresses(EventData event){

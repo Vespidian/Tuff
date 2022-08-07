@@ -1,0 +1,5 @@
+{
+	name: "Light Material",
+	shader: "shaders/light.shader",
+	uniforms: [],
+}

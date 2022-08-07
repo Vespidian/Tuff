@@ -26,6 +26,7 @@ extern unsigned int uniform_buffer;
 
 extern Shader axis_shader;
 extern Shader mesh_shader;
+void ExitGL();
 
 //tmp
 // #include "gl_utils.h"

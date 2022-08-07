@@ -83,12 +83,17 @@ Model ModelNewEmpty(){
 Model ModelNew(Model *parent, Mesh *mesh, Material *material){
 	Model model = ModelNewEmpty();
 
-	if(mesh != NULL && material != NULL){
+	if(material != NULL){
 		model.parent = parent;
 
-		model.mesh = mesh;
-		model.mesh_path = malloc(strlen(mesh->path) + 1);
-		memcpy(model.mesh_path, mesh->path, strlen(mesh->path));
+		if(mesh == NULL){
+			mesh = &undefined_mesh;
+			model.mesh = &undefined_mesh;
+		}else{
+			model.mesh = mesh;
+			model.mesh_path = malloc(strlen(mesh->path) + 1);
+			memcpy(model.mesh_path, mesh->path, strlen(mesh->path));
+		}
 
 		model.material = material;
 		model.material_path = malloc(strlen(material->path) + 1);
@@ -161,10 +166,22 @@ void ModelRender(Model *model){
 	if(model != NULL && model->is_loaded){
 		TransformCalculate(&model->transform);
 
-		UniformSetMat4(model->material->shader, "model", model->transform.matrix); // TODO: Make this uniform buffer objects (UBO)
-		MaterialShaderSet(model->material);
+		ShaderUniformSetMat4(model->material->shader, "model", model->transform.matrix); // TODO: Make this uniform buffer objects (UBO)
+		// Looking back at this: can you even put this uniform into the UBO? SHOULD we even do that?
+		MaterialShaderPassUniforms(model->material);
 
 		SetVAO(model->renderer.vao);
+
+		for(int i = 0; i < model->material->num_uniforms; i++){
+			if(model->material->uniforms[i].type == UNI_SAMPLER2D){
+				if(current_texture_unit != i){
+					glActiveTexture(GL_TEXTURE0 + i);
+					current_texture_unit = i;
+				}
+				glBindTexture(GL_TEXTURE_2D, model->material->uniforms[i].value._sampler2D);	
+				bound_textures[i] = model->material->uniforms[i].value._sampler2D;
+			}
+		}
 
 		if(model->mesh->index_exists){
 			glDrawElements(GL_TRIANGLES, model->mesh->index_count, model->mesh->index_gl_type, NULL);

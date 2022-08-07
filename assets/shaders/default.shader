@@ -53,7 +53,8 @@
 				// gl_Position = projection_persp * view * model * vec4(pos_a, 1);
 				float zval = (sin(time + pos_a.x*2 + pos_a.y*3) + 1)*0.2 + pos_a.z;
 				float yval = (sin(time + pos_a.x*5) + 1)*0.1 + pos_a.y;
-				gl_Position = projection_persp * view * model * vec4(pos_a.x, yval, zval, 1);
+				// gl_Position = projection_persp * view * model * vec4(pos_a.x, yval, zval, 1);
+				gl_Position = projection_persp * view * model * vec4(pos_a, 1);
 				// gl_Position = projection * view * model * vec4(normal_a, 1);
 				// gl_Position = projection * view * model * vec4(texture_a, 1);
 				frag_pos_v = vec3(model * vec4(pos_a, 1));
@@ -70,14 +71,28 @@
 				uniform: light_pos,
 				description: "Position of the phong light",
 				type: VEC3,
-				default: [1, 0.25, 0.5],
+				
+			},
+			{
+				uniform: light_color,
+				description: "Color of the phong light",
+				type: VEC3,
+				default: [0.5, 0.25, 0.1],
 			},
 			{
 				uniform: checker_size,
 				description: "Size of the checkerboard pattern",
 				type: FLOAT,
-				default: 50.0,
+				default: 20.0,
 				range: [5, 50],
+			},
+			{
+				uniform: tex,
+				description: "Base texture of mesh (currently unused)",
+			},
+			{
+				uniform: normal_map,
+				description: "Normal map texture",
 			},
 		],
 		
@@ -106,7 +121,8 @@
 
 			void main(){
 				vec2 tv = mod(texture_v*2, 1.0);
-				vec3 new_normal = normalize(normal_v + (texture(normal_map, tv)).rgb);
+				vec3 new_normal = normalize(normal_v.rgb);
+				// vec3 new_normal = normalize(normal_v + (texture(normal_map, tv)).rgb);
 				// vec3 new_normal = normalize(normal_v + (texture(tex, tv)).rgb);
 				// new_normal *= 2.0 - 1.0;
 				// new_normal = normalize(TBN_v * new_normal);
@@ -127,7 +143,8 @@
 				// Calculate diffuse
 				vec3 light_dir = normalize(light_pos - frag_pos_v);
 				float difference = max(dot(new_normal, light_dir), 0);
-				vec3 diffuse = vec3(difference * light_color);
+				// vec3 light_color = vec3(1);
+				vec3 diffuse = vec3(difference * light_color * 0.6);
 
 				// Calculate specular
 				vec3 view_dir = normalize(view_position - frag_pos_v);
@@ -142,7 +159,8 @@
 				// vec3 specular = specular_strength * spec * light_color;
 				// vec3 specular = vec3(specular_strength * spec);
 				// FragColor = texture(tex, tv);
-				FragColor = vec4(vec3(light_pos), 1);
+				// FragColor = vec4(light_pos, 1);
+				FragColor = vec4(1);
 				FragColor *= vec4(diffuse + specular + ambient, 1);
 				float grid_size = checker_size;
 				FragColor *= vec4(vec3(mod(floor(tv.x * grid_size) + floor(tv.y * grid_size), 2.0) == 0 ? 0.8 : 1), 1);
@@ -156,7 +174,7 @@
 				// FragColor = vec4(diffuse + specular + ambient, 1);
 				// FragColor *= vec4(ambient + specular, 1);
 				// FragColor = vec4(light_pos, 1);
-				// FragColor = texture(normal_map, texture_v.xy);
+				// FragColor = vec4(light_color, 1);
 
 
 			}

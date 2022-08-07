@@ -9,10 +9,16 @@
 // #include "ui/ui_parser.h" 	// Domains
 // #include "" 					// Scenes
 
-// typedef struct Model{
-// 	char *path;
-// 	GLTFState gltf;
-// }Model;
+/**
+ *  Assets to be used in error cases
+ */
+extern Texture undefined_texture;
+extern GLTF undefined_gltf;
+extern Mesh undefined_mesh;
+extern Shader undefined_shader;
+extern Material undefined_material;
+void InitUndefined();
+void FreeUndefined();
 
 typedef struct Bundle{
 	char *path;
@@ -35,6 +41,8 @@ Bundle BundleOpen(char *path);
 
 void BundleFree(Bundle *bundle);
 
+Texture *BundleTextureFind(Bundle *bundle, char *texture_path);
+GLTF *BundleGLTFFind(Bundle *bundle, char *gltf_path);
 Shader *BundleShaderFind(Bundle *bundle, char *shader_path);
 Material *BundleMaterialFind(Bundle *bundle, char *material_path);
 

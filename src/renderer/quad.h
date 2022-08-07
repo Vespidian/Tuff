@@ -8,6 +8,8 @@
  */
 void InitQuadRender();
 
+extern Shader quad_shader;
+
 /**
  *  Render a quad with a texture to the viewport
  */

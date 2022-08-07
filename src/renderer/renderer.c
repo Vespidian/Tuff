@@ -34,21 +34,23 @@ mat4 default_texture_coordinates = {
     {0.0, 1.0},
 };
 
-InstanceBuffer *instance_buffer;
+RendererInstance *instance_buffer;
 unsigned int num_instances = 0;
 int num_append_instance_calls = 0;
 mat4 orthographic_projection;
 
 void RendererInit(){
-	instance_buffer = malloc(sizeof(InstanceBuffer) * 2);
-	GLCall(glGenBuffers(1, &quad_vbo));
-	GLCall(glGenBuffers(1, &quad_ebo));
-	GLCall(glGenBuffers(1, &instanced_vbo));
-
+	instance_buffer = malloc(sizeof(RendererInstance) * 2);
+	#ifndef NOOPENGL
+		GLCall(glGenBuffers(1, &quad_vbo));
+		GLCall(glGenBuffers(1, &quad_ebo));
+		GLCall(glGenBuffers(1, &instanced_vbo));
+	#endif
 }
 
 void RendererQuit(){
-
+	free(instance_buffer);
+	instance_buffer = NULL;
 }
 
 AttribArray NewVAO(int num_attribs, ...){
@@ -63,22 +65,24 @@ AttribArray NewVAO(int num_attribs, ...){
 	}
 
 	// Initialize the new vertex array object
-	GLCall(glGenVertexArrays(1, &vao.array_object));
-	GLCall(glBindVertexArray(vao.array_object));
-	// Initialize static vertex buffer
-	GLCall(glBindBuffer(GL_ARRAY_BUFFER, quad_vbo));
-	GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_STATIC_DRAW));
+	#ifndef NOOPENGL
+		GLCall(glGenVertexArrays(1, &vao.array_object));
+		GLCall(glBindVertexArray(vao.array_object));
+		// Initialize static vertex buffer
+		GLCall(glBindBuffer(GL_ARRAY_BUFFER, quad_vbo));
+		GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_STATIC_DRAW));
 
-	// Default quad vertex positions
-	GLCall(glEnableVertexAttribArray(0));
-    GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0));
+		// Default quad vertex positions
+		GLCall(glEnableVertexAttribArray(0));
+		GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0));
 
-    // Initialize static index buffer
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad_ebo));
-    GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_indices), quad_indices, GL_STATIC_DRAW));
+		// Initialize static index buffer
+		GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad_ebo));
+		GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_indices), quad_indices, GL_STATIC_DRAW));
 
-	// Setting attribute locations for 'instanced_vbo'
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, instanced_vbo));
+		// Setting attribute locations for 'instanced_vbo'
+		GLCall(glBindBuffer(GL_ARRAY_BUFFER, instanced_vbo));
+	#endif
 
 	uint8_t attribs[16];
 	va_list vl;
@@ -113,11 +117,13 @@ AttribArray NewVAO(int num_attribs, ...){
 		}
 		// For matrixes, loops through each vertex attribute, otherwise only executes once
 		for(int j = 0; j < mat_type; j++){
-			GLCall(glEnableVertexAttribArray(attrib_index));
+			#ifndef NOOPENGL
+				GLCall(glEnableVertexAttribArray(attrib_index));
 
-			// Size is 'mat_type' for matrixes and 'attribs[i]' for normal attributes
-			GLCall(glVertexAttribPointer(attrib_index, (mat_type != 1) ? mat_type : attribs[i], GL_FLOAT, GL_FALSE, vao.stride * sizeof(float), (void*)(attrib_offset * sizeof(float))));
-			GLCall(glVertexAttribDivisor(attrib_index, 1));
+				// Size is 'mat_type' for matrixes and 'attribs[i]' for normal attributes
+				GLCall(glVertexAttribPointer(attrib_index, (mat_type != 1) ? mat_type : attribs[i], GL_FLOAT, GL_FALSE, vao.stride * sizeof(float), (void*)(attrib_offset * sizeof(float))));
+				GLCall(glVertexAttribDivisor(attrib_index, 1));
+			#endif
 			attrib_index++;
 			
 			// mat2 needs to be differentiated from vec4 (both have 4 variables)
@@ -142,7 +148,7 @@ AttribArray NewVAO(int num_attribs, ...){
 
 unsigned int NewInstance(char num_textures_used, Texture textures[16], AttribArray vao, Shader *shader){
 	// Extend buffer by 1 instance
-	InstanceBuffer *tmp_buffer = realloc(instance_buffer, sizeof(InstanceBuffer) * (num_instances + 1));
+	RendererInstance *tmp_buffer = realloc(instance_buffer, sizeof(RendererInstance) * (num_instances + 1));
 	if(tmp_buffer != NULL){
 		instance_buffer = tmp_buffer;
 
@@ -224,7 +230,7 @@ void EmptyRenderBuffer(){
 		free(instance_buffer[i].buffer);
 	}
 	free(instance_buffer);
-	instance_buffer = malloc(sizeof(InstanceBuffer) * 2);
+	instance_buffer = malloc(sizeof(RendererInstance) * 2);
 	num_instances = 0;
 	num_append_instance_calls = 0;
 }
@@ -232,11 +238,11 @@ void EmptyRenderBuffer(){
 void PushRender(){
 	// Loop through instances
 	for(int instance = 0; instance < num_instances; instance++){
-		unsigned int instance_count = instance_buffer[instance].count;
-		
 		// Only bind vao if different vao is bound
 		if(current_vao != instance_buffer[instance].vao.array_object){
-			glBindVertexArray(instance_buffer[instance].vao.array_object);
+			#ifndef NOOPENGL
+				glBindVertexArray(instance_buffer[instance].vao.array_object);
+			#endif
 			current_vao = instance_buffer[instance].vao.array_object;
 		}
 
@@ -251,19 +257,27 @@ void PushRender(){
 				
 				// Only change active texture slot if different texture slot is active
 				if(current_texture_unit != texture_slot){
-					glActiveTexture(GL_TEXTURE0 + texture_slot);
+					#ifndef NOOPENGL
+						glActiveTexture(GL_TEXTURE0 + texture_slot);
+					#endif
 					current_texture_unit = texture_slot;
 				}
-				glBindTexture(GL_TEXTURE_2D, instance_buffer[instance].texture[texture_slot]);
+				#ifndef NOOPENGL
+					glBindTexture(GL_TEXTURE_2D, instance_buffer[instance].texture[texture_slot]);
+				#endif
 				bound_textures[texture_slot] = instance_buffer[instance].texture[texture_slot];
 			}
 		}
 
-		// Set 'instance_vbo' data to instance data
-	    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * instance_buffer[instance].vao.stride * instance_count, instance_buffer[instance].buffer, GL_STREAM_DRAW);
+		#ifndef NOOPENGL
+			unsigned int instance_count = instance_buffer[instance].count;
+			
+			// Set 'instance_vbo' data to instance data
+			glBufferData(GL_ARRAY_BUFFER, sizeof(float) * instance_buffer[instance].vao.stride * instance_count, instance_buffer[instance].buffer, GL_STREAM_DRAW);
 
-		// Render instance
-		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL, instance_count);
+			// Render instance
+			glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL, instance_count);
+		#endif
 	}
 
 	// Clear all instances and reset 'instance_buffer' size

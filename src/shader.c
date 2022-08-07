@@ -11,17 +11,9 @@
 #include "json_base.h"
 #include "shader.h"
 
-#ifdef DEBUG_BUILD
-#define GLCall CheckGLErrors(__FILE__, __LINE__);
-#else
-#define GLCall
-#endif
 
 // Prints out everything as it happens
 // #define SHADER_DEBUG
-
-// Only to be defined for testing the library (useful so valgrind doesnt show false leaks)
-#define SHADER_NOOPENGL
 
 const char *shader_types[] = {
 	"UNDEFINED",
@@ -67,52 +59,55 @@ static ShaderUniform UniformNew(){
 }
 
 void ShaderPassUniforms(Shader *shader){
-	ShaderSet(shader);
+	if(shader != NULL){
+		ShaderSet(shader);
+		for(int i = 0; i < shader->num_uniforms; i++){
+			if(!shader->uniforms[i].is_uploaded){
+				#ifndef NOOPENGL
+					switch(shader->uniforms[i].type){
+						case UNI_BOOL:
+							glUniform1i(shader->uniforms[i].uniform, (int)shader->uniforms[i].value._bool);
+							break;
+						case UNI_INT:
+							glUniform1i(shader->uniforms[i].uniform, (int)shader->uniforms[i].value._int);
+							break;
+						case UNI_FLOAT:
+							glUniform1f(shader->uniforms[i].uniform, shader->uniforms[i].value._float);
+							break;
 
-	for(int i = 0; i < shader->num_uniforms; i++){
-		if(!shader->uniforms[i].is_uploaded){
-			switch(shader->uniforms[i].type){
-				case UNI_BOOL:
-					glUniform1i(shader->uniforms[i].uniform, (int)shader->uniforms[i].value._bool);
-					break;
-				case UNI_INT:
-					glUniform1i(shader->uniforms[i].uniform, (int)shader->uniforms[i].value._int);
-					break;
-				case UNI_FLOAT:
-					glUniform1f(shader->uniforms[i].uniform, shader->uniforms[i].value._float);
-					break;
+						case UNI_VEC2:
+							glUniform2fv(shader->uniforms[i].uniform, 1, shader->uniforms[i].value._vec2.v);
+							break;
+						case UNI_VEC3:
+							glUniform3fv(shader->uniforms[i].uniform, 1, shader->uniforms[i].value._vec3.v);
+							break;
+						case UNI_VEC4:
+							glUniform4fv(shader->uniforms[i].uniform, 1, shader->uniforms[i].value._vec4.v);
+							break;
 
-				case UNI_VEC2:
-					glUniform2fv(shader->uniforms[i].uniform, 1, shader->uniforms[i].value._vec2.v);
-					break;
-				case UNI_VEC3:
-					glUniform3fv(shader->uniforms[i].uniform, 1, shader->uniforms[i].value._vec3.v);
-					break;
-				case UNI_VEC4:
-					glUniform4fv(shader->uniforms[i].uniform, 1, shader->uniforms[i].value._vec4.v);
-					break;
+						case UNI_MAT2:
+							glUniformMatrix2fv(shader->uniforms[i].uniform, 1, GL_FALSE, shader->uniforms[i].value._mat2[0]);
+							break;
+						case UNI_MAT3:
+							glUniformMatrix3fv(shader->uniforms[i].uniform, 1, GL_FALSE, shader->uniforms[i].value._mat3[0]);
+							break;
+						case UNI_MAT4:
+							glUniformMatrix4fv(shader->uniforms[i].uniform, 1, GL_FALSE, shader->uniforms[i].value._mat4[0]);
+							break;
 
-				case UNI_MAT2:
-					glUniformMatrix2fv(shader->uniforms[i].uniform, 1, GL_FALSE, shader->uniforms[i].value._mat2[0]);
-					break;
-				case UNI_MAT3:
-					glUniformMatrix3fv(shader->uniforms[i].uniform, 1, GL_FALSE, shader->uniforms[i].value._mat3[0]);
-					break;
-				case UNI_MAT4:
-					glUniformMatrix4fv(shader->uniforms[i].uniform, 1, GL_FALSE, shader->uniforms[i].value._mat4[0]);
-					break;
-
-				case UNI_SAMPLER1D:
-					glUniform1i(shader->uniforms[i].uniform, shader->uniforms[i].value._sampler1d);
-					break;
-				case UNI_SAMPLER2D:
-					glUniform1i(shader->uniforms[i].uniform, shader->uniforms[i].value._sampler2d);
-					break;
-				case UNI_SAMPLER3D:
-					glUniform1i(shader->uniforms[i].uniform, shader->uniforms[i].value._sampler3d);
-					break;
+						case UNI_SAMPLER1D:
+							glUniform1i(shader->uniforms[i].uniform, shader->uniforms[i].value._sampler1d);
+							break;
+						case UNI_SAMPLER2D:
+							glUniform1i(shader->uniforms[i].uniform, shader->uniforms[i].value._sampler2d);
+							break;
+						case UNI_SAMPLER3D:
+							glUniform1i(shader->uniforms[i].uniform, shader->uniforms[i].value._sampler3d);
+							break;
+					}
+				#endif
+				shader->uniforms[i].is_uploaded = true;
 			}
-			shader->uniforms[i].is_uploaded = true;
 		}
 	}
 }
@@ -248,6 +243,8 @@ static void ShaderStageParseUniforms(Shader *shader, unsigned int stage_id){
 				for(int j = 0; j < stage_ptr->num_uniforms; j++){
 					if(strcmp(stage_ptr->uniforms[j].name, stage_ptr->uniforms[stage_ptr->num_uniforms].name) == 0){
 						found_copy = true;
+						// Set the copy's type to the one found in the shader source
+						stage_ptr->uniforms[j].type = stage_ptr->uniforms[stage_ptr->num_uniforms].type;
 						break;
 					}
 				}
@@ -264,7 +261,7 @@ static void ShaderStageParseUniforms(Shader *shader, unsigned int stage_id){
 }
 
 static void ShaderCompile(Shader *shader){
-	#ifndef SHADER_NOOPENGL
+	#ifndef NOOPENGL
 		shader->id = glCreateProgram();
 		for(int i = 0; i < shader->num_stages; i++){
 			#ifdef SHADER_DEBUG
@@ -297,16 +294,16 @@ static void ShaderCompile(Shader *shader){
 			if(shader_type != 0){
 				shader->stages[i].gl_id = glCreateShader(shader_type);
 				int source_length = strlen(shader->stages[i].source);
-				GLCall(glShaderSource(shader->stages[i].gl_id, 1, (const GLchar*const*)&shader->stages[i].source, &source_length));
-				GLCall(glCompileShader(shader->stages[i].gl_id));
+				glShaderSource(shader->stages[i].gl_id, 1, (const GLchar*const*)&shader->stages[i].source, &source_length);
+				glCompileShader(shader->stages[i].gl_id);
 				int success;
-				GLCall(glGetShaderiv(shader->stages[i].gl_id, GL_COMPILE_STATUS, &success)); // Crash? 
+				glGetShaderiv(shader->stages[i].gl_id, GL_COMPILE_STATUS, &success); // Crash 
 				if(!success){
 					int info_log_length = 0;
-					GLCall(glGetShaderiv(shader->stages[i].gl_id, GL_INFO_LOG_LENGTH, &info_log_length));
+					glGetShaderiv(shader->stages[i].gl_id, GL_INFO_LOG_LENGTH, &info_log_length);
 					char *info_log = malloc(info_log_length);
 					if(info_log != NULL){
-						GLCall(glGetShaderInfoLog(shader->stages[i].gl_id, info_log_length, NULL, info_log));
+						glGetShaderInfoLog(shader->stages[i].gl_id, info_log_length, NULL, info_log);
 						DebugLog(D_ACT, "\n\n'%s' (%s) compilation failed: \n%s\n", shader->path, shader_types[shader->stages[i].stage_type], info_log);
 						printf("'%s' (%s) compilation failed: \n%s\n", shader->path, shader_types[shader->stages[i].stage_type], info_log);
 					}else{
@@ -314,7 +311,7 @@ static void ShaderCompile(Shader *shader){
 					}
 					free(info_log);
 				}else{
-					GLCall(glAttachShader(shader->id, shader->stages[i].gl_id));
+					glAttachShader(shader->id, shader->stages[i].gl_id);
 				}
 				#ifdef SHADER_DEBUG
 					DebugLog(D_ACT, "%s: Compilation successful!\n", shader->path);
@@ -327,15 +324,15 @@ static void ShaderCompile(Shader *shader){
 			DebugLog(D_ACT, "%s: Done looping stages\n", shader->path);
 		#endif
 
-		GLCall(glLinkProgram(shader->id));
+		glLinkProgram(shader->id);
 		int success;
-		GLCall(glGetProgramiv(shader->id, GL_LINK_STATUS, &success));
+		glGetProgramiv(shader->id, GL_LINK_STATUS, &success);
 		if(!success){
 			int info_log_length = 0;
-			GLCall(glGetProgramiv(shader->id, GL_INFO_LOG_LENGTH, &info_log_length));
+			glGetProgramiv(shader->id, GL_INFO_LOG_LENGTH, &info_log_length);
 			char *info_log = malloc(info_log_length);
 			if(info_log != NULL){
-				GLCall(glGetProgramInfoLog(shader->id, info_log_length, NULL, info_log));
+				glGetProgramInfoLog(shader->id, info_log_length, NULL, info_log);
 				DebugLog(D_ERR, "\n\n'%s' linking failed: \n%s\n", shader->path, info_log);
 				printf("'%s' linking failed: \n%s\n", shader->path, info_log);
 			}else{
@@ -346,7 +343,7 @@ static void ShaderCompile(Shader *shader){
 			DebugLog(D_ACT, "%s: Compilation successfull!\n", shader->path);
 		}
 	#else
-		DebugLog(D_ACT, "%s: Shader compilation failed: Since 'SHADER_NOOPENGL' is defined, no opengl functions will be called\n", shader->path);
+		DebugLog(D_ACT, "%s: Shader compilation failed: Since 'NOOPENGL' is defined, no opengl functions will be called\n", shader->path);
 	#endif
 }
 
@@ -416,11 +413,6 @@ Shader *shader_ptr = NULL;
 							JSONTokenToString(json, token + 1, &string);
 
 							if(string != NULL){
-								// if(strncmp(string, "VEC", 3) == 0){
-								// 	if(string[3] > '1' && string[3] < '5'){
-								// 		uniform_ptr->type = UNI_VEC2 + string[3] - '2';
-								// 	}
-								// }else if
 								switch(JSONTokenHash(json, token + 1, dict_uniform_types)){
 									case 0: // FLOAT
 										uniform_ptr->type = UNI_FLOAT;
@@ -435,6 +427,12 @@ Shader *shader_ptr = NULL;
 										break;
 									case 5: // BOOL
 										uniform_ptr->type = UNI_BOOL;
+										break;
+									case 6: // SAMPLER1D
+									case 7: // SAMPLER2D
+									case 8: // SAMPLER3D
+										// Since all samplers are just 'int' types, we can assign them all together
+										uniform_ptr->type = UNI_SAMPLER1D;
 										break;
 								}
 							}
@@ -719,7 +717,7 @@ Shader ShaderOpen(char *path){
 				ShaderCompile(&shader);
 
 				for(int i = 0; i < shader.num_uniforms; i++){
-					#ifndef SHADER_NOOPENGL
+					#ifndef NOOPENGL
 						shader.uniforms[i].uniform = glGetUniformLocation(shader.id, shader.uniforms[i].name);
 					#endif
 				}
@@ -753,8 +751,8 @@ void ShaderReload(Shader *shader){
 void ShaderFree(Shader *shader){
 	if(shader != NULL){
 		// Free VRAM data
-		#ifndef SHADER_NOOPENGL
-			GLCall(glDeleteProgram(shader->id));
+		#ifndef NOOPENGL
+			glDeleteProgram(shader->id);
 		#endif
 
 		// Free RAM data
@@ -775,8 +773,8 @@ void ShaderFree(Shader *shader){
 
 			free(shader->stages[i].uniforms);
 			shader->stages[i].uniforms = NULL;
-			#ifndef SHADER_NOOPENGL
-				GLCall(glDeleteShader(shader->stages[i].gl_id));
+			#ifndef NOOPENGL
+				glDeleteShader(shader->stages[i].gl_id);
 			#endif
 		}
 		free(shader->stages);
@@ -787,26 +785,27 @@ void ShaderFree(Shader *shader){
 }
 
 void ShaderSet(Shader *shader){
-	if(current_shader != shader->id){
-		#ifndef SHADER_NOOPENGL
+	if(shader != NULL && current_shader != shader->id){
+		#ifndef NOOPENGL
 			glUseProgram(shader->id);
 		#endif
 		current_shader = shader->id;
 	}
 }
 
-int ShaderUniformFind(Shader *shader, char *name){
-	if(shader != NULL && name != NULL){
+ShaderUniform *ShaderUniformFind(Shader *shader, char *uniform_name){
+	ShaderUniform *uniform = NULL;
+
+	if(shader != NULL && uniform_name != NULL){
 		for(int i = 0; i < shader->num_uniforms; i++){
-			if(shader->uniforms[i].name != NULL){
-				if(strcmp(name, shader->uniforms[i].name) == 0){
-					return i;
-				}
+			if(shader->uniforms[i].name != NULL && (strcmp(shader->uniforms[i].name, uniform_name) == 0)){
+				uniform = &shader->uniforms[i];
+				break;
 			}
 		}
-		printf("Couldn't find uniform '%s' in shader: '%s'\n", name, shader->name);
 	}
-	return 0;
+
+	return uniform;
 }
 
 // typedef union ShaderUniformData{
@@ -827,149 +826,178 @@ int ShaderUniformFind(Shader *shader, char *name){
 // 	int _sampler3d;
 // }ShaderUniformData;
 
-// void UniformSet(Shader *shader, UNIFORM_TYPE type, ShaderUniformData uniform_value){
+// void ShaderUniformSet(Shader *shader, UNIFORM_TYPE type, ShaderUniformData uniform_value){
 
 // }
 
 /* --- PRIMITIVES --- */
 
 
-void UniformSetBool(Shader *shader, char *uniform_name, bool value){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_BOOL && (uniform->value._bool != value)){
-		uniform->value._bool = value;
-		uniform->is_uploaded = false;
-	}
-}
-
-void UniformSetInt(Shader *shader, char *uniform_name, int value){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_INT && (uniform->value._int != value)){
-		uniform->value._int = value;
-		uniform->is_uploaded = false;
-	}
-}
-
-void UniformSetFloat(Shader *shader, char *uniform_name, float value){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_FLOAT && (uniform->value._float != value)){
-		if(uniform->has_range){
-			if(value > uniform->max){
-				value = uniform->max;
-			}else if (value < uniform->min){
-				value = uniform->min;
-			}
+void ShaderUniformSetBool(Shader *shader, char *uniform_name, bool value){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_BOOL && (uniform->value._bool != value)){
+			uniform->value._bool = value;
+			uniform->is_uploaded = false;
 		}
-		uniform->value._float = value;
-		uniform->is_uploaded = false;
+	}
+}
+
+void ShaderUniformSetInt(Shader *shader, char *uniform_name, int value){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_INT && (uniform->value._int != value)){
+			uniform->value._int = value;
+			uniform->is_uploaded = false;
+		}
+	}
+}
+
+void ShaderUniformSetFloat(Shader *shader, char *uniform_name, float value){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_FLOAT && (uniform->value._float != value)){
+			if(uniform->has_range){
+				if(value > uniform->max){
+					value = uniform->max;
+				}else if (value < uniform->min){
+					value = uniform->min;
+				}
+			}
+			uniform->value._float = value;
+			uniform->is_uploaded = false;
+		}
 	}
 }
 
 /* --- VECTOR (datatype) --- */
 
-// TODO: Compare new with old values for vectors and matrices to make sure we dont re-upload the same values to OpenGL
 /** TODO: 	Remove the need to call 'ShaderUniformFind' every time we want to set a uniform
- *  		Make all the 'UniformSet_' functions take a pointer to the uniform or index of uniform rather than the name of the uniform
+ *  		Make all the 'ShaderUniformSet_' functions take a pointer to the uniform or index of uniform rather than the name of the uniform
  */
 
-void UniformSetVec2(Shader *shader, char *uniform_name, vec2 value){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_VEC2){
-		memcpy(uniform->value._vec2.v, value, sizeof(float) * 2);
-		uniform->is_uploaded = false;
+void ShaderUniformSetVec2(Shader *shader, char *uniform_name, vec2 value){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_VEC2){
+			memcpy(uniform->value._vec2.v, value, sizeof(float) * 2);
+			uniform->is_uploaded = false;
+		}
 	}
 }
-void UniformSetVec3(Shader *shader, char *uniform_name, vec3 value){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_VEC3){
-		memcpy(uniform->value._vec3.v, value, sizeof(float) * 3);
-		uniform->is_uploaded = false;
+void ShaderUniformSetVec3(Shader *shader, char *uniform_name, vec3 value){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_VEC3){
+			memcpy(uniform->value._vec3.v, value, sizeof(float) * 3);
+			uniform->is_uploaded = false;
+		}
 	}
 }
-void UniformSetVec4(Shader *shader, char *uniform_name, vec4 value){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_VEC4){
-		memcpy(uniform->value._vec4.v, value, sizeof(float) * 4);
-		uniform->is_uploaded = false;
+void ShaderUniformSetVec4(Shader *shader, char *uniform_name, vec4 value){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_VEC4){
+			memcpy(uniform->value._vec4.v, value, sizeof(float) * 4);
+			uniform->is_uploaded = false;
+		}
 	}
 }
 /* --- VECTOR (manual) --- */
 
 
-void UniformSetVec2_m(Shader *shader, char *uniform_name, float x, float y){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_VEC2){
-		uniform->value._vec2.x = x;
-		uniform->value._vec2.y = y;
-		uniform->is_uploaded = false;
+void ShaderUniformSetVec2_m(Shader *shader, char *uniform_name, float x, float y){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_VEC2){
+			uniform->value._vec2.x = x;
+			uniform->value._vec2.y = y;
+			uniform->is_uploaded = false;
+		}
 	}
 }
-void UniformSetVec3_m(Shader *shader, char *uniform_name, float x, float y, float z){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_VEC3){
-		uniform->value._vec3.x = x;
-		uniform->value._vec3.y = y;
-		uniform->value._vec3.z = z;
-		uniform->is_uploaded = false;
+void ShaderUniformSetVec3_m(Shader *shader, char *uniform_name, float x, float y, float z){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_VEC3){
+			uniform->value._vec3.x = x;
+			uniform->value._vec3.y = y;
+			uniform->value._vec3.z = z;
+			uniform->is_uploaded = false;
+		}
 	}
 }
-void UniformSetVec4_m(Shader *shader, char *uniform_name, float x, float y, float z, float w){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_VEC4){
-		uniform->value._vec4.x = x;
-		uniform->value._vec4.y = y;
-		uniform->value._vec4.z = z;
-		uniform->value._vec4.w = w;
-		uniform->is_uploaded = false;
+void ShaderUniformSetVec4_m(Shader *shader, char *uniform_name, float x, float y, float z, float w){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_VEC4){
+			uniform->value._vec4.x = x;
+			uniform->value._vec4.y = y;
+			uniform->value._vec4.z = z;
+			uniform->value._vec4.w = w;
+			uniform->is_uploaded = false;
+		}
 	}
 }
 
 /* --- MATRIX --- */
 
 
-void UniformSetMat2(Shader *shader, char *uniform_name, mat2 mat){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_MAT2){
-		memcpy(uniform->value._mat2, mat[0], sizeof(float) * 4);
-		uniform->is_uploaded = false;
+void ShaderUniformSetMat2(Shader *shader, char *uniform_name, mat2 mat){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_MAT2){
+			memcpy(uniform->value._mat2, mat[0], sizeof(float) * 4);
+			uniform->is_uploaded = false;
+		}
 	}
 }
-void UniformSetMat3(Shader *shader, char *uniform_name, mat3 mat){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_MAT3){
-		memcpy(uniform->value._mat3, mat[0], sizeof(float) * 9);
-		uniform->is_uploaded = false;
+void ShaderUniformSetMat3(Shader *shader, char *uniform_name, mat3 mat){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_MAT3){
+			memcpy(uniform->value._mat3, mat[0], sizeof(float) * 9);
+			uniform->is_uploaded = false;
+		}
 	}
 }
-void UniformSetMat4(Shader *shader, char *uniform_name, mat4 mat){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_MAT4){
-		memcpy(uniform->value._mat4, mat[0], sizeof(float) * 16);
-		uniform->is_uploaded = false;
+void ShaderUniformSetMat4(Shader *shader, char *uniform_name, mat4 mat){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_MAT4){
+			memcpy(uniform->value._mat4, mat[0], sizeof(float) * 16);
+			uniform->is_uploaded = false;
+		}
 	}
 }
 
 /* --- SAMPLERS --- */
 
 
-void UniformSetSampler1D(Shader *shader, char *uniform_name, int sampler){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_SAMPLER1D && (uniform->value._int != sampler)){
-		uniform->value._sampler1d = sampler;
-		uniform->is_uploaded = false;
+void ShaderUniformSetSampler1D(Shader *shader, char *uniform_name, int sampler){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_SAMPLER1D && (uniform->value._int != sampler)){
+			uniform->value._sampler1d = sampler;
+			uniform->is_uploaded = false;
+		}
 	}
 }
-void UniformSetSampler2D(Shader *shader, char *uniform_name, int sampler){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_SAMPLER2D && (uniform->value._int != sampler)){
-		uniform->value._sampler2d = sampler;
-		uniform->is_uploaded = false;
+void ShaderUniformSetSampler2D(Shader *shader, char *uniform_name, int sampler){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_SAMPLER2D && (uniform->value._int != sampler)){
+			uniform->value._sampler2d = sampler;
+			uniform->is_uploaded = false;
+		}
 	}
 }
-void UniformSetSampler3D(Shader *shader, char *uniform_name, int sampler){
-	ShaderUniform *uniform = &shader->uniforms[ShaderUniformFind(shader, uniform_name)];
-	if(uniform->type == UNI_SAMPLER3D && (uniform->value._int != sampler)){
-		uniform->value._sampler3d = sampler;
-		uniform->is_uploaded = false;
+void ShaderUniformSetSampler3D(Shader *shader, char *uniform_name, int sampler){
+	if(shader != NULL){
+		ShaderUniform *uniform = ShaderUniformFind(shader, uniform_name);
+		if(uniform->type == UNI_SAMPLER3D && (uniform->value._int != sampler)){
+			uniform->value._sampler3d = sampler;
+			uniform->is_uploaded = false;
+		}
 	}
 }

@@ -450,6 +450,8 @@ static GLTFState GLTFStateOpen(char *path){
 			gltf.is_loaded = true;
 		}else{
 			DebugLog(D_WARN, "%s: error reading gltf file", path);
+			free(gltf.path);
+			gltf.path = NULL;
 		}
 
 		gltf_ptr = NULL;
@@ -732,7 +734,7 @@ GLTF GLTFOpen(char *path){
 }
 
 void GLTFReload(GLTF *gltf){
-	if(gltf != NULL){
+	if(gltf != NULL && gltf->gltf_state.is_loaded){
 		char *path = malloc(strlen(gltf->path) + 1);
 		memcpy(path, gltf->path, strlen(gltf->path));
 		path[strlen(gltf->path)] = 0;
@@ -751,6 +753,6 @@ void GLTFFree(GLTF *gltf){
 
 		GLTFStateFree(&gltf->gltf_state);
 
-		gltf->path = NULL;
+		gltf->path = NULL; // 'gltf.path' is a pointer to 'gltf.gltf_state.path' so 'GLTFStateFree()' frees it, we only need to stop pointing at it
 	}
 }

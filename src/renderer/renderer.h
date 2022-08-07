@@ -19,14 +19,14 @@ typedef struct AttribArray{
 /**
  *  Stores all the data needed to render an instance
  */
-typedef struct InstanceBuffer{
+typedef struct RendererInstance{
 	char num_textures_used;
 	unsigned int texture[16];
 	Shader *shader;
 	AttribArray vao;
 	unsigned int count;
 	float *buffer;
-}InstanceBuffer;
+}RendererInstance;
 
 /**
  *  Quad texture coordinates
@@ -47,6 +47,8 @@ extern mat4 orthographic_projection;
  *  @brief Initialize the render system
  */
 void RendererInit();
+
+void RendererQuit();
 
 /**
  *  @brief Dynamically create a VAO

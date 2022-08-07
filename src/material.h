@@ -4,8 +4,6 @@
 #include "shader.h"
 #include "vectorlib.h"
 
-// enum PARAMETER{ UNI_BOOL = 0, UNI_INT, UNI_FLOAT, UNI_VEC2, UNI_VEC3, UNI_VEC4, UNI_SAMPLER1D, UNI_SAMPLER2D, UNI_SAMPLER3D};
-
 typedef struct MaterialUniform{
 	char *uniform_name;
 
@@ -20,8 +18,12 @@ typedef struct MaterialUniform{
 		Vector4 _vec4;
 
 		// SAMPLERS GO HERE
-		int _sampler;
+		int _sampler1D;
+		int _sampler2D;
+		int _sampler3D;
 	}value;
+
+	enum UNIFORM_TYPE type;
 
 }MaterialUniform;
 
@@ -58,7 +60,7 @@ void MaterialFree(Material *material);
 /**
  *  @brief Find a uniform in a material by name
  */
-MaterialUniform *MaterialUniformGet(Material *material, char *uniform_name);
+MaterialUniform *MaterialUniformFind(Material *material, char *uniform_name);
 
 /**
  *  @brief Clean up useless uniforms and mark exposed uniforms (defined by the shader) (Must be called AFTER 'MaterialShaderSet()')
@@ -74,5 +76,31 @@ void MaterialShaderSet(Material *material, Shader *shader);
  *  @brief Pass the uniforms stored in 'material' to its parent shader for the values to be given to OpenGL (Essentially sets 'material' as the active material)
  */
 void MaterialShaderPassUniforms(Material *material);
+
+
+/**
+ * UNIFORM SETTERS AND GETTERS 
+ */
+
+// Primitives
+void MaterialUniformSetBool(Material *material, char *uniform_name, bool value);
+void MaterialUniformSetInt(Material *material, char *uniform_name, int value);
+void MaterialUniformSetFloat(Material *material, char *uniform_name, float value);
+
+// Vectors (typedef)
+void MaterialUniformSetVec2(Material *material, char *uniform_name, vec2 value);
+void MaterialUniformSetVec3(Material *material, char *uniform_name, vec3 value);
+void MaterialUniformSetVec4(Material *material, char *uniform_name, vec4 value);
+
+// Vectors (manual)
+void MaterialUniformSetVec2_m(Material *material, char *uniform_name, float x, float y);
+void MaterialUniformSetVec3_m(Material *material, char *uniform_name, float x, float y, float z);
+void MaterialUniformSetVec4_m(Material *material, char *uniform_name, float x, float y, float z, float w);
+
+// Samplers
+void MaterialUniformSetSampler1D(Material *material, char *uniform_name, int sampler);
+void MaterialUniformSetSampler2D(Material *material, char *uniform_name, int sampler);
+void MaterialUniformSetSampler3D(Material *material, char *uniform_name, int sampler);
+
 
 #endif

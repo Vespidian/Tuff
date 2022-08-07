@@ -4,7 +4,7 @@
 #include "vectorlib.h"
 #include <cglm/cglm.h>
 
-enum UNIFORM_TYPE{ UNI_BOOL = 0, UNI_INT, UNI_FLOAT, UNI_VEC2, UNI_VEC3, UNI_VEC4, UNI_MAT2, UNI_MAT3, UNI_MAT4, UNI_SAMPLER1D, UNI_SAMPLER2D, UNI_SAMPLER3D};
+typedef enum UNIFORM_TYPE{ UNI_BOOL = 0, UNI_INT, UNI_FLOAT, UNI_VEC2, UNI_VEC3, UNI_VEC4, UNI_MAT2, UNI_MAT3, UNI_MAT4, UNI_SAMPLER1D, UNI_SAMPLER2D, UNI_SAMPLER3D}UNIFORM_TYPE;
 
 /**
  *  @brief Shader uniform containing value, name and other flags
@@ -23,7 +23,7 @@ typedef struct ShaderUniform{
 	bool is_uploaded;
 
 	// Uniform type (float, vec3, ..)
-	enum UNIFORM_TYPE type;
+	UNIFORM_TYPE type;
 	union value{
 		bool _bool;
 		int _int;
@@ -164,36 +164,36 @@ void ShaderSet(Shader *shader);
 void ShaderPassUniforms(Shader *shader);
 
 /**
- * 	@brief Retrieve the index of a uniform by name from 'shader'
- * 	@return Index of 'shader.uniforms[]' or -1 upon error (uniform name doesnt exist)
+ * 	@brief Retrieve a uniform by name from 'shader'
+ * 	@return Pointer to uniform found in 'shader' or NULL if none is found
  */
-int ShaderUniformFind(Shader *shader, char *name);
+ShaderUniform *ShaderUniformFind(Shader *shader, char *uniform_name);
 
 
 // Primitives
-void UniformSetBool(Shader *shader, char *uniform_name, bool value);
-void UniformSetInt(Shader *shader, char *uniform_name, int value);
-void UniformSetFloat(Shader *shader, char *uniform_name, float value);
+void ShaderUniformSetBool(Shader *shader, char *uniform_name, bool value);
+void ShaderUniformSetInt(Shader *shader, char *uniform_name, int value);
+void ShaderUniformSetFloat(Shader *shader, char *uniform_name, float value);
 
 // Vectors (typedef)
-void UniformSetVec2(Shader *shader, char *uniform_name, vec2 value);
-void UniformSetVec3(Shader *shader, char *uniform_name, vec3 value);
-void UniformSetVec4(Shader *shader, char *uniform_name, vec4 value);
+void ShaderUniformSetVec2(Shader *shader, char *uniform_name, vec2 value);
+void ShaderUniformSetVec3(Shader *shader, char *uniform_name, vec3 value);
+void ShaderUniformSetVec4(Shader *shader, char *uniform_name, vec4 value);
 
 // Vectors (manual)
-void UniformSetVec2_m(Shader *shader, char *uniform_name, float x, float y);
-void UniformSetVec3_m(Shader *shader, char *uniform_name, float x, float y, float z);
-void UniformSetVec4_m(Shader *shader, char *uniform_name, float x, float y, float z, float w);
+void ShaderUniformSetVec2_m(Shader *shader, char *uniform_name, float x, float y);
+void ShaderUniformSetVec3_m(Shader *shader, char *uniform_name, float x, float y, float z);
+void ShaderUniformSetVec4_m(Shader *shader, char *uniform_name, float x, float y, float z, float w);
 
 // Matrix
-void UniformSetMat2(Shader *shader, char *uniform_name, mat2 mat);
-void UniformSetMat3(Shader *shader, char *uniform_name, mat3 mat);
-void UniformSetMat4(Shader *shader, char *uniform_name, mat4 mat);
+void ShaderUniformSetMat2(Shader *shader, char *uniform_name, mat2 mat);
+void ShaderUniformSetMat3(Shader *shader, char *uniform_name, mat3 mat);
+void ShaderUniformSetMat4(Shader *shader, char *uniform_name, mat4 mat);
 
 // Samplers
-void UniformSetSampler1D(Shader *shader, char *uniform_name, int sampler);
-void UniformSetSampler2D(Shader *shader, char *uniform_name, int sampler);
-void UniformSetSampler3D(Shader *shader, char *uniform_name, int sampler);
+void ShaderUniformSetSampler1D(Shader *shader, char *uniform_name, int sampler);
+void ShaderUniformSetSampler2D(Shader *shader, char *uniform_name, int sampler);
+void ShaderUniformSetSampler3D(Shader *shader, char *uniform_name, int sampler);
 
 
 #endif

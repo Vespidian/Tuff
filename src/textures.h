@@ -1,10 +1,13 @@
 #ifndef TEXTURES_H_
 #define TEXTURES_H_
 
+typedef enum TEXTURE_FILTERING_TYPE{TEXTURE_FILTERING_NEAREST, TEXTURE_FILTERING_LINEAR, TEXTURE_FILTERING_BILINEAR, TEXTURE_FILTERING_TRILINEAR, TEXTURE_FILTERING_ANISOTROPIC} TEXTURE_FILTERING_TYPE;
+
 typedef struct Texture{
     unsigned int gl_tex;
 	char *path;
 	bool is_loaded;
+	TEXTURE_FILTERING_TYPE filtering;
     int w;
     int h;
 }Texture;
@@ -17,14 +20,14 @@ typedef struct TilesheetObject{
 }TilesheetObject;
 
 /**
- *  Texture to be used in error cases
- */
-extern Texture undefined_texture;
-
-/**
  *  @brief Initialize the texture subsystem
  */
 void InitTextures();
+
+/**
+ * 
+ */
+Texture TextureNew();
 
 /**
  * 

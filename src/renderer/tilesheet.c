@@ -6,7 +6,7 @@
 #include "tilesheet.h"
 
 TilesheetObject undefined_tilesheet;
-
+Texture tmp_texture;
 TilesheetObject *tilesheet_stack;
 
 // Number of tilesheets currently loaded into the 'tilesheet_stack'
@@ -16,7 +16,7 @@ unsigned int num_tilesheets = 0;
 static unsigned int nextID = 0;
 
 void InitTilesheets(){
-	undefined_tilesheet = (TilesheetObject){-1, undefined_texture, 16, 16};
+	undefined_tilesheet = (TilesheetObject){-1, tmp_texture, 16, 16}; // TODO: fix the tmp_texture, should be undefined_texture
     DebugLog(D_ACT, "Initialized tilesheet subsystem");
 }
 

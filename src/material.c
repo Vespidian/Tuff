@@ -7,11 +7,6 @@
 
 #include "material.h"
 
-#define MATERIAL_NOOPENGL
-#ifdef MATERIAL_NOOPENGL
-	#define SHADER_NOOPENGL
-#endif
-
 Material *material_ptr = NULL;
 
 Material MaterialNew(void){
@@ -31,6 +26,17 @@ Material MaterialNew(void){
 	return material;
 }
 
+MaterialUniform MaterialUniformNew(){
+	MaterialUniform uniform;
+
+	uniform.uniform_name = NULL;
+	uniform.texture_path = NULL;
+	uniform.value._int = 0;
+	uniform.type = UNI_INT;
+
+	return uniform;
+}
+
 static char *dict_uniforms[] = {
 	"name",
 	"value",
@@ -42,16 +48,14 @@ static void tfunc_uniforms(JSONState *json, unsigned int token){
 
 		MaterialUniform *uniform_ptr = &material_ptr->uniforms[material_ptr->num_uniforms];
 		if(json->tokens[token].type == JSMN_OBJECT){
+			
 			// Allocate space for new uniform
-
 			MaterialUniform *tmp_uniforms = realloc(material_ptr->uniforms, sizeof(MaterialUniform) * (material_ptr->num_uniforms + 1));
 			if(tmp_uniforms != NULL){
 				material_ptr->uniforms = tmp_uniforms;
 				uniform_ptr = &material_ptr->uniforms[material_ptr->num_uniforms];
 
-				uniform_ptr->uniform_name = NULL;
-				uniform_ptr->texture_path = NULL;
-				uniform_ptr->value._int = 0;
+				*uniform_ptr = MaterialUniformNew();
 
 				JSONSetTokenFunc(json, NULL, tfunc_uniforms);
 				JSONParse(json);
@@ -155,10 +159,12 @@ void MaterialUniformsValidate(Material *material){
 	// ^ OR we could set a boolean which says that this uniform doesnt exist (useful to warn people of mistakes)
 	if(material != NULL){
 		if(material->shader != NULL){
+			// Loop through all the uniforms in the material and delete ones that arent in the parent shader
 			for(int i = 0; i < material->num_uniforms; i++){
-				int uniform_index = ShaderUniformFind(material->shader, material->uniforms[i].uniform_name);
-				// If Uniform doesnt exist in the shader OR material is not exposed in the shader.. This uniform is useless to us
-				if(uniform_index == -1 || !material->shader->uniforms[uniform_index].is_exposed){
+				ShaderUniform *uniform = ShaderUniformFind(material->shader, material->uniforms[i].uniform_name);
+				// If Uniform doesnt exist in the shader OR uniform is not exposed in the shader.. This uniform is useless to us
+				// TODO: RETURN: We want uniforms to exist even if they arent defined in .mat files, as long as they exist in a shader, they should also exist in the material (with the exception of matrices)
+				if(uniform == NULL){
 					DebugLog(D_WARN, "%s: Uniform '%s' does not exist or is not exposed within shader '%s'\n", material->path, material->uniforms[i].uniform_name, material->shader->path);
 
 					MaterialUniform *tmp_uniform = &material->uniforms[i];
@@ -167,14 +173,79 @@ void MaterialUniformsValidate(Material *material){
 					free(tmp_uniform->texture_path);
 					tmp_uniform->texture_path = NULL;
 
-					memcpy(&material->uniforms[i], &material->uniforms[i + 1], sizeof(MaterialUniform) * (material->num_uniforms - i));
+					if(i + 1 < material->num_uniforms){
+						memcpy(&material->uniforms[i], &material->uniforms[i + 1], sizeof(MaterialUniform) * (material->num_uniforms - 1 - i));
+					}
 
 					i--;
 					material->num_uniforms--;
-				// }else{ // Make sure uniforms conform to shader's 'range' limits
-				// 	if(material->uniforms[i].value._float  material->shader->uniforms[uniform_index].min){
+				}else{
+					material->uniforms[i].type = uniform->type;
+				}
+			}
+			// Loop through all the uniforms in the parent shader and copy them to the material
+			unsigned int initial_mat_uniforms = material->num_uniforms;
+			for(int i = 0; i < material->shader->num_uniforms; i++){
+				bool is_defined = false;
+				// Check if the uniform is already defined in the material
+				for(int k = 0; k < initial_mat_uniforms; k++){
+					if(strcmp(material->shader->uniforms[i].name, material->uniforms[k].uniform_name) == 0){
+						is_defined = true;
+						break;
+					}
+				}
 
-				// 	}
+				// If the uniform isn't defined copy it to the material (as long as its not a matrix)
+				UNIFORM_TYPE uniform_type = material->shader->uniforms[i].type;
+				if(!is_defined && (uniform_type != UNI_MAT2) && (uniform_type != UNI_MAT3) && (uniform_type != UNI_MAT4)){
+				// if(!is_defined && (material->shader->uniforms[i].type < UNI_MAT2) && (material->shader->uniforms[i].type > UNI_MAT4)){
+					MaterialUniform *tmp_uniforms = realloc(material->uniforms, sizeof(MaterialUniform) * (material->num_uniforms + 1));
+					if(tmp_uniforms != NULL){
+						material->uniforms = tmp_uniforms;
+
+						material->uniforms[material->num_uniforms] = MaterialUniformNew();
+
+						char *src_name, *dst_name;
+						dst_name = material->uniforms[material->num_uniforms].uniform_name;
+						src_name = material->shader->uniforms[i].name;
+						dst_name = malloc(strlen(src_name) + 1);
+						if(dst_name != NULL){
+							memcpy(dst_name, src_name, strlen(src_name));
+							dst_name[strlen(src_name)] = 0;
+						}
+
+						
+						material->uniforms[material->num_uniforms].uniform_name = dst_name;
+						material->uniforms[material->num_uniforms].type = material->shader->uniforms[i].type;
+
+						// Set the uniform's value to the shader's default
+						MaterialUniform *m_uniform = &material->uniforms[material->num_uniforms];
+						ShaderUniform *s_uniform = &material->shader->uniforms[i];
+						switch(s_uniform->type){
+							case UNI_BOOL:
+							case UNI_INT:
+							case UNI_SAMPLER1D:
+							case UNI_SAMPLER2D:
+							case UNI_SAMPLER3D:
+								m_uniform->value._int = s_uniform->value_default._int;
+								break;
+							case UNI_FLOAT:
+								m_uniform->value._float = s_uniform->value_default._float;
+								break;
+							case UNI_VEC4:
+								m_uniform->value._vec4.v[3] = s_uniform->value_default._vec4.v[3];
+							case UNI_VEC3:
+								m_uniform->value._vec4.v[2] = s_uniform->value_default._vec4.v[2];
+							case UNI_VEC2:
+								m_uniform->value._vec4.v[1] = s_uniform->value_default._vec4.v[1];
+								m_uniform->value._vec4.v[0] = s_uniform->value_default._vec4.v[0];
+								break;
+							default:
+								break;
+						}
+
+						material->num_uniforms++;
+					}
 				}
 			}
 			material->is_validated = true;
@@ -191,12 +262,6 @@ void MaterialShaderSet(Material *material, Shader *shader){
 		}else{
 			DebugLog(D_ERR, "%s: Trying to set material's shader to the incorrect shader (shader paths must match)\n", material->path);
 		}
-	}
-}
-
-void MaterialUniformTextureSet(MaterialUniform *uniform, unsigned int texture_gl_id){
-	if(uniform != NULL){
-
 	}
 }
 
@@ -279,13 +344,13 @@ void MaterialFree(Material *material){
 	}
 }
 
-MaterialUniform *MaterialUniformGet(Material *material, char *uniform_name){
+MaterialUniform *MaterialUniformFind(Material *material, char *uniform_name){
 	MaterialUniform *uniform = NULL;
 
 	if(material != NULL && uniform_name != NULL){
 		for(int i = 0; i < material->num_uniforms; i++){
 			if(material->uniforms[i].uniform_name != NULL && (strcmp(material->uniforms[i].uniform_name, uniform_name) == 0)){
-				uniform = & material->uniforms[i];
+				uniform = &material->uniforms[i];
 				break;
 			}
 		}
@@ -295,7 +360,7 @@ MaterialUniform *MaterialUniformGet(Material *material, char *uniform_name){
 }
 
 void MaterialShaderPassUniforms(Material *material){
-	if(material != NULL && material->shader != NULL && material->shader->is_loaded){
+	if(material != NULL && material->shader != NULL && material->shader->is_loaded && material->is_validated){
 		// Call 'BundleFindShader' to make sure the path we have is correct
 		// ^ Possibly dont do this, and just have a MaterialShaderValidate function we call once every few frames or so for all materials
 
@@ -303,37 +368,38 @@ void MaterialShaderPassUniforms(Material *material){
 		// Loop through uniforms and copy them to the shader
 		for(int i = 0; i < material->num_uniforms; i++){
 			// switch(material->shader->uniforms[i].type){
-			switch(material->shader->uniforms[ShaderUniformFind(material->shader, material->uniforms[i].uniform_name)].type){
+			// switch(ShaderUniformFind(material->shader, material->uniforms[i].uniform_name)->type){
+			switch(material->uniforms[i].type){
 				case UNI_BOOL:
-					UniformSetBool(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._bool);
+					ShaderUniformSetBool(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._bool);
 					break;
 
 				case UNI_INT:
-					UniformSetInt(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._int);
+					ShaderUniformSetInt(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._int);
 					break;
 
 				case UNI_FLOAT:
-					UniformSetFloat(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._float);
+					ShaderUniformSetFloat(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._float);
 					break;
 
 				case UNI_VEC2:
-					UniformSetVec2(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._vec2.v);
+					ShaderUniformSetVec2(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._vec2.v);
 					break;
 				case UNI_VEC3:
-					UniformSetVec3(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._vec3.v);
+					ShaderUniformSetVec3(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._vec3.v);
 					break;
 				case UNI_VEC4:
-					UniformSetVec4(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._vec4.v);
+					ShaderUniformSetVec4(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._vec4.v);
 					break;
 				
 				case UNI_SAMPLER1D:
-					UniformSetSampler1D(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._sampler);
+					ShaderUniformSetSampler1D(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._sampler1D);
 					break;
 				case UNI_SAMPLER2D:
-					UniformSetSampler2D(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._sampler);
+					ShaderUniformSetSampler2D(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._sampler2D);
 					break;
 				case UNI_SAMPLER3D:
-					UniformSetSampler3D(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._sampler);
+					ShaderUniformSetSampler3D(material->shader, material->uniforms[i].uniform_name, material->uniforms[i].value._sampler3D);
 					break;
 				
 				default:
@@ -347,3 +413,84 @@ void MaterialShaderPassUniforms(Material *material){
 }
 
 //TODO: Add setters and getters for each uniform type (int, float, vec3, texture)
+
+void MaterialUniformSetBool(Material *material, char *uniform_name, bool value){
+	if(material != NULL && material->is_validated){
+		MaterialUniform *uniform = MaterialUniformFind(material, uniform_name);
+		if(uniform != NULL && uniform->type == UNI_BOOL){
+			uniform->value._bool = value;
+		}
+	}
+}
+
+void MaterialUniformSetInt(Material *material, char *uniform_name, int value){
+	if(material != NULL && material->is_validated){
+		MaterialUniform *uniform = MaterialUniformFind(material, uniform_name);
+		if(uniform != NULL && uniform->type == UNI_INT){
+			uniform->value._int = value;
+		}
+	}
+}
+
+void MaterialUniformSetFloat(Material *material, char *uniform_name, float value){
+	if(material != NULL && material->is_validated){
+		MaterialUniform *uniform = MaterialUniformFind(material, uniform_name);
+		if(uniform != NULL && uniform->type == UNI_FLOAT){
+			uniform->value._float = value;
+		}
+	}
+}
+
+
+void MaterialUniformSetVec2(Material *material, char *uniform_name, vec2 value){
+	if(material != NULL && material->is_validated){
+		MaterialUniform *uniform = MaterialUniformFind(material, uniform_name);
+		if(uniform != NULL && uniform->type == UNI_VEC2){
+			memcpy(uniform->value._vec2.v, value, sizeof(float) * 2);
+		}
+	}
+}
+
+void MaterialUniformSetVec3(Material *material, char *uniform_name, vec3 value){
+	if(material != NULL && material->is_validated){
+		MaterialUniform *uniform = MaterialUniformFind(material, uniform_name);
+		if(uniform != NULL && uniform->type == UNI_VEC3){
+			memcpy(uniform->value._vec3.v, value, sizeof(float) * 3);
+		}
+	}
+}
+
+void MaterialUniformSetVec4(Material *material, char *uniform_name, vec4 value){
+	if(material != NULL && material->is_validated){
+		MaterialUniform *uniform = MaterialUniformFind(material, uniform_name);
+		if(uniform != NULL && uniform->type == UNI_VEC4){
+			memcpy(uniform->value._vec4.v, value, sizeof(float) * 4);
+		}
+	}
+}
+
+// TODO: Make the SetSampler functions use textures in their arguments
+void MaterialUniformSetSampler1D(Material *material, char *uniform_name, int sampler){
+	if(material != NULL && material->is_validated){
+		MaterialUniform *uniform = MaterialUniformFind(material, uniform_name);
+		if(uniform != NULL && uniform->type == UNI_SAMPLER1D){
+			uniform->value._sampler1D = sampler;
+		}
+	}
+}
+void MaterialUniformSetSampler2D(Material *material, char *uniform_name, int sampler){
+	if(material != NULL && material->is_validated){
+		MaterialUniform *uniform = MaterialUniformFind(material, uniform_name);
+		if(uniform != NULL && uniform->type == UNI_SAMPLER2D){
+			uniform->value._sampler2D = sampler;
+		}
+	}
+}
+void MaterialUniformSetSampler3D(Material *material, char *uniform_name, int sampler){
+	if(material != NULL && material->is_validated){
+		MaterialUniform *uniform = MaterialUniformFind(material, uniform_name);
+		if(uniform != NULL && uniform->type == UNI_SAMPLER3D){
+			uniform->value._sampler3D = sampler;
+		}
+	}
+}

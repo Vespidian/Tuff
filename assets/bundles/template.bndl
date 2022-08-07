@@ -1,5 +1,6 @@
 {
 	"gltfs" : [
+		"models/uv_sphere.gltf",
 		"models/squish_cube.gltf",
 		"models/axis.gltf",
 		"lamp.gltf",
@@ -9,8 +10,10 @@
 	],
 	"textures" : [
 		{
-			path: "../bin/builtin_assets/undefined.png",
-			filtering: "linear",
+			path: "images/brick_normal.png",
+		},
+		{
+			path: "images/brick_diffuse.png",
 		},
 		{
 			path: "icon.jpg",
@@ -22,10 +25,12 @@
 	
 	"shaders" : [
 		"shaders/default.shader",
+		"shaders/light.shader",
 	],
 	
 	"materials": [
 		"materials/default.mat",
+		"materials/light.mat",
 	],
 	
 	"scripts": [

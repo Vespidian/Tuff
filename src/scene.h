@@ -1,12 +1,11 @@
 #ifndef SCENE_H_
 #define SCENE_H_
 
-#include "cgltf.h"
 #include "vectorlib.h"
 #include "material.h"
 #include "gltf.h"
 
-
+// TODO: The renderer struct should have its child 'Mesh' as a member of it, mesh and renderer shouldnt be 2 independent things
 typedef struct Renderer{
 	unsigned int vao;
 
