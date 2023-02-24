@@ -13,7 +13,7 @@
 		"files.exclude":{
 			"include/": true,
 			"lib/": true,
-			"bin/": true,
+			"bin/*.dll": true,
 			"**/*.o": true,
 			"**/*.d": true,
 			"models/": true,

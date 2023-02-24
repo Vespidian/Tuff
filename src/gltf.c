@@ -378,6 +378,7 @@ void tfunc_gltf(JSONState *json, unsigned int token){
 
 static GLTFState GLTFStateOpen(char *path){
 	GLTFState gltf;
+	gltf.path = NULL;
 	gltf.is_loaded = false;
 
 	gltf.num_meshes = 0;
@@ -393,10 +394,12 @@ static GLTFState GLTFStateOpen(char *path){
 	gltf.buffers = NULL;
 
 	if(path != NULL){
-		gltf.path = malloc(strlen(path) + 1);
+		gltf.path = calloc(1, strlen(path) + 1);
 		if(gltf.path != NULL){
+			printf("\n%s: OVER HERE: %p\n", path, &gltf.path);
 			memcpy(gltf.path, path, strlen(path));
 			gltf.path[strlen(path)] = 0;
+			printf(">> %s\n", gltf.path);
 		}
 
 		gltf_ptr = &gltf;
@@ -481,41 +484,39 @@ static GLTFState GLTFStateNew(){
 }
 
 static void GLTFStateFree(GLTFState *gltf){
-	if(gltf != NULL){
-		if(gltf->is_loaded){
-			gltf->is_loaded = false;
+	if(gltf != NULL && gltf->is_loaded){
+		gltf->is_loaded = false;
 
-			free(gltf->path);
-			gltf->path = NULL;
+		free(gltf->path);
+		gltf->path = NULL;
 
-			if(gltf->meshes != NULL){
-				for(int i = 0; i < gltf->num_meshes; i++){
-					free(gltf->meshes[i].name);
-					gltf->meshes[i].name = NULL;
-					free(gltf->meshes[i].attributes);
-					gltf->meshes[i].attributes = NULL;
-				}
-				// TODO: Fix crash on exit
-				free(gltf->meshes);
-				gltf->meshes = NULL;
+		if(gltf->meshes != NULL){
+			for(int i = 0; i < gltf->num_meshes; i++){
+				free(gltf->meshes[i].name);
+				gltf->meshes[i].name = NULL;
+				free(gltf->meshes[i].attributes);
+				gltf->meshes[i].attributes = NULL;
 			}
+			// TODO: Fix crash on exit
+			free(gltf->meshes);
+			gltf->meshes = NULL;
+		}
 
-			free(gltf->accessors);
-			gltf->accessors = NULL;
+		free(gltf->accessors);
+		gltf->accessors = NULL;
 
-			free(gltf->buffer_views);
-			gltf->buffer_views = NULL;
+		free(gltf->buffer_views);
+		gltf->buffer_views = NULL;
 
-			if(gltf->buffers != NULL){
-				for(int i = 0; i < gltf->num_buffers; i++){
-					free(gltf->buffers[i].uri);
-					gltf->buffers[i].uri = NULL;
-					free(gltf->buffers[i].data);
-					gltf->buffers[i].data = NULL;
-				}
-				free(gltf->buffers);
-				gltf->buffers = NULL;
+		if(gltf->buffers != NULL){
+			for(int i = 0; i < gltf->num_buffers; i++){
+				free(gltf->buffers[i].uri);
+				gltf->buffers[i].uri = NULL;
+				free(gltf->buffers[i].data);
+				gltf->buffers[i].data = NULL;
 			}
+			free(gltf->buffers);
+			gltf->buffers = NULL;
 		}
 	}
 }
@@ -545,6 +546,21 @@ GLTF GLTFNew(){
 	return gltf;
 }
 
+static GLMesh GLMeshNew(){
+	GLMesh mesh;
+	
+	mesh.is_loaded = false;
+	mesh.vao = 0;
+	mesh.ebo = 0;
+	mesh.norm_vbo = 0;
+	mesh.pos_vbo = 0;
+	mesh.tan_vbo = 0;
+	mesh.uv0_vbo = 0;
+	mesh.uv1_vbo = 0;
+
+	return mesh;
+}
+
 Mesh MeshNew(){
 	Mesh mesh;
 
@@ -553,9 +569,10 @@ Mesh MeshNew(){
 
 	mesh.name = NULL;
 	mesh.path = NULL;
-	mesh.gltf = NULL;
+	mesh.gltf_state = NULL;
 	mesh.mesh_index = 0;
 
+	mesh.gl_data = GLMeshNew();
 	// size = (size of a single component) * (number of components in an element)
 
 	mesh.index_exists = false;
@@ -619,7 +636,7 @@ Mesh MeshFromGLTF(GLTFState *gltf, unsigned int mesh_index){
 
 		mesh.name = gltf->meshes[mesh_index].name;
 		mesh.path = gltf->path;
-		mesh.gltf = gltf;
+		mesh.gltf_state = gltf;
 		mesh.mesh_index = mesh_index;
 
 		// Copy index data only if the data exists..
@@ -747,11 +764,13 @@ void GLTFReload(GLTF *gltf){
 
 void GLTFFree(GLTF *gltf){
 	if(gltf != NULL){
+		GLTFStateFree(&gltf->gltf_state);
+		
+		// Free the array of pointers (the meshes were free'd when we called GLTFStateFree())
 		free(gltf->meshes);
 		gltf->meshes = NULL;
 		gltf->num_meshes = 0;
 
-		GLTFStateFree(&gltf->gltf_state);
 
 		gltf->path = NULL; // 'gltf.path' is a pointer to 'gltf.gltf_state.path' so 'GLTFStateFree()' frees it, we only need to stop pointing at it
 	}

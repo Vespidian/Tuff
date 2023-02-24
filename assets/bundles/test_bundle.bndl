@@ -1,37 +1,19 @@
 {
 	"gltfs" : [
 		"models/uv_sphere.gltf",
-		"models/squish_cube.gltf",
-		"models/axis.gltf",
-		"lamp.gltf",
-		"models/entrance.gltf",
-		"models/plane.gltf",
 	],
 	"textures" : [
 		{
 			path: "images/brick_normal.png",
 		},
-		{
-			path: "images/brick_diffuse.png",
-		},
-		{
-			path: "icon.jpg",
-		},
-		{
-			path: "hehe.png",
-		},
 	],
 	
 	"shaders" : [
 		"shaders/default.shader",
-		"shaders/light.shader",
-		"shaders/squish.shader",
 	],
 	
 	"materials": [
 		"materials/default.mat",
-		"materials/light.mat",
-		"materials/squish.mat",
 	],
 	
 	"scripts": [

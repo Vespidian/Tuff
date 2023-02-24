@@ -152,6 +152,7 @@ void PrintShaderUniforms(Shader *shader){
 }
 
 Model model;
+Model model2;
 Model light_model;
 
 int InitGL(){
@@ -233,9 +234,21 @@ int InitGL(){
 	// glGenBuffers(1, &mesh_ebo);
 
 
-	model = ModelNew(NULL, &app.gltfs[4].meshes[0], BundleMaterialFind(&app, "materials/default.mat"));
-	light_model = ModelNew(NULL, &app.gltfs[0].meshes[0], BundleMaterialFind(&app, "materials/light.mat"));
+	// model = ModelNew(NULL, &BundleGLTFFind(&app, "models/soda_can.gltf")->meshes[0], BundleMaterialFind(&app, "materials/default.mat"));
+	// Open these once to stabilize the address of the material array
+	// BundleShaderFind(&app, "shaders/default.shader");
+	// BundleShaderFind(&app, "shaders/squish.shader");
+	// BundleShaderFind(&app, "shaders/light.shader");
+	// BundleMaterialFind(&app, "materials/default.mat");
+	// BundleMaterialFind(&app, "materials/squish.mat");
+	// BundleMaterialFind(&app, "materials/light.mat");
 
+	// model = ModelNew(NULL, &BundleGLTFFind(&app, "models/entrance.gltf")->meshes[0], &app.materials[0]);
+	model = ModelNew(NULL, &BundleGLTFFind(&app, "models/entrance.gltf")->meshes[0], BundleMaterialFind(&app, "materials/default.mat"));
+	// model2 = ModelNew(NULL, &BundleGLTFFind(&app, "models/squish_cube.gltf")->meshes[0], &app.materials[1]);
+	model2 = ModelNew(NULL, &BundleGLTFFind(&app, "models/squish_cube.gltf")->meshes[0], BundleMaterialFind(&app, "materials/squish.mat"));
+	// light_model = ModelNew(NULL, &BundleGLTFFind(&app, "models/uv_sphere.gltf")->meshes[0], &app.materials[2]);
+	light_model = ModelNew(NULL, &BundleGLTFFind(&app, "models/uv_sphere.gltf")->meshes[0], BundleMaterialFind(&app, "materials/light.mat"));
 
     glm_mat4_identity(perspective_projection);
     glm_mat4_identity(view_matrix);
@@ -285,7 +298,7 @@ Vector3 light_color = {0.98, 0.839, 0.647};
 static Vector3 direction = {0, 0, 0};
 static Vector3 view_position = {0, 0, 0};
 // static Vector3 mesh_position = {0, 0.01, 0};
-Vector3 light_position = {1, 0.6, 1.2};
+Vector3 light_position = {1, 2, 1.2};
 static float view_distance = 5;
 static float yaw, pitch = 0.25;
 static float normal_intense = 1;
@@ -321,15 +334,15 @@ void RenderGL(){
 
 	// RETURN: Something weird is happening when reloading the bundle / shaders
 	// the normal map texture slot is being set to the regular brick texture
-	// glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_2D, crate_tex.gl_tex);
-	// current_texture_unit = 0;
-	// bound_textures[0] = crate_tex.gl_tex;
+	glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, BundleTextureFind(&app, "images/brick_diffuse.png")->gl_tex);
+	current_texture_unit = 0;
+	bound_textures[0] = BundleTextureFind(&app, "images/brick_diffuse.png")->gl_tex;
 
-	// glActiveTexture(GL_TEXTURE1);
-    // glBindTexture(GL_TEXTURE_2D, normal_map.gl_tex);
-	// current_texture_unit = 1;
-	// bound_textures[1] = normal_map.gl_tex;
+	glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, BundleTextureFind(&app, "images/brick_diffuse.png")->gl_tex);
+	current_texture_unit = 1;
+	bound_textures[1] = BundleTextureFind(&app, "images/brick_diffuse.png")->gl_tex;
 
 
 	glEnable(GL_MULTISAMPLE);
@@ -360,6 +373,7 @@ void RenderGL(){
 
 	light_position.x = 2 * sin(time);
 	light_position.z = 2 * cos(time);
+	light_position.y = -cos(time) / 2 + 1;
 
 	// SetVAO(mesh_vao);
 	// ShaderPassUniforms(&mesh_shader);
@@ -370,24 +384,25 @@ void RenderGL(){
 	// glDrawElements(GL_TRIANGLES, app.meshes->accessors[app.meshes->meshes[0].indices].count, app.meshes->accessors[app.meshes->meshes[0].indices].component_type, NULL);
 	// glDrawElements(GL_TRIANGLES, app.gltfs[0].meshes[0].index_count, app.gltfs[0].meshes[0].index_gl_type, NULL);
 	
-	// Works
 	MaterialUniformSetVec3(model.material, "light_color", light_color.v);
-	model.transform.position = (Vector3){0, 1, 0};
-	
-	// Doesnt
 	MaterialUniformSetVec3(model.material, "light_pos", light_position.v);
-
+	// MaterialUniformSetSampler2D(model2.material, "normal_map", BundleTextureFind(&app, "images/brick_diffuse.png")->gl_tex);
+	model.transform.position = (Vector3){0, 1, 0};
 	ModelRender(&model);
 
 
-	// Works
 	light_model.transform.position = light_position;
 	light_model.transform.scale = (Vector3){0.2, 0.2, 0.2};
-	
-	// Doesnt
-	MaterialUniformSetVec3(light_model.material, "light_color", light_color.v);
-	
+	MaterialUniformSetVec3(light_model.material, "light_color", light_color.v);	
 	ModelRender(&light_model);
+
+
+	MaterialUniformSetVec3(model2.material, "light_color", light_color.v);
+	MaterialUniformSetVec3(model2.material, "light_pos", light_position.v);
+	model2.transform.scale.x = model2.transform.scale.y = model2.transform.scale.z = 0.5;
+	model2.transform.position.x = -2;
+	model2.transform.position.y = sin(time * 2) / 2 + 1;
+	ModelRender(&model2);
 	// SDL_Rect mouse = {mouse_pos.x, mouse_pos.y, 16, 16};
 }
 

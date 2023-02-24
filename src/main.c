@@ -34,6 +34,7 @@ bool paused = false;
 bool main_menu = true;
 bool window_active = true;
 
+// Possible name for the project: Pallet
 
 Bundle app;
 
@@ -109,9 +110,9 @@ void Setup(){
 	#ifndef NOOPENGL
 		InitSDL();
 	#endif
-	// InitTextures();
 	InitUndefined();
 
+	app = BundleNew();
 	int timer = SDL_GetTicks();
 	JSONState json = JSONOpen("../bin/builtin_assets/startup.conf");
 	JSONSetTokenFunc(&json, NULL, tfunc_startup);
@@ -128,16 +129,25 @@ void Setup(){
 	// InitFonts();
 }
 
+#include "scene.h"
+extern Model model;
+extern Model model2;
+extern Model light_model;
+
 void Quit(){
 	DebugLog(D_ACT, "Shutting down!");
 	running = false;
+
+	ModelFree(&model);
+	ModelFree(&model2);
+	ModelFree(&light_model);
+
 	BundleFree(&app);
 
 	// Eventually unnecessary
 	{
 		ExitGL();
 		ShaderFree(&quad_shader);
-		// TextureFree(&undefined_texture);
 		FreeUndefined();
 		free(startup_path);
 		startup_path = NULL;
@@ -157,9 +167,6 @@ static void CheckWindowActive(EventData event){
 	}
 }
 
-#include "scene.h"
-extern Model model;
-extern Model light_model;
 // extern Texture crate_tex;
 // extern Texture normal_map;
 static void ReloadApp(){
@@ -174,13 +181,20 @@ static void ReloadApp(){
 	// mesh_shader = ShaderOpen("shaders/mesh.shader");
 	printf("Loaded bundle in '%d' ms\n", SDL_GetTicks() - timer);
 
-	model.material = &app.materials[0];
-	// model.mesh = &app.gltfs[4].meshes[0];
-	model.mesh = &BundleGLTFFind(&app, "meshes/entrance.gltf")->meshes[0];
+	model.material = BundleMaterialFind(&app, "materials/default.mat");
+	model.bundle = &app;
+	// model.mesh = &BundleGLTFFind(&app, "models/soda_can.gltf")->meshes[0];
+	// model.mesh = &undefined_mesh;
+	ModelSetMesh(&model, &BundleGLTFFind(&app, "models/soda_can.gltf")->meshes[0]);
+
+	model2.material = BundleMaterialFind(&app, "materials/squish.mat");
+	// model2.mesh = &BundleGLTFFind(&app, "models/squish_cube.gltf")->meshes[0];
+	model2.bundle = &app;
+	model2.mesh = &undefined_gltf.meshes[0];
 
 	light_model.material = BundleMaterialFind(&app, "materials/light.mat");
-	// light_model.mesh = BundleGLTFFind(&app, "meshes/sphere.gltf");
-	light_model.mesh = &app.gltfs[0].meshes[0];
+	light_model.bundle = &app;
+	light_model.mesh = &BundleGLTFFind(&app, "meshes/sphere.gltf")->meshes[0];
 	
 }
 
@@ -228,7 +242,24 @@ int main(int argc, char *argv[]){
 #ifndef NOOPENGL
 	}
 #else
-	ReloadApp();
+	// ReloadApp();
+	// model = ModelNew(NULL, &undefined_mesh, &undefined_material);
+	// ModelSetMesh(&model, &BundleGLTFFind(&app, "models/soda_ca.gltf")->meshes[0]);
+	// ModelFree(&model);
+	// &BundleGLTFFind(&app, "models/soda_can.gltf")->meshes[0];
+
+
+	model = ModelNew(NULL, &BundleGLTFFind(&app, "models/soda_can.gltf")->meshes[0], BundleMaterialFind(&app, "materials/default.mat"));
+	model2 = ModelNew(NULL, &BundleGLTFFind(&app, "models/squish_cube.gltf")->meshes[0], BundleMaterialFind(&app, "materials/squish.mat"));
+	light_model = ModelNew(NULL, &BundleGLTFFind(&app, "models/uv_sphere.gltf")->meshes[0], BundleMaterialFind(&app, "materials/light.mat"));
+
+	// model = ModelNew(NULL, &BundleGLTFFind(&app, "models/soda_can.gltf")->meshes[0], &app.materials[0]);
+	// BundleMaterialFind(&app, "materials/squish.mat");
+	// model2 = ModelNew(NULL, &BundleGLTFFind(&app, "models/squish_cube.gltf")->meshes[0], &app.materials[1]);
+	// BundleMaterialFind(&app, "materials/light.mat");
+	// light_model = ModelNew(NULL, &BundleGLTFFind(&app, "models/uv_sphere.gltf")->meshes[0], &app.materials[2]);
+
+
 	Quit();
 #endif
 	return 0;

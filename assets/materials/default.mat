@@ -22,9 +22,5 @@
 			name: "normal_map",
 			value: "images/brick_diffuse.png",
 		},
-		{
-			name: "light_color",
-			value: [0.1, 0.25, 0.1],
-		},
 	],
 }

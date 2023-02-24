@@ -5,19 +5,6 @@
 #include "material.h"
 #include "gltf.h"
 
-// TODO: The renderer struct should have its child 'Mesh' as a member of it, mesh and renderer shouldnt be 2 independent things
-typedef struct Renderer{
-	unsigned int vao;
-
-	unsigned int pos_vbo;
-	unsigned int norm_vbo;
-	unsigned int uv0_vbo;
-	unsigned int uv1_vbo;
-	unsigned int tan_vbo;
-
-	unsigned int ebo;
-}Renderer;
-
 typedef struct Transform{
 	Vector3 position;
 	Vector3 scale;
@@ -27,6 +14,8 @@ typedef struct Transform{
 }Transform;
 
 typedef struct Model{
+	Bundle *bundle;
+
 	struct Model *parent;
 	bool is_loaded;
 
@@ -34,8 +23,6 @@ typedef struct Model{
 	struct Model *children;
 
 	Transform transform;
-
-	Renderer renderer;
 
 	char *mesh_path;
 	unsigned int mesh_index;
@@ -56,8 +43,9 @@ typedef struct Scene{
 
 
 Model ModelNew(Model *parent, Mesh *mesh, Material *material);
+void ModelSetMesh(Model *model, Mesh *mesh);
 void ModelRender(Model *model);
-
+void ModelFree(Model *model);
 
 /**
 	=== PLAN: ===

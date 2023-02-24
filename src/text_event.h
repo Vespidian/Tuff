@@ -7,7 +7,7 @@ typedef struct TextObject{
 	unsigned int buffer_pointer;
 }TextObject;
 
-TextObject text_object;
+extern TextObject text_object;
 void TextObjectClear(TextObject *t);
 char TextObjectRead(TextObject *t);
 

@@ -10,6 +10,3 @@ Check out bundles/template.bndl to see an example of a bundle
 - Scripts		
 - UI Domains	.5
 - Scenes		
-
-
-TODO: Figure out if we want to distinguish between the different meshes in a .gltf file

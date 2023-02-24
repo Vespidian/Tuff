@@ -42,6 +42,11 @@ typedef struct Material{
 }Material;
 
 /**
+ *  @return An initialized empty material
+*/
+Material MaterialNew();
+
+/**
  *  @brief Load a material from a file (Material's shader must be specified using 'MaterialShaderSet()' function)
  *  @param path - Path to material file (*.mat)
  */

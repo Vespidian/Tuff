@@ -9,6 +9,8 @@
 #include "bundle.h"
 #include <SDL2/SDL.h> // TMP
 
+const unsigned short BUNDLE_ARRAY_INCREMENT = 16;
+
 Texture undefined_texture;
 GLTF undefined_gltf;
 Mesh undefined_mesh;
@@ -19,16 +21,17 @@ void InitUndefined(){
 	undefined_texture = TextureOpen("../bin/builtin_assets/undefined.png");
 	undefined_gltf = GLTFOpen("../bin/builtin_assets/undefined.gltf");
 	undefined_mesh = undefined_gltf.meshes[0];
-	// undefined_shader = ShaderOpen("../bin/builtin_assets/undefined.shader");
-	// undefined_material = MaterialOpen("../bin/builtin_assets/undefined.mat");
+	undefined_shader = ShaderOpen("../bin/builtin_assets/undefined.shader");
+	undefined_material = MaterialOpen("../bin/builtin_assets/undefined.mat");
+	MaterialShaderSet(&undefined_material, &undefined_shader);
 }
 
 void FreeUndefined(){
 	TextureFree(&undefined_texture);
 	GLTFFree(&undefined_gltf);
-	// undefined_mesh = undefined_gltf.meshes[0];
-	// ShaderFree(&undefined_shader);
-	// MaterialFree(&undefined_material);
+	// undefined_mesh = ;
+	ShaderFree(&undefined_shader);
+	MaterialFree(&undefined_material);
 }
 
 static Bundle *bundle_ptr = NULL;;
@@ -220,13 +223,6 @@ Bundle BundleOpen(char *path){
 
 /* --- GLTFS --- */
 			for(int i = 0; i < bundle.num_gltfs; i++){
-				// int tmp = SDL_GetTicks();
-				// bundle.models[i].gltf = GLTFOpen(bundle.models[i].path);
-				// if(!bundle.models[i].gltf.is_loaded){
-				// 	BundleModelFree(&bundle.models[i]);
-				// 	continue;
-				// }
-				// printf("Took %dms to load gltf file '%s'\n", SDL_GetTicks() - tmp, bundle.models[i].path);
 				char *gltf_path = bundle.gltfs[i].path;
 				if(gltf_path != NULL){
 					bundle.gltfs[i].path = NULL;
@@ -252,10 +248,6 @@ Bundle BundleOpen(char *path){
 /* --- MATERIALS --- */
 			for(int i = 0; i < bundle.num_materials; i++){
 				char *material_path = bundle.materials[i].path;
-
-
-				// TODO: Loop through material's uniforms and set every texture (BundleTextureFind)
-
 				if(material_path != NULL){
 					// Open all the material files with the previously gathered paths
 					bundle.materials[i].path = NULL;
@@ -291,20 +283,32 @@ Bundle BundleOpen(char *path){
 	return bundle;
 }
 
+/**
+ *  TODO: Possibly come back to all the Bundle*Open() and Bundle*Find() functions 
+ *  and create a single general purpose function to allow for easy implementation of new bundle elements
+ * 
+ * 
+ *  TODO: For Bundle*Open() check if the resource already exists in the bundle with Bundle*Find() and if it does, 
+ *  use Bundle*Reload() instead of opening a new instance of it
+ */
+
 Texture *BundleTextureOpen(Bundle *bundle, char *path){
 	Texture *texture = &undefined_texture;
 	if(bundle != NULL && path != NULL){
 		// Resize the bundle's texture buffer and make sure realloc succeeded
 		Texture *tmp_textures = realloc(bundle->textures, sizeof(Texture) * (bundle->num_textures + 1));
 		if(tmp_textures != NULL){
-			bundle->textures = tmp_textures;
+			if(tmp_textures != bundle->textures){
+				bundle->ptr_addresses_valid = false;
+				bundle->textures = tmp_textures;
+			}
 
 			bundle->textures[bundle->num_textures] = TextureOpen(path);
 
 			if(bundle->textures[bundle->num_textures].is_loaded){
 				// If the texture exists, increment the bundle's texture counter and set the return ptr
-				bundle->num_textures++;
 				texture = &bundle->textures[bundle->num_textures];
+				bundle->num_textures++;
 			}else{
 				// Otherwise, free the texture and leave the return ptr pointing to 'undefined_texture'
 				TextureFree(&bundle->textures[bundle->num_textures]);
@@ -314,13 +318,83 @@ Texture *BundleTextureOpen(Bundle *bundle, char *path){
 	return texture;
 }
 
-// Shader *BundleShaderOpen(Bundle *bundle, char *path){
+GLTF *BundleGLTFOpen(Bundle *bundle, char *path){
+	GLTF *gltf = &undefined_gltf;
+	if(bundle != NULL && path != NULL){
+		// Resize the bundle's gltf buffer and make sure realloc succeeded
+		GLTF *tmp_gltfs = realloc(bundle->gltfs, sizeof(GLTF) * (bundle->num_gltfs + 1));
+		if(tmp_gltfs != NULL){
+			if(tmp_gltfs != bundle->gltfs){
+				bundle->ptr_addresses_valid = false;
+				bundle->gltfs = tmp_gltfs;
+			}
 
-// }
+			bundle->gltfs[bundle->num_gltfs] = GLTFOpen(path);
 
-// Material *BundleMaterialOpen(Bundle *bundle, char *path){
+			if(bundle->gltfs[bundle->num_gltfs].gltf_state.is_loaded){
+				// If the gltf file exists, increment the bundle's gltf counter and set the return ptr
+				gltf = &bundle->gltfs[bundle->num_gltfs];
+				bundle->num_gltfs++;
+			}else{
+				// Otherwise, free the gltf and leave the return ptr pointing to 'undefined_gltf'
+				GLTFFree(&bundle->gltfs[bundle->num_gltfs]);
+			}
+		}
+	}
+	return gltf;
+}
 
-// }
+Shader *BundleShaderOpen(Bundle *bundle, char *path){
+	Shader *shader = &undefined_shader;
+	if(bundle != NULL && path != NULL){
+		// Resize the bundle's shader buffer and make sure realloc succeeded
+		Shader *tmp_shaders = realloc(bundle->shaders, sizeof(Shader) * (bundle->num_shaders + 1));
+		if(tmp_shaders != NULL){
+			if(tmp_shaders != bundle->shaders){
+				bundle->ptr_addresses_valid = false;
+				bundle->shaders = tmp_shaders;
+			}
+
+			bundle->shaders[bundle->num_shaders] = ShaderOpen(path);
+
+			if(bundle->shaders[bundle->num_shaders].is_loaded){
+				// If the shader file exists, increment the bundle's shader counter and set the return ptr
+				shader = &bundle->shaders[bundle->num_shaders];
+				bundle->num_shaders++;
+			}else{
+				// Otherwise, free the shader and leave the return ptr pointing to 'undefined_shader'
+				ShaderFree(&bundle->shaders[bundle->num_shaders]);
+			}
+		}
+	}
+	return shader;
+}
+
+Material *BundleMaterialOpen(Bundle *bundle, char *path){
+	Material *material = &undefined_material;
+	if(bundle != NULL && path != NULL){
+		// Resize the bundle's material buffer and make sure realloc succeeded
+		Material *tmp_materials = realloc(bundle->materials, sizeof(Material) * (bundle->num_materials + 1));
+		if(tmp_materials != NULL){
+			if(tmp_materials != bundle->materials){
+				bundle->ptr_addresses_valid = false;
+				bundle->materials = tmp_materials;
+			}
+
+			bundle->materials[bundle->num_materials] = MaterialOpen(path);
+
+			if(bundle->materials[bundle->num_materials].is_loaded){
+				// If the material file exists, increment the bundle's material counter and set the return ptr
+				material = &bundle->materials[bundle->num_materials];
+				bundle->num_materials++;
+			}else{
+				// Otherwise, free the material and leave the return ptr pointing to 'undefined_material'
+				MaterialFree(&bundle->materials[bundle->num_materials]);
+			}
+		}
+	}
+	return material;
+}
 
 /**
  *  TODO: Add flag in Bundles to determine when resources need their references refreshed
@@ -375,7 +449,7 @@ Texture *BundleTextureFind(Bundle *bundle, char *texture_path){
 				break;
 			}
 		}
-		if(texture != NULL && !texture->is_loaded){
+		if(texture != NULL && texture == &undefined_texture){
 			texture = BundleTextureOpen(bundle, texture_path);
 		}
 	}
@@ -391,12 +465,15 @@ GLTF *BundleGLTFFind(Bundle *bundle, char *gltf_path){
 				break;
 			}
 		}
+		if(gltf != NULL && gltf == &undefined_gltf){
+			gltf = BundleGLTFOpen(bundle, gltf_path);
+		}
 	}
 	return gltf;
 }
 
 Shader *BundleShaderFind(Bundle *bundle, char *shader_path){
-	Shader *shader = NULL;
+	Shader *shader = &undefined_shader;
 	if(bundle != NULL && shader_path != NULL){
 		for(int i = 0; i < bundle->num_shaders; i++){
 			if(strcmp(bundle->shaders[i].path, shader_path) == 0){
@@ -404,12 +481,15 @@ Shader *BundleShaderFind(Bundle *bundle, char *shader_path){
 				break;
 			}
 		}
+		if(shader != NULL && shader == &undefined_shader){
+			shader = BundleShaderOpen(bundle, shader_path);
+		}
 	}
 	return shader;
 }
 
 Material *BundleMaterialFind(Bundle *bundle, char *material_path){
-	Material *material = NULL;
+	Material *material = &undefined_material;
 	if(bundle != NULL && material_path != NULL){
 		for(int i = 0; i < bundle->num_materials; i++){
 			if(strcmp(bundle->materials[i].path, material_path) == 0){
@@ -417,12 +497,16 @@ Material *BundleMaterialFind(Bundle *bundle, char *material_path){
 				break;
 			}
 		}
+		if(material != NULL && material == &undefined_material){
+			material = BundleMaterialOpen(bundle, material_path);
+			MaterialShaderSet(material, BundleShaderFind(bundle, material->shader_path));
+		}
 	}
 	return material;
 }
 
 void BundleFree(Bundle *bundle){
-	if(bundle->is_loaded){
+	if(bundle != NULL){
 		free(bundle->path);
 		bundle->path = NULL;
 
@@ -459,7 +543,6 @@ void BundleFree(Bundle *bundle){
 		bundle->materials = NULL;
 		bundle->num_materials = 0;
 
+		bundle->is_loaded = false;
 	}
-
-	bundle->is_loaded = false;
 }

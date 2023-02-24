@@ -15,18 +15,12 @@
     "nodes" : [
         {
             "mesh" : 0,
-            "name" : "Text",
-            "rotation" : [
-                0.7071068286895752,
-                0,
-                0,
-                0.7071068286895752
-            ]
+            "name" : "Text.001"
         }
     ],
     "meshes" : [
         {
-            "name" : "Text",
+            "name" : "Text.001",
             "primitives" : [
                 {
                     "attributes" : {
@@ -43,63 +37,63 @@
         {
             "bufferView" : 0,
             "componentType" : 5126,
-            "count" : 6620,
+            "count" : 1211,
             "max" : [
-                0.615882158279419,
-                0.20000000298023224,
-                0.2516085207462311
+                0.6433135271072388,
+                0.26545846462249756,
+                0.20000000298023224
             ],
             "min" : [
-                -0.615882158279419,
-                -0.20000000298023224,
-                -0.2516085207462311
+                -0.5884507894515991,
+                -0.2377585619688034,
+                -0.20000000298023224
             ],
             "type" : "VEC3"
         },
         {
             "bufferView" : 1,
             "componentType" : 5126,
-            "count" : 6620,
+            "count" : 1211,
             "type" : "VEC3"
         },
         {
             "bufferView" : 2,
             "componentType" : 5126,
-            "count" : 6620,
+            "count" : 1211,
             "type" : "VEC2"
         },
         {
             "bufferView" : 3,
             "componentType" : 5123,
-            "count" : 11676,
+            "count" : 2196,
             "type" : "SCALAR"
         }
     ],
     "bufferViews" : [
         {
             "buffer" : 0,
-            "byteLength" : 79440,
+            "byteLength" : 14532,
             "byteOffset" : 0
         },
         {
             "buffer" : 0,
-            "byteLength" : 79440,
-            "byteOffset" : 79440
+            "byteLength" : 14532,
+            "byteOffset" : 14532
         },
         {
             "buffer" : 0,
-            "byteLength" : 52960,
-            "byteOffset" : 158880
+            "byteLength" : 9688,
+            "byteOffset" : 29064
         },
         {
             "buffer" : 0,
-            "byteLength" : 23352,
-            "byteOffset" : 211840
+            "byteLength" : 4392,
+            "byteOffset" : 38752
         }
     ],
     "buffers" : [
         {
-            "byteLength" : 235192,
+            "byteLength" : 43144,
             "uri" : "undefined.bin"
         }
     ]

@@ -53,7 +53,6 @@ typedef enum GLTF_ATTR_TYPE{GLTF_NONE, GLTF_POSITION, GLTF_NORMAL, GLTF_TEXCOORD
 
 typedef struct GLTFState{
 	char *path;
-
 	bool is_loaded;
 
 	unsigned int num_meshes;
@@ -70,6 +69,19 @@ typedef struct GLTFState{
 }GLTFState;
 
 
+typedef struct GLMesh{
+	bool is_loaded;
+	
+	unsigned int vao;
+	unsigned int ebo;
+
+	unsigned int pos_vbo;
+	unsigned int norm_vbo;
+	unsigned int uv0_vbo;
+	unsigned int uv1_vbo;
+	unsigned int tan_vbo;
+
+}GLMesh;
 
 typedef struct Mesh{
 	void *data;
@@ -77,8 +89,10 @@ typedef struct Mesh{
 
 	char *name;
 	char *path;
-	GLTFState *gltf;
+	GLTFState *gltf_state;
 	unsigned int mesh_index;
+
+	GLMesh gl_data; // Data to be filled in when the mesh data is passed over to OpenGL
 
 	/**
 	 * Indices

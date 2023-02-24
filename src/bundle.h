@@ -23,16 +23,21 @@ void FreeUndefined();
 typedef struct Bundle{
 	char *path;
 	bool is_loaded;
+	bool ptr_addresses_valid;
 
+	unsigned int allocated_textures;
 	unsigned int num_textures;
 	Texture *textures;
 
+	unsigned int allocated_gltfs;
 	unsigned int num_gltfs;
 	GLTF *gltfs;
 
+	unsigned int allocated_shaders;
 	unsigned int num_shaders;
 	Shader *shaders;
 
+	unsigned int allocated_materials;
 	unsigned int num_materials;
 	Material *materials;
 }Bundle;
@@ -40,6 +45,7 @@ typedef struct Bundle{
 Bundle BundleOpen(char *path);
 
 void BundleFree(Bundle *bundle);
+Bundle BundleNew();
 
 Texture *BundleTextureFind(Bundle *bundle, char *texture_path);
 GLTF *BundleGLTFFind(Bundle *bundle, char *gltf_path);
