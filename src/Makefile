@@ -3,7 +3,7 @@ CC = gcc
 # DEFINES = -DNOOPENGL
 
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
-	LDFLAGS = -L../lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lglew32 -lopengl32 -llibtcc
+	LDFLAGS = -L../lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lglew32 -lopengl32
 	CFLAGS = -Werror -Wall -g
 	INCLUDE = -isystem ../include -isystem ../include/win_only
 else

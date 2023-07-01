@@ -252,16 +252,24 @@ void MaterialUniformsValidate(Material *material){
 		}else{
 			DebugLog(D_ERR, "%s: Cannot validate uniforms, shader must first be set using 'MaterialShaderSet'\n", material->path);
 		}
+	}else{
+		DebugLog(D_WARN, "MaterialUniformsValidate: called with NULL argument\n");
 	}
 }
 
 void MaterialShaderSet(Material *material, Shader *shader){
 	if(material != NULL && shader != NULL){
-		if(strcmp(material->shader_path, shader->path) == 0){
-			material->shader = shader;
+		if(material->shader_path != NULL){
+			if(strcmp(material->shader_path, shader->path) == 0){
+				material->shader = shader;
+			}else{
+				DebugLog(D_ERR, "%s: Trying to set material's shader to the incorrect shader (shader paths must match)\n", material->path);
+			}
 		}else{
-			DebugLog(D_ERR, "%s: Trying to set material's shader to the incorrect shader (shader paths must match)\n", material->path);
+			DebugLog(D_ERR, "%s: MaterialShaderSet: shader_path is NULL\n", material->path);
 		}
+	}else{
+		DebugLog(D_WARN, "MaterialShaderSet: called with NULL argument\n");
 	}
 }
 

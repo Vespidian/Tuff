@@ -243,12 +243,9 @@ int InitGL(){
 	// BundleMaterialFind(&app, "materials/squish.mat");
 	// BundleMaterialFind(&app, "materials/light.mat");
 
-	// model = ModelNew(NULL, &BundleGLTFFind(&app, "models/entrance.gltf")->meshes[0], &app.materials[0]);
-	model = ModelNew(NULL, &BundleGLTFFind(&app, "models/entrance.gltf")->meshes[0], BundleMaterialFind(&app, "materials/default.mat"));
-	// model2 = ModelNew(NULL, &BundleGLTFFind(&app, "models/squish_cube.gltf")->meshes[0], &app.materials[1]);
-	model2 = ModelNew(NULL, &BundleGLTFFind(&app, "models/squish_cube.gltf")->meshes[0], BundleMaterialFind(&app, "materials/squish.mat"));
-	// light_model = ModelNew(NULL, &BundleGLTFFind(&app, "models/uv_sphere.gltf")->meshes[0], &app.materials[2]);
-	light_model = ModelNew(NULL, &BundleGLTFFind(&app, "models/uv_sphere.gltf")->meshes[0], BundleMaterialFind(&app, "materials/light.mat"));
+	model = ModelNew(NULL, &BundleGLTFFind(&app, "models/entrance.gltf", true)->meshes[0], BundleMaterialFind(&app, "materials/default.mat", true));
+	model2 = ModelNew(NULL, &BundleGLTFFind(&app, "models/squish_cube.gltf", true)->meshes[0], BundleMaterialFind(&app, "materials/squish.mat", true));
+	light_model = ModelNew(NULL, &BundleGLTFFind(&app, "models/uv_sphere.gltf", true)->meshes[0], BundleMaterialFind(&app, "materials/light.mat", true));
 
     glm_mat4_identity(perspective_projection);
     glm_mat4_identity(view_matrix);
@@ -312,10 +309,10 @@ void RenderGL(){
 	// float w = view_distance * cos(pitch);
 	glm_vec3_add(view_position.v, tmp.v, tmp.v);
 	// ShaderUniformSetVec3(mesh_shader, "view_position", tmp.v);
-	ShaderUniformSetVec3(BundleShaderFind(&app, "shaders/default.shader"), "view_position", tmp.v);
+	ShaderUniformSetVec3(BundleShaderFind(&app, "shaders/default.shader", true), "view_position", tmp.v);
 
 
-	ShaderUniformSetFloat(BundleShaderFind(&app, "shaders/default.shader"), "normal_map_intensity", normal_intense);
+	ShaderUniformSetFloat(BundleShaderFind(&app, "shaders/default.shader", true), "normal_map_intensity", normal_intense);
 
     glm_mat4_identity(view_matrix);
 	glm_translate(view_matrix, (vec3){0, 0, -view_distance});
@@ -335,14 +332,14 @@ void RenderGL(){
 	// RETURN: Something weird is happening when reloading the bundle / shaders
 	// the normal map texture slot is being set to the regular brick texture
 	glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, BundleTextureFind(&app, "images/brick_diffuse.png")->gl_tex);
+    glBindTexture(GL_TEXTURE_2D, BundleTextureFind(&app, "images/brick_diffuse.png", true)->gl_tex);
 	current_texture_unit = 0;
-	bound_textures[0] = BundleTextureFind(&app, "images/brick_diffuse.png")->gl_tex;
+	bound_textures[0] = BundleTextureFind(&app, "images/brick_diffuse.png", true)->gl_tex;
 
 	glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, BundleTextureFind(&app, "images/brick_diffuse.png")->gl_tex);
+    glBindTexture(GL_TEXTURE_2D, BundleTextureFind(&app, "images/brick_diffuse.png", true)->gl_tex);
 	current_texture_unit = 1;
-	bound_textures[1] = BundleTextureFind(&app, "images/brick_diffuse.png")->gl_tex;
+	bound_textures[1] = BundleTextureFind(&app, "images/brick_diffuse.png", true)->gl_tex;
 
 
 	glEnable(GL_MULTISAMPLE);

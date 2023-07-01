@@ -67,7 +67,7 @@ void RenderUIElement(UIElement *element, unsigned int layer){
 		mat4 matrix;
 		glm_mat4_identity(matrix);
 		glm_translate(matrix, (vec3){transform.x, transform.y, 100 + layer});
-		glm_scale(matrix, (vec2){transform.z, transform.w});
+		// glm_scale(matrix, (vec2){transform.z, transform.w});
 
 		float data[64] = {0};
 		memcpy(&data[0], matrix, sizeof(mat4));

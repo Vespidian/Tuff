@@ -396,10 +396,8 @@ static GLTFState GLTFStateOpen(char *path){
 	if(path != NULL){
 		gltf.path = calloc(1, strlen(path) + 1);
 		if(gltf.path != NULL){
-			printf("\n%s: OVER HERE: %p\n", path, &gltf.path);
 			memcpy(gltf.path, path, strlen(path));
 			gltf.path[strlen(path)] = 0;
-			printf(">> %s\n", gltf.path);
 		}
 
 		gltf_ptr = &gltf;

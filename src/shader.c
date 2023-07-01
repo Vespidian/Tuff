@@ -297,7 +297,7 @@ static void ShaderCompile(Shader *shader){
 				glShaderSource(shader->stages[i].gl_id, 1, (const GLchar*const*)&shader->stages[i].source, &source_length);
 				glCompileShader(shader->stages[i].gl_id);
 				int success;
-				glGetShaderiv(shader->stages[i].gl_id, GL_COMPILE_STATUS, &success); // Crash 
+				glGetShaderiv(shader->stages[i].gl_id, GL_COMPILE_STATUS, &success);
 				if(!success){
 					int info_log_length = 0;
 					glGetShaderiv(shader->stages[i].gl_id, GL_INFO_LOG_LENGTH, &info_log_length);

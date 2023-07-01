@@ -41,7 +41,7 @@ void TextureFree(Texture *texture){
 	}
 }
 
-#ifndef NOOPENGL
+// #ifndef NOOPENGL
 static int InvertSurfaceVertical(SDL_Surface *surface)
 {
     Uint8 *t;
@@ -87,7 +87,7 @@ static int InvertSurfaceVertical(SDL_Surface *surface)
 
     return 0;
 }
-#endif
+// #endif
 
 Texture TextureOpen(char *path){
     Texture texture = TextureNew();
@@ -113,6 +113,10 @@ Texture TextureOpen(char *path){
 			GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 			GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
+			texture.gl_tex = gl_texture;
+
+		#endif
+
 			tmp_surface = IMG_Load(texture.path);
 			if(tmp_surface == NULL){
 				printf("%s: Error opening image\n", texture.path);
@@ -123,10 +127,8 @@ Texture TextureOpen(char *path){
 			}
 			InvertSurfaceVertical(tmp_surface);
 
-			texture.gl_tex = gl_texture;
 			texture.w = tmp_surface->w;
 			texture.h = tmp_surface->h;
-		#endif
 		if(tmp_surface != NULL){
 			// TODO: Support more image formats / image color formats without crashing
 			#ifndef NOOPENGL
@@ -161,9 +163,7 @@ Texture TextureOpen(char *path){
 			free(texture.path);
 			texture.path = NULL;
 		}
-		#ifndef NOOPENGL
-			SDL_FreeSurface(tmp_surface);
-		#endif
+		SDL_FreeSurface(tmp_surface);
 	}
     return texture;
 }

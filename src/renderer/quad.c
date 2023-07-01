@@ -31,11 +31,19 @@ void SetQuadProjection(){
 void RenderQuad(Texture texture, SDL_Rect *src, SDL_Rect *dst, int zpos, Vector4 color, float rot){
 	// NULL to fill entire viewport
 	if(dst == NULL){
-		dst = &(SDL_Rect){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+		// dst = &(SDL_Rect){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+		dst->x = 0;
+		dst->y = 0;
+		dst->w = SCREEN_WIDTH;
+		dst->h = SCREEN_HEIGHT;
 	}
 	// NULL for entire texture
 	if(src == NULL){
-		src = &(SDL_Rect){0, 0, texture.w, texture.h};
+		// src = &(SDL_Rect){0, 0, texture.w, texture.h};
+		src->x = 0;
+		src->y = 0;
+		src->w = texture.w;
+		src->h = texture.h;
 	}
 		
 	// Populate model matrix
@@ -79,7 +87,11 @@ void RenderQuad(Texture texture, SDL_Rect *src, SDL_Rect *dst, int zpos, Vector4
 void RenderTilesheet(TilesheetObject tilesheet, unsigned int index, SDL_Rect *dst, int zpos, Vector4 color){
 	// NULL to fill entire viewport
 	if(dst == NULL){
-		dst = &(SDL_Rect){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+		// dst = &(SDL_Rect){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+		dst->x = 0;
+		dst->y = 0;
+		dst->w = SCREEN_WIDTH;
+		dst->h = SCREEN_HEIGHT;
 	}
 
 	mat4 pos;

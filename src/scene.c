@@ -127,33 +127,6 @@ void MeshPassToGL(Mesh *mesh){
 	}
 }
 
-Model ModelNew(Model *parent, Mesh *mesh, Material *material){
-	Model model = ModelNewEmpty();
-
-	model.parent = parent;
-
-	if(mesh == NULL){
-		model.mesh = &undefined_mesh;
-	}else{
-		model.mesh = mesh;
-		model.mesh_path = malloc(strlen(mesh->path) + 1);
-		memcpy(model.mesh_path, mesh->path, strlen(mesh->path));
-	}
-	MeshPassToGL(mesh);
-
-	if(material == NULL){
-		model.material = &undefined_material;
-	}else{
-		model.material = material;
-		model.material_path = malloc(strlen(material->path) + 1);
-		memcpy(model.material_path, material->path, strlen(material->path));
-	}
-
-	model.is_loaded = true;
-
-	return model;
-}
-
 void ModelSetMesh(Model *model, Mesh *mesh){
 	if(model != NULL && mesh != NULL){
 		// Free the old mesh path
@@ -195,6 +168,36 @@ void ModelSetMaterial(Model *model, Material *material){
 		memcpy(model->material_path, material->path, strlen(material->path));
 		model->material_path[strlen(material->path)] = 0;
 	}
+}
+
+Model ModelNew(Model *parent, Mesh *mesh, Material *material){
+	Model model = ModelNewEmpty();
+
+	model.parent = parent;
+
+	// if(mesh == NULL){
+	// 	model.mesh = &undefined_mesh;
+	// }else{
+	// 	model.mesh = mesh;
+	// 	model.mesh_path = malloc(strlen(mesh->path) + 1);
+	// 	memcpy(model.mesh_path, mesh->path, strlen(mesh->path));
+	// }
+	ModelSetMesh(&model, mesh);
+
+	MeshPassToGL(mesh);
+
+	// if(material == NULL){
+	// 	model.material = &undefined_material;
+	// }else{
+	// 	model.material = material;
+	// 	model.material_path = malloc(strlen(material->path) + 1);
+	// 	memcpy(model.material_path, material->path, strlen(material->path));
+	// }
+	ModelSetMaterial(&model, material);
+
+	model.is_loaded = true;
+
+	return model;
 }
 
 void ModelRender(Model *model){
