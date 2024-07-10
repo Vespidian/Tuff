@@ -1,0 +1,53 @@
+{
+	classes: {
+		"root": {
+			margin: 20,
+			max-width: 500,
+			min-width: 900,
+			min-height: 100,
+			origin-p: right,
+			wrap-reverse: true,
+		},
+		"extra": {
+			color: #ff0000,
+			padding-left: 30,
+		}
+		"changed": {
+			border-color: #abcdef,
+			color: #e2e2e2,
+			on-hover: "extra",
+			origin-c: right,
+			border-left: 3,
+			border-top: 4,
+			border-right: 5,
+			border-bottom: 6,
+		},
+	},
+	elements: [
+		{
+			name: "menu",
+			class: "root",
+			text: "i am root",
+			children: [
+				{
+					name: "a1",
+					text: "howdy",
+					class: "changed",
+				},
+				{
+					name: "b1",
+					class: "changed",
+					children: [
+						{
+							name: "idk",
+							class: "extra",
+						}
+					],
+				},
+			],
+		},
+		{
+			name: "hehe",
+		},
+	],
+},

@@ -7,6 +7,7 @@
 #include "event.h"
 #include "renderer/renderer.h"
 #include "render_text.h"
+#include "ui.h"
 
 #include "engine.h"
 
@@ -16,8 +17,20 @@ Material *mat;
 Model model;
 
 
+Texture texture;
+UIState state;
+
+void tmp(UIState *state, UIElement *element, UI_MOUSE_EVENT events){
+    if(events & UI_MOUSE_CLICK){
+        UIElement *e = UIFindElement(state, "idk");
+        e->visible = !e->visible;
+    }
+}
+
 float data[64] = {0};
 void EngineSetup(){
+    UI_WINDOW_HEIGHT = 800;
+    UI_WINDOW_WIDTH = 800;
 
     bundle = BundleOpen(NULL);
     sphere = BundleGLTFOpen(&bundle, "models/sphere.gltf");
@@ -26,6 +39,18 @@ void EngineSetup(){
 
     MaterialUniformSetVec3(mat, "light_pos", (vec3){1, 1, 1});
 
+
+    texture = TextureOpen("../assets/texture.png", TEXTURE_FILTERING_NEAREST);
+
+    InitUIRender();
+    UIParse(&state, "../assets/ui/new.ui");
+    
+    // Create a slider
+    UISliderNew(UIFindElement(&state, "b1"), 0, 100, 5, 0.1);
+    UIFindElement(&state, "b1")->slider.modify_width = true;
+
+    // Implement a show/hide button
+    UIFindElement(&state, "hehe")->event_func = tmp;
 }
 
 void EngineExit(){
@@ -44,6 +69,13 @@ void EngineLoop(){
 
 
     RenderText(&default_font, 1.001, SCREEN_WIDTH - 100, 10, TEXT_ALIGN_LEFT, "testing");
+
+
+    UIUpdate(&state);
+
+    UIInteract(&state);
+
+    UIRender(&state);
 
     PushRender();
 }
