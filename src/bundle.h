@@ -1,6 +1,8 @@
 #ifndef BUNDLE_H_
 #define BUNDLE_H_
 
+#include <stdbool.h>
+
 #include "gltf.h"				// Meshes
 #include "textures.h" 			// Textures
 #include "shader.h"				// Shaders

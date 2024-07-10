@@ -13,7 +13,7 @@ layout (location = 8) in vec4 border_color_a;
 layout (std140) uniform ShaderGlobals{
 	mat4 projection_persp;
 	mat4 projection_ortho;
-	mat4 view;
+	mat4 view_matrix;
 	float time;
 };
 

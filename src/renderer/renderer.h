@@ -1,8 +1,7 @@
 #ifndef RENDERER_H_
 #define RENDERER_H_
 
-#include "../textures.h"
-#include "../shader.h"
+#include "../gltf.h"
 
 // VAO function constants
 enum VAOAttributes{ATTR_FLOAT = 1, ATTR_VEC2, ATTR_VEC3, ATTR_VEC4, ATTR_MAT2 = 8, ATTR_MAT3 = 9, ATTR_MAT4 = 16};
@@ -14,6 +13,7 @@ typedef struct AttribArray{
 	unsigned int array_object;
 	unsigned int stride;
 	unsigned int num_attrib_slots;
+	unsigned int instanced_vbo;
 }AttribArray;
 
 /**
@@ -22,6 +22,7 @@ typedef struct AttribArray{
 typedef struct RendererInstance{
 	char num_textures_used;
 	unsigned int texture[16];
+	Mesh mesh;
 	Shader *shader;
 	AttribArray vao;
 	unsigned int count;
@@ -39,24 +40,13 @@ extern mat4 default_texture_coordinates;
 extern int num_append_instance_calls;
 
 /**
- *  Orthographic projection matrix for use with ui rendering
- */
-extern mat4 orthographic_projection;
-
-/**
- *  @brief Initialize the render system
- */
-void RendererInit();
-
-void RendererQuit();
-
-/**
  *  @brief Dynamically create a VAO
  *  @param num_attribs number of ATTR_... enums specified
  *  @param ... attribute enums
  *  @return AttribArray with VAO data
  */
-AttribArray NewVAO(int num_attribs, ...);
+// AttribArray NewVAO(int num_attribs, ...);
+AttribArray NewVAO(unsigned int input_vao, unsigned int start_attrib_index, int num_attribs, ...);
 
 /**
  *  @brief Send instance data to the instance_buffer
@@ -66,7 +56,7 @@ AttribArray NewVAO(int num_attribs, ...);
  *  @param num_textures_used number of textures to copy to instance texture buffer
  *  @param textures[16] array of textures to use
  */
-void AppendInstance(AttribArray vao, float data[64], Shader *shader, char num_textures_used, Texture textures[16]);
+void AppendInstance(AttribArray vao, float data[64], Mesh mesh, Shader *shader, char num_textures_used, Texture textures[16]);
 
 /**
  *  @brief Passes all instance data to the GPU (window buffer still needs to be swapped)

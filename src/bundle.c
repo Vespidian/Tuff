@@ -13,11 +13,12 @@
  * (1) - Materials dont yet depend upon textures internally
 */
 
+#include <GL/glew.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "json_base.h"
+#include "json_read.h"
 #include "debug.h"
 
 #include "bundle.h"
@@ -37,7 +38,7 @@ static bool BundleBufferPush(BundleBuffer *buffer, void *ptr, BUNDLE_RESOURCES t
 static bool BundleBufferFree(BundleBuffer *buffer);
 
 void InitUndefined(){
-	undefined_texture = TextureOpen("../bin/builtin_assets/undefined.png");
+	undefined_texture = TextureOpen("../bin/builtin_assets/undefined.png", TEXTURE_FILTERING_NEAREST);
 	undefined_gltf = GLTFOpen("../bin/builtin_assets/undefined.gltf");
 	undefined_mesh = undefined_gltf.meshes[0];
 	undefined_shader = ShaderOpen("../bin/builtin_assets/undefined.shader");
@@ -168,10 +169,10 @@ void BundleResetPtrs(Bundle *bundle){
 		// Loop through each material and reassign the shader pointers if the shader buffer has been moved
 		for(int i = 0; i < materials->size; i++){
 			// Shader
-			if(bundle->buffers[BNDL_SHADER].has_been_moved){
-				materials->data.materials[i].shader = BundleShaderFind(bundle, materials->data.materials[i].shader_path, true);
-			}
-			bundle->buffers[BNDL_SHADER].has_been_moved = false;
+			// if(bundle->buffers[BNDL_SHADER].has_been_moved){
+				materials->data.materials[i].shader = BundleShaderFind(bundle, materials->data.materials[i].shader_path, false);
+			// }
+			// bundle->buffers[BNDL_SHADER].has_been_moved = false;
 
 			// Texture
 			// - 
@@ -236,8 +237,10 @@ static bool BundleBufferPush(BundleBuffer *buffer, void *ptr, BUNDLE_RESOURCES t
 	return success;
 }
 
-static bool BundleBufferReload(BundleBuffer *buffer){
+static bool BundleBufferReload(Bundle *bundle, unsigned int index){
 	bool success = false;
+
+	BundleBuffer *buffer = &bundle->buffers[index];
 
 	if(buffer != NULL){
 		// Loop through each element in the buffer and have a switch statement calling a Bundle*Reload
@@ -254,6 +257,7 @@ static bool BundleBufferReload(BundleBuffer *buffer){
 					break;
 				case BNDL_MATERIAL:
 					MaterialReload(&buffer->data.materials[i]);
+					MaterialShaderSet(&buffer->data.materials[i], BundleShaderFind(bundle, buffer->data.materials[i].shader_path, true));
 					break;
 				default:
 					break;
@@ -300,7 +304,7 @@ static Shader *BundleGetShaderBuffer(Bundle *bundle){
 void BundleReload(Bundle *bundle){
 	if(bundle != NULL){
 		for(int i = 0; i < bundle->num_buffers; i++){
-			BundleBufferReload(&bundle->buffers[i]);
+			BundleBufferReload(bundle, i);
 		}
 	}else{
 		DebugLog(D_WARN, "BundleReload: called with NULL argument\n");
@@ -309,7 +313,7 @@ void BundleReload(Bundle *bundle){
 
 /** --- BUNDLE UTILITY FUNCTIONS --- **/
 
-Bundle BundleNew(){
+static Bundle BundleNew(){
 	Bundle bundle;
 	bundle.path = NULL;
 	bundle.is_loaded = false;
@@ -370,7 +374,7 @@ Texture *BundleTextureOpen(Bundle *bundle, char *path){
 		}else{
 			
 			// Otherwise, open it
-			Texture tmp = TextureOpen(path);
+			Texture tmp = TextureOpen(path, TEXTURE_FILTERING_NEAREST);
 
 			// Check that the texture at 'path' exists and then push it to the buffer
 			if(tmp.is_loaded){
@@ -431,6 +435,9 @@ Shader *BundleShaderOpen(Bundle *bundle, char *path){
 			// If it exists, simply reload it
 			ShaderReload(shader);
 
+			// Apply the global uniform buffer
+			glUniformBlockBinding(shader->id, glGetUniformBlockIndex(shader->id, "ShaderGlobals"), 0);
+
 		}else{
 
 			// Otherwise, attempt to open the resource
@@ -440,6 +447,9 @@ Shader *BundleShaderOpen(Bundle *bundle, char *path){
 			if(tmp.is_loaded){
 				if(BundleBufferPush(&bundle->buffers[BNDL_SHADER], &tmp, BNDL_SHADER)){
 					shader = &bundle->buffers[BNDL_SHADER].data.shaders[bundle->buffers[BNDL_SHADER].size - 1];
+					
+					// Apply the global uniform buffer
+					glUniformBlockBinding(shader->id, glGetUniformBlockIndex(shader->id, "ShaderGlobals"), 0);
 				}else{
 					DebugLog(D_WARN, "BundleShaderOpen: Could not push shader '%s' to bundle '%s'", path, bundle->path);
 					ShaderFree(&tmp);
@@ -618,7 +628,7 @@ void BundleFree(Bundle *bundle){
 		bundle->path = NULL;
 
 /* --- TEXTURES --- */
-		for(int i = 1; i < bundle->buffers[BNDL_TEXTURE].size; i++){
+		for(int i = 0; i < bundle->buffers[BNDL_TEXTURE].size; i++){
 			TextureFree(&bundle->buffers[BNDL_TEXTURE].data.textures[i]);
 		}
 

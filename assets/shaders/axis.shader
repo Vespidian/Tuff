@@ -14,7 +14,7 @@
 			layout (std140) uniform ShaderGlobals{
 				mat4 projection_persp;
 				mat4 projection_ortho;
-				mat4 view;
+				mat4 view_matrix;
 				float time;
 			};
 
@@ -28,11 +28,11 @@
 
 			void main(){
 				color_v = color_a;
-				gl_Position = projection_persp * view * model * vec4(pos_a, 1);
+				gl_Position = projection_persp * view_matrix * model * vec4(pos_a, 1);
 
 
-				pos_v = (projection_persp * view * model * vec4(pos_a, 1)).xyz;
-				pos_f = (projection_persp * view * model * vec4(pos_a, 1)).xyz;
+				pos_v = (projection_persp * view_matrix * model * vec4(pos_a, 1)).xyz;
+				pos_f = (projection_persp * view_matrix * model * vec4(pos_a, 1)).xyz;
 
 			}
 		",

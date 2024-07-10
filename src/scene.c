@@ -1,14 +1,14 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <GL/glew.h>
 
-#include "json_base.h"
 #include "vectorlib.h"
 #include "material.h"
 #include "gltf.h"
 #include "bundle.h"
-#include "gl_utils.h"
+#include "renderer/renderer.h"
 
 #include "scene.h"
 
@@ -73,15 +73,16 @@ void MeshPassToGL(Mesh *mesh){
 		glGenBuffers(1, &mesh->gl_data.pos_vbo);
 		glGenBuffers(1, &mesh->gl_data.norm_vbo);
 		glGenBuffers(1, &mesh->gl_data.uv0_vbo);
-		glGenBuffers(1, &mesh->gl_data.uv1_vbo);
-		glGenBuffers(1, &mesh->gl_data.tan_vbo);
+		// glGenBuffers(1, &mesh->gl_data.uv1_vbo);
+		// glGenBuffers(1, &mesh->gl_data.tan_vbo);
 		glGenBuffers(1, &mesh->gl_data.ebo);
 
 		// Position
 		if(mesh->position_exists){
 			glBindBuffer(GL_ARRAY_BUFFER, mesh->gl_data.pos_vbo);
 			glBufferData(GL_ARRAY_BUFFER, mesh->position_bytelength, mesh->data + mesh->position_offset, GL_STATIC_DRAW);
-			glEnableVertexAttribArray(0);
+			// glEnableVertexAttribArray(0);
+			glEnableVertexArrayAttrib(mesh->gl_data.vao, 0);
 			glVertexAttribPointer(0, mesh->position_size, mesh->position_gl_type, GL_FALSE, 0, (void*)(0));
 		}
 
@@ -89,7 +90,8 @@ void MeshPassToGL(Mesh *mesh){
 		if(mesh->normal_exists){
 			glBindBuffer(GL_ARRAY_BUFFER, mesh->gl_data.norm_vbo);
 			glBufferData(GL_ARRAY_BUFFER, mesh->normal_bytelength, mesh->data + mesh->normal_offset, GL_STATIC_DRAW);
-			glEnableVertexAttribArray(1);
+			// glEnableVertexAttribArray(1);
+			glEnableVertexArrayAttrib(mesh->gl_data.vao, 1);
 			glVertexAttribPointer(1, mesh->normal_size, mesh->normal_gl_type, GL_FALSE, 0, (void*)(0));
 		}
 
@@ -97,25 +99,26 @@ void MeshPassToGL(Mesh *mesh){
 		if(mesh->uv0_exists){
 			glBindBuffer(GL_ARRAY_BUFFER, mesh->gl_data.uv0_vbo);
 			glBufferData(GL_ARRAY_BUFFER, mesh->uv0_bytelength, mesh->data + mesh->uv0_offset, GL_STATIC_DRAW);
-			glEnableVertexAttribArray(2);
+			// glEnableVertexAttribArray(2);
+			glEnableVertexArrayAttrib(mesh->gl_data.vao, 2);
 			glVertexAttribPointer(2, mesh->uv0_size, mesh->uv0_gl_type, GL_FALSE, 0, (void*)(0));
 		}
 		
-		// UV1
-		if(mesh->uv1_exists){
-			glBindBuffer(GL_ARRAY_BUFFER, mesh->gl_data.uv1_vbo);
-			glBufferData(GL_ARRAY_BUFFER, mesh->uv1_bytelength, mesh->data + mesh->uv1_offset, GL_STATIC_DRAW);
-			glEnableVertexAttribArray(3);
-			glVertexAttribPointer(2, mesh->uv1_size, mesh->uv1_gl_type, GL_FALSE, 0, (void*)(0));
-		}
+		// // UV1
+		// if(mesh->uv1_exists){
+		// 	glBindBuffer(GL_ARRAY_BUFFER, mesh->gl_data.uv1_vbo);
+		// 	glBufferData(GL_ARRAY_BUFFER, mesh->uv1_bytelength, mesh->data + mesh->uv1_offset, GL_STATIC_DRAW);
+		// 	glEnableVertexAttribArray(3);
+		// 	glVertexAttribPointer(2, mesh->uv1_size, mesh->uv1_gl_type, GL_FALSE, 0, (void*)(0));
+		// }
 		
-		// Tangent
-		if(mesh->tangent_exists){
-			glBindBuffer(GL_ARRAY_BUFFER, mesh->gl_data.tan_vbo);
-			glBufferData(GL_ARRAY_BUFFER, mesh->tangent_bytelength, mesh->data + mesh->tangent_offset, GL_STATIC_DRAW);
-			glEnableVertexAttribArray(3);
-			glVertexAttribPointer(2, mesh->tangent_size, mesh->tangent_gl_type, GL_FALSE, 0, (void*)(0));
-		}
+		// // Tangent
+		// if(mesh->tangent_exists){
+		// 	glBindBuffer(GL_ARRAY_BUFFER, mesh->gl_data.tan_vbo);
+		// 	glBufferData(GL_ARRAY_BUFFER, mesh->tangent_bytelength, mesh->data + mesh->tangent_offset, GL_STATIC_DRAW);
+		// 	glEnableVertexAttribArray(3);
+		// 	glVertexAttribPointer(2, mesh->tangent_size, mesh->tangent_gl_type, GL_FALSE, 0, (void*)(0));
+		// }
 
 		// Indices
 		if(mesh->index_exists){
@@ -185,6 +188,8 @@ Model ModelNew(Model *parent, Mesh *mesh, Material *material){
 	ModelSetMesh(&model, mesh);
 
 	MeshPassToGL(mesh);
+	model.attr = NewVAO(mesh->gl_data.vao, 3, 3, ATTR_VEC3, ATTR_VEC3, ATTR_FLOAT);
+
 
 	// if(material == NULL){
 	// 	model.material = &undefined_material;
@@ -194,6 +199,9 @@ Model ModelNew(Model *parent, Mesh *mesh, Material *material){
 	// 	memcpy(model.material_path, material->path, strlen(material->path));
 	// }
 	ModelSetMaterial(&model, material);
+
+
+	// model.attr = NewVAO(2, ATTR_VEC3, ATTR_VEC3);
 
 	model.is_loaded = true;
 
@@ -217,29 +225,39 @@ void ModelRender(Model *model){
 			model->mesh = &undefined_mesh;
 			model->mesh_index = undefined_mesh.mesh_index;
 		}
-		SetVAO(model->mesh->gl_data.vao);
+		// SetVAO(model->mesh->gl_data.vao);
+		glBindVertexArray(model->mesh->gl_data.vao);
 
-		for(int i = 0; i < model->material->num_uniforms; i++){
-			if(model->material->uniforms[i].type == UNI_SAMPLER2D){
-				if(current_texture_unit != i){
-					glActiveTexture(GL_TEXTURE0 + i);
-					current_texture_unit = i;
-				}
-				glBindTexture(GL_TEXTURE_2D, model->material->uniforms[i].value._sampler2D);	
-				bound_textures[i] = model->material->uniforms[i].value._sampler2D;
-			}
-		}
+		// for(int i = 0; i < model->material->num_uniforms; i++){
+		// 	if(model->material->uniforms[i].type == UNI_SAMPLER2D){
+		// 		if(current_texture_unit != i){
+		// 			glActiveTexture(GL_TEXTURE0 + i);
+		// 			current_texture_unit = i;
+		// 		}
+		// 		glBindTexture(GL_TEXTURE_2D, model->material->uniforms[i].value._sampler2D);	
+		// 		bound_textures[i] = model->material->uniforms[i].value._sampler2D;
+		// 	}
+		// }
 
 		if(model->mesh->index_exists){
 			glDrawElements(GL_TRIANGLES, model->mesh->index_count, model->mesh->index_gl_type, NULL);
 		}else{
 			glDrawArrays(GL_TRIANGLES, 0, model->mesh->position_count);
 		}
+		// model->mesh->gl_data.
+
+		// // Copy all data into data array
+		// float data[64];
+		// memcpy(&data[0], model->transform.matrix, sizeof(mat4));
+		// // memcpy(&data[16], color_vec, sizeof(vec4));
+		// // memcpy(&data[20], texture_src, sizeof(vec4));
+
+		// AppendInstance(model->attr, data, model->material->shader, 1, NULL);
 	}
 }
 
 void ModelFree(Model *model){
-	// Needs to be recursive to free children too
+	// TODO: Needs to be recursive to free children too
 
 
 	model->parent = NULL;

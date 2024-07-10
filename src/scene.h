@@ -3,6 +3,7 @@
 
 #include "vectorlib.h"
 #include "material.h"
+#include "renderer/renderer.h"
 #include "gltf.h"
 
 typedef struct Transform{
@@ -18,6 +19,8 @@ typedef struct Model{
 
 	struct Model *parent;
 	bool is_loaded;
+
+	AttribArray attr;
 
 	unsigned int num_children;
 	struct Model *children;
@@ -44,6 +47,7 @@ typedef struct Scene{
 
 Model ModelNew(Model *parent, Mesh *mesh, Material *material);
 void ModelSetMesh(Model *model, Mesh *mesh);
+void ModelSetMaterial(Model *model, Material *material);
 void ModelRender(Model *model);
 void ModelFree(Model *model);
 

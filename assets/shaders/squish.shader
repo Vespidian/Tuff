@@ -15,7 +15,7 @@
 			layout (std140) uniform ShaderGlobals{
 				mat4 projection_persp;
 				mat4 projection_ortho;
-				mat4 view;
+				mat4 view_matrix;
 				float time;
 			};
 			flat out float time_f;
@@ -42,14 +42,14 @@
 				vec3 B = normalize(vec3(model * vec4(cross(normal_a, tangent_a), 0)));
 				vec3 N = normalize(vec3(model * vec4(normal_a, 0)));
 				mat3 TBN = mat3(T, B, N);
-				// vert_v = (projection * view * model * vec4(pos_a, 1)).xyz;
+				// vert_v = (projection * view_matrix * model * vec4(pos_a, 1)).xyz;
 				vert_v = pos_a;
 				normal_v = normal_a;
 				texture_v = texture_a;
 
 				float zval = (sin(time + pos_a.x*2 + pos_a.y*3) + 1)*0.2 + pos_a.z;
 				float yval = (sin(time + pos_a.x*5) + 1)*0.1 + pos_a.y;
-				gl_Position = projection_persp * view * model * vec4(pos_a.x, yval, zval, 1);
+				gl_Position = projection_persp * view_matrix * model * vec4(pos_a.x, yval, zval, 1);
 				frag_pos_v = vec3(model * vec4(pos_a, 1));
 				gl_PointSize = gl_Position.z;
 

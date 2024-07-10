@@ -3,7 +3,7 @@
 	{
 		stage: VERTEX,
 		source: "
-			#version 130
+			#version 140
 			#extension GL_ARB_explicit_attrib_location : enable
 			layout (location = 0) in vec3 pos_a;
 
@@ -11,6 +11,13 @@
 			layout (location = 1) in mat4 model_a;
 			layout (location = 5) in vec4 color_a;
 			layout (location = 6) in vec4 texture_src_a;
+
+			layout (std140) uniform ShaderGlobals{
+				mat4 projection_persp;
+				mat4 projection_ortho;
+				mat4 view;
+				float time;
+			};
 
 			uniform mat4 tex_coordinates;
 			uniform mat4 projection;
@@ -22,7 +29,7 @@
 
 
 			void main(){
-				gl_Position = projection * model_a * vec4(pos_a, 1);
+				gl_Position = projection_ortho * model_a * vec4(pos_a, 1);
 				
 				int quadVert = gl_VertexID % 4;
 				tex_coordinate_v = vec2(tex_coordinates[quadVert][0], tex_coordinates[quadVert][1]);
@@ -34,7 +41,7 @@
 	{
 		stage: FRAGMENT,
 		source: "
-			#version 130
+			#version 140
 
 			out vec4 FragColor;
 

@@ -13,7 +13,7 @@
 			layout (std140) uniform ShaderGlobals{
 				mat4 projection_persp;
 				mat4 projection_ortho;
-				mat4 view;
+				mat4 view_matrix;
 				float time;
 			};
 
@@ -28,8 +28,8 @@
 			}
 
 			void main(){
-				gl_Position = projection_persp * view * vec4(pos_a, 1);
-				// gl_Position = projection_persp * view * vec4(pos_a + vec3(gold_noise(vec2(pos_a.x, pos_a.z) * time, 5)) * 0.1, 1);
+				gl_Position = projection_persp * view_matrix * vec4(pos_a, 1);
+				// gl_Position = projection_persp * view_matrix * vec4(pos_a + vec3(gold_noise(vec2(pos_a.x, pos_a.z) * time, 5)) * 0.1, 1);
 
 				if(pos_a.z == 0){
 					color_v = vec3(1, 0.2, 0.322);
@@ -62,7 +62,7 @@
 
 			// layout (std140) uniform Matrices{
 			// 	mat4 projection;
-			// 	mat4 view;
+			// 	mat4 view_matrix;
 			// };
 
 			// out mat4 projection_frag;
@@ -75,21 +75,21 @@
 
 			// out vec3 position_v;
 
-			// vec3 UnprojectPoint(float x, float y, float z, mat4 view, mat4 projection) {
-			//     mat4 viewInv = inverse(view);
+			// vec3 UnprojectPoint(float x, float y, float z, mat4 view_matrix, mat4 projection) {
+			//     mat4 viewInv = inverse(view_matrix);
 			//     mat4 projInv = inverse(projection);
 			//     vec4 unprojectedPoint =  viewInv * projInv * vec4(x, y, z, 1.0);
 			//     return unprojectedPoint.xyz / unprojectedPoint.w;
 			// }
 
 			// void main(){
-			// 	gl_Position = projection * view * vec4(pos_a * 25, 1);
+			// 	gl_Position = projection * view_matrix * vec4(pos_a * 25, 1);
 
-			// 	near_point = UnprojectPoint(pos_a.x, pos_a.y, 0.0, view, projection).xyz; // unprojecting on the near plane
-			//     far_point = UnprojectPoint(pos_a.x, pos_a.y, 1.0, view, projection).xyz; // unprojecting on the far plane
+			// 	near_point = UnprojectPoint(pos_a.x, pos_a.y, 0.0, view_matrix, projection).xyz; // unprojecting on the near plane
+			//     far_point = UnprojectPoint(pos_a.x, pos_a.y, 1.0, view_matrix, projection).xyz; // unprojecting on the far plane
 				
 			// 	projection_frag = projection;
-			// 	view_frag = view;
+			// 	view_frag = view_matrix;
 
 			// 	position_v = pos_a;
 			// }

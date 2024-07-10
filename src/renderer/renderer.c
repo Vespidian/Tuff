@@ -1,59 +1,74 @@
+#include <stdbool.h>
 #include <stdarg.h>
+#include <string.h>
+#include <GL/glew.h>
+#include <SDL2/SDL_opengl.h>
 
-#include "../global.h"
-#include "../gl_context.h"
-#include "../gl_utils.h"
+#include "../debug.h"
+#include "../textures.h"
+#include "../shader.h"
+#include "../gltf.h"
 
 #include "renderer.h"
 
-unsigned int quad_vbo;
-unsigned int quad_ebo;
 
-unsigned int instanced_vbo;
+#define GLCall CheckGLErrors(__FILE__, __LINE__);
 
-float quad_vertices[] = {
-    1, 0, 0,	// top right
-    1, 1, 0,	// bottom right
-    0, 1, 0,	// bottom left
-    0, 0, 0,	// top left 
-};
+/**
+ *  Active VAO
+ */
+unsigned int current_vao;
 
-unsigned int quad_indices[] = {
-	// Clockwise
-    // 0, 1, 3,	// First triangle
-    // 1, 2, 3,	// Second triangle
-	// Counter Clockwise
-    3, 1, 0,	// First triangle
-    3, 2, 1,	// Second triangle
-};
+/**
+ *  Ordered array of all bound textures
+ */
+unsigned int bound_textures[16];
 
-mat4 default_texture_coordinates = {
-    {1.0, 1.0},
-    {1.0, 0.0},
-    {0.0, 0.0},
-    {0.0, 1.0},
-};
+/**
+ *  Bound texture unit
+ */
+unsigned int current_texture_unit;
+
+void CheckGLErrors(const char *file, int line){
+    unsigned int error_code;
+    while((error_code = glGetError()) != GL_NO_ERROR){
+        char error_string[32];
+        switch(error_code){
+            case 1280:
+                strcpy(error_string, "INVALID_ENUM");
+                break;
+            case 1281:
+                strcpy(error_string, "INVALID_VALUE");
+                break;
+            case 1282:
+                strcpy(error_string, "INVALID_OPERATION");
+                break;
+            case 1283:
+                strcpy(error_string, "STACK_OVERFLOW");
+                break;
+            case 1284:
+                strcpy(error_string, "STACK_UNDERFLOW");
+                break;
+            case 1285:
+                strcpy(error_string, "OUT_OF_MEMORY");
+                break;
+            case 1286:
+                strcpy(error_string, "INVALID_FRAMEBUFFER_OPERATION");
+                break;
+			default:
+				break;
+        }
+        DebugLog(D_ERR, "Opengl error '%s' ('%s': %d)", error_string, file, line);
+        printf("Opengl error '%s' ('%s': %d)", error_string, file, line);
+    }
+}
+
 
 RendererInstance *instance_buffer;
 unsigned int num_instances = 0;
 int num_append_instance_calls = 0;
-mat4 orthographic_projection;
 
-void RendererInit(){
-	instance_buffer = malloc(sizeof(RendererInstance) * 2);
-	#ifndef NOOPENGL
-		GLCall(glGenBuffers(1, &quad_vbo));
-		GLCall(glGenBuffers(1, &quad_ebo));
-		GLCall(glGenBuffers(1, &instanced_vbo));
-	#endif
-}
-
-void RendererQuit(){
-	free(instance_buffer);
-	instance_buffer = NULL;
-}
-
-AttribArray NewVAO(int num_attribs, ...){
+AttribArray NewVAO(unsigned int input_vao, unsigned int start_attrib_index, int num_attribs, ...){
 	// Initialize vao variables
 	AttribArray vao;
 	vao.num_attrib_slots = 0;
@@ -64,25 +79,15 @@ AttribArray NewVAO(int num_attribs, ...){
 		num_attribs = 16;
 	}
 
-	// Initialize the new vertex array object
-	#ifndef NOOPENGL
-		GLCall(glGenVertexArrays(1, &vao.array_object));
-		GLCall(glBindVertexArray(vao.array_object));
-		// Initialize static vertex buffer
-		GLCall(glBindBuffer(GL_ARRAY_BUFFER, quad_vbo));
-		GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_STATIC_DRAW));
+	// Bind the vertex array object that was passed in
+	vao.array_object = input_vao;
+	GLCall(glBindVertexArray(vao.array_object));
 
-		// Default quad vertex positions
-		GLCall(glEnableVertexAttribArray(0));
-		GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0));
-
-		// Initialize static index buffer
-		GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad_ebo));
-		GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_indices), quad_indices, GL_STATIC_DRAW));
-
-		// Setting attribute locations for 'instanced_vbo'
-		GLCall(glBindBuffer(GL_ARRAY_BUFFER, instanced_vbo));
-	#endif
+	// Setting attribute locations for 'instanced_vbo'
+	// This is the vbo which contains the per instance data (positions, colors, etc)
+	// We set up each attribute of this below based on the passed in function args
+	GLCall(glGenBuffers(1, &vao.instanced_vbo));
+	GLCall(glBindBuffer(GL_ARRAY_BUFFER, vao.instanced_vbo));
 
 	uint8_t attribs[16];
 	va_list vl;
@@ -96,7 +101,7 @@ AttribArray NewVAO(int num_attribs, ...){
 
 	// Loop through attributes and enable them
 	unsigned int attrib_offset = 0;
-	unsigned int attrib_index = 1;
+	unsigned int attrib_index = start_attrib_index;
 	for(int i = 0; i < num_attribs; i++){
 		// If the attribute is a matrix, 'mat_type' defines the number of vertex attribs it consumes
 		int mat_type = 0;
@@ -115,15 +120,21 @@ AttribArray NewVAO(int num_attribs, ...){
 				mat_type = 1;
 				break;
 		}
-		// For matrixes, loops through each vertex attribute, otherwise only executes once
+		// For matrices, loops through each vertex attribute, otherwise only executes once
 		for(int j = 0; j < mat_type; j++){
-			#ifndef NOOPENGL
-				GLCall(glEnableVertexAttribArray(attrib_index));
+			GLCall(glEnableVertexAttribArray(attrib_index));
 
-				// Size is 'mat_type' for matrixes and 'attribs[i]' for normal attributes
-				GLCall(glVertexAttribPointer(attrib_index, (mat_type != 1) ? mat_type : attribs[i], GL_FLOAT, GL_FALSE, vao.stride * sizeof(float), (void*)(attrib_offset * sizeof(float))));
-				GLCall(glVertexAttribDivisor(attrib_index, 1));
-			#endif
+			// Size is 'mat_type' for matrixes and 'attribs[i]' for normal attributes
+			GLCall(glVertexAttribPointer(
+				attrib_index, 
+				(mat_type != 1) ? mat_type : attribs[i], 
+				GL_FLOAT, 
+				GL_FALSE, 
+				vao.stride * sizeof(float), 
+				(void*)(attrib_offset * sizeof(float))
+			));
+			GLCall(glVertexAttribDivisor(attrib_index, 1));
+			
 			attrib_index++;
 			
 			// mat2 needs to be differentiated from vec4 (both have 4 variables)
@@ -146,7 +157,7 @@ AttribArray NewVAO(int num_attribs, ...){
 	return vao;
 }
 
-unsigned int NewInstance(char num_textures_used, Texture textures[16], AttribArray vao, Shader *shader){
+unsigned int NewInstance(char num_textures_used, Texture textures[16], AttribArray vao, Shader *shader, Mesh mesh){
 	// Extend buffer by 1 instance
 	RendererInstance *tmp_buffer = realloc(instance_buffer, sizeof(RendererInstance) * (num_instances + 1));
 	if(tmp_buffer != NULL){
@@ -165,29 +176,38 @@ unsigned int NewInstance(char num_textures_used, Texture textures[16], AttribArr
 		}else{
 			instance_buffer[num_instances].shader = 0;
 		}
+		instance_buffer[num_instances].mesh = mesh;
 		instance_buffer[num_instances].count = 0;
 
 		// Initialize instance vbo
 		instance_buffer[num_instances].buffer = malloc(sizeof(float) * vao.stride);
-		return num_instances++;
+
+		num_instances++;
+		return num_instances - 1;
 	}else{
 		// DebugLog(D_WARN)
 		return 0;
 	}
 }
 
-unsigned int FindInstance(char num_textures_used, Texture textures[16], AttribArray vao, Shader *shader){
+unsigned int FindInstance(char num_textures_used, Texture textures[16], AttribArray vao, Shader *shader, Mesh mesh){
 	// Loop through all instances to find exact match
 	for(int i = 0; i < num_instances; i++){
-		if(instance_buffer[i].vao.array_object == vao.array_object && instance_buffer[i].shader == shader){
+		if(
+			instance_buffer[i].vao.array_object == vao.array_object && 
+			instance_buffer[i].shader == shader && 
+			instance_buffer[i].mesh.data == mesh.data
+		){
 			
 			// Loop through all textures and find number that match
 			int count = 0;
-			for(int j = 0; j < num_textures_used; j++){
-				if(instance_buffer[i].texture[j] == textures[j].gl_tex){
-					count++;
-				}else{
-					break;
+			if(textures != NULL){
+				for(int j = 0; j < num_textures_used; j++){
+					if(instance_buffer[i].texture[j] == textures[j].gl_tex){
+						count++;
+					}else{
+						break;
+					}
 				}
 			}
 
@@ -199,12 +219,12 @@ unsigned int FindInstance(char num_textures_used, Texture textures[16], AttribAr
 	}
 
 	// If no instance match is found, create a new one
-	return NewInstance(num_textures_used, textures, vao, shader);
+	return NewInstance(num_textures_used, textures, vao, shader, mesh);
 }
 
-void AppendInstance(AttribArray vao, float data[64], Shader *shader, char num_textures_used, Texture textures[16]){
+void AppendInstance(AttribArray vao, float data[64], Mesh mesh, Shader *shader, char num_textures_used, Texture textures[16]){
 	// Retrieve instance id for inputed configuration
-	unsigned int instance = FindInstance(num_textures_used, textures, vao, shader);
+	unsigned int instance = FindInstance(num_textures_used, textures, vao, shader, mesh);
 
 	// Allocate space for new element in instance buffer
 	float *tmp_buffer = realloc(instance_buffer[instance].buffer, sizeof(float) * vao.stride * (instance_buffer[instance].count + 1));
@@ -220,7 +240,7 @@ void AppendInstance(AttribArray vao, float data[64], Shader *shader, char num_te
 
 		num_append_instance_calls++;
 	}else{
-		//DebugLog(D_WARN, "");
+		DebugLog(D_WARN, "Couldnt allocate space for new instance buffer");
 	}
 }
 
@@ -228,6 +248,7 @@ void EmptyRenderBuffer(){
 	for(int i = 0; i < num_instances; i++){
 		instance_buffer[i].count = 0;
 		free(instance_buffer[i].buffer);
+        instance_buffer[i].buffer = NULL;
 	}
 	free(instance_buffer);
 	instance_buffer = malloc(sizeof(RendererInstance) * 2);
@@ -240,9 +261,7 @@ void PushRender(){
 	for(int instance = 0; instance < num_instances; instance++){
 		// Only bind vao if different vao is bound
 		if(current_vao != instance_buffer[instance].vao.array_object){
-			#ifndef NOOPENGL
-				glBindVertexArray(instance_buffer[instance].vao.array_object);
-			#endif
+			GLCall(glBindVertexArray(instance_buffer[instance].vao.array_object));
 			current_vao = instance_buffer[instance].vao.array_object;
 		}
 
@@ -257,27 +276,23 @@ void PushRender(){
 				
 				// Only change active texture slot if different texture slot is active
 				if(current_texture_unit != texture_slot){
-					#ifndef NOOPENGL
-						glActiveTexture(GL_TEXTURE0 + texture_slot);
-					#endif
+					GLCall(glActiveTexture(GL_TEXTURE0 + texture_slot));
 					current_texture_unit = texture_slot;
 				}
-				#ifndef NOOPENGL
-					glBindTexture(GL_TEXTURE_2D, instance_buffer[instance].texture[texture_slot]);
-				#endif
+
+				GLCall(glBindTexture(GL_TEXTURE_2D, instance_buffer[instance].texture[texture_slot]));
 				bound_textures[texture_slot] = instance_buffer[instance].texture[texture_slot];
 			}
 		}
 
-		#ifndef NOOPENGL
-			unsigned int instance_count = instance_buffer[instance].count;
-			
-			// Set 'instance_vbo' data to instance data
-			glBufferData(GL_ARRAY_BUFFER, sizeof(float) * instance_buffer[instance].vao.stride * instance_count, instance_buffer[instance].buffer, GL_STREAM_DRAW);
+		unsigned int instance_count = instance_buffer[instance].count;
+		
+		// Set 'instance_vbo' data to instance data
+		GLCall(glBindBuffer(GL_ARRAY_BUFFER, instance_buffer[instance].vao.instanced_vbo));
+		GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * instance_buffer[instance].vao.stride * instance_count, instance_buffer[instance].buffer, GL_STREAM_DRAW));
 
-			// Render instance
-			glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL, instance_count);
-		#endif
+		// Render instance
+		glDrawElementsInstanced(GL_TRIANGLES, instance_buffer[instance].mesh.index_count, instance_buffer[instance].mesh.index_gl_type, NULL, instance_count);
 	}
 
 	// Clear all instances and reset 'instance_buffer' size

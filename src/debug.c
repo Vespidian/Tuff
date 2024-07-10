@@ -21,6 +21,9 @@ void InitDebug(){
 }
 
 void DebugLog(int type, const char *format, ...){
+	if(!initialized){
+		InitDebug();
+	}
 	if(format != NULL){
 		va_list va_format;
 		va_list copy;

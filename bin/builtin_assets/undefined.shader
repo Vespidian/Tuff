@@ -15,14 +15,14 @@
 			layout (std140) uniform ShaderGlobals{
 				mat4 projection_persp;
 				mat4 projection_ortho;
-				mat4 view;
+				mat4 view_matrix;
 				float time;
 			};
 			
 			uniform mat4 model;
 			
 			void main(){
-				gl_Position = projection_persp * view * model * vec4(pos_a, 1);
+				gl_Position = projection_persp * view_matrix * model * vec4(pos_a, 1);
 			}
 		",
 	},

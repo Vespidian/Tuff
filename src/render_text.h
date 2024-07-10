@@ -1,8 +1,6 @@
 #ifndef RENDER_TEXT_H_
 #define RENDER_TEXT_H_
 
-#include "tilesheet.h"
-
 enum TEXT_ALIGN{TEXT_ALIGN_LEFT = 0, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER};
 
 /**
@@ -11,15 +9,11 @@ enum TEXT_ALIGN{TEXT_ALIGN_LEFT = 0, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER};
 typedef struct FontObject{
     char *name;
     unsigned int id;
-    TilesheetObject tilesheet;
-    Vector2 char_size;
-    Vector2 padding;
+    Texture texture;
+    iVector2 tile_size;
+    iVector2 char_size;
+    iVector2 padding;
 }FontObject;
-
-/**
- *  Array containing all fonts
- */
-extern FontObject *font_stack;
 
 /**
  *  Font used in all cases unless specified otherwise
@@ -37,22 +31,23 @@ void FreeFontStack();
  *  @brief generate a new font (to be used when rendering text)
  *  @param name name of the font
  *  @param tilesheet tilesheet containing font characters
+ *  @param tile_size size of tiles tilesheet is divided into
  *  @param char_size size of the boundaries of all characters within font
  *  @param padding area around character in tilesheet
  *  @return A pointer to the font in the font stack
  */
-FontObject *NewFont(char *name, TilesheetObject *tilesheet, Vector2 char_size, Vector2 padding);
+FontObject NewFont(char *name, Texture texture, iVector2 tile_size, iVector2 char_size, iVector2 padding);
 
-/**
- *  @brief generate a new font directly from a texture on the disk (to be used when rendering text)
- *  @param name name of the font
- *  @param path path to texture file on disk
- *  @param image_format format of tilesheet image (GL_RGB, RL_RGBA)
- *  @param char_size size of the boundaries of all characters within font
- *  @param padding area around character in tilesheet
- *  @return A pointer to the font in the font stack
- */
-FontObject *NewRawFont(char *name, char *path, int image_format, Vector2 char_size, Vector2 padding);
+// /**
+//  *  @brief generate a new font directly from a texture on the disk (to be used when rendering text)
+//  *  @param name name of the font
+//  *  @param path path to texture file on disk
+//  *  @param image_format format of tilesheet image (GL_RGB, RL_RGBA)
+//  *  @param char_size size of the boundaries of all characters within font
+//  *  @param padding area around character in tilesheet
+//  *  @return A pointer to the font in the font stack
+//  */
+// FontObject *NewRawFont(char *name, char *path, int image_format, Vector2 char_size, Vector2 padding);
 
 /**
  *  @return Font with name 'name' from the font stack
