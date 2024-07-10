@@ -1,4 +1,4 @@
-# Tuff
+# GameFramework
 3D game / software engine built upon SDL2 and OpenGL
 
 ![Engine Example](/screenshots/squishcube.gif)
