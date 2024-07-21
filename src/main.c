@@ -51,6 +51,7 @@ void EngineSetup(){
 
     // Implement a show/hide button
     UIFindElement(&state, "hehe")->event_func = tmp;
+
 }
 
 void EngineExit(){

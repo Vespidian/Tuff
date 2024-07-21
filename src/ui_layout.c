@@ -9,7 +9,7 @@
 unsigned int UI_WINDOW_WIDTH = 100;
 unsigned int UI_WINDOW_HEIGHT = 100;
 
-extern UIClass UIElementDefaultClass();
+extern UIClass UIDefaultElementClass();
 
 void UIElementApplyClass(UIElement *element, UIClass *class){
 	if((element != NULL) && (class != NULL)){
@@ -288,7 +288,7 @@ void UIElementUpdatePosition(UIElement *element){
 void UIElementUpdateSize(UIElement *element){
 	if(element != NULL){
 		// Reset element's style class
-		element->style = UIElementDefaultClass();
+		element->style = UIDefaultElementClass();
 
 		// Condense all classes into a single 'element.style' class by 
 		// calling 'UIElementApplyClass'
@@ -383,6 +383,13 @@ void UIElementUpdateSize(UIElement *element){
 				}
 				element->transform.w += tallest;
 			}
+		}
+
+		if(element->parent != NULL){
+			(element->style.size_min_percent.x != -1) ? (element->style.size_min.x = (element->parent->transform.z * element->style.size_min_percent.x / 100.0f)) : false;
+			(element->style.size_min_percent.y != -1) ? (element->style.size_min.y = (element->parent->transform.w * element->style.size_min_percent.y / 100.0f)) : false;
+			(element->style.size_max_percent.x != -1) ? (element->style.size_max.x = (element->parent->transform.z * element->style.size_max_percent.x / 100.0f)) : false;
+			(element->style.size_max_percent.y != -1) ? (element->style.size_max.y = (element->parent->transform.w * element->style.size_max_percent.y / 100.0f)) : false;
 		}
 
 		// Limit size of element if children go beyond max size

@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 
 #include "vectorlib.h"
+#include "ui.h"
 #include "debug.h"
 #include "sdl_gl_init.h"
 
@@ -156,6 +157,8 @@ static void EscapeEvent(EventData event){
 static void WindowResize(EventData event){
 	if(event.e->window.event == SDL_WINDOWEVENT_RESIZED){
 		SDL_GetWindowSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
+		UI_WINDOW_WIDTH = SCREEN_WIDTH;
+		UI_WINDOW_HEIGHT = SCREEN_HEIGHT;
 		DebugLog(D_ACT, "Window resolution set to %dx%d", SCREEN_WIDTH, SCREEN_HEIGHT);
 	}else if(event.e->window.event == SDL_WINDOWEVENT_CLOSE){
 		running = false;

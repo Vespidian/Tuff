@@ -15,6 +15,7 @@ static UIState *ui_state_ptr = NULL;
 static UIClass *class_ptr = NULL;
 static UIElement *element_ptr = NULL;
 
+extern UIClass UIDefaultRootClass();
 
 static char *boolean_dict[] = {
 	"false",
@@ -48,6 +49,22 @@ static Vector3 HexToColor(char *hex){
 	return  (Vector3){v[0] / 255.0, v[1] / 255.0, v[2] / 255.0};
 }
 
+static int strntol(char *string, unsigned int length){
+	int result = 0;
+	int decimal_place = 1;
+	for(int i = 0; i < length; i++){
+		if(string[length - 1 - i] >= '0' && string[length - 1 - i] <= '9'){
+			result += (string[length - 1 - i] - '0') * decimal_place;
+			decimal_place *= 10;
+		}
+	}
+	if(string[0] == '-'){
+		result *= -1;
+	}
+
+	return result;
+}
+
 #define PADDING_INDEX 2
 #define BORDER_INDEX 12
 #define MARGIN_INDEX 7
@@ -77,6 +94,8 @@ static char *class_attributes[] = {
 	"max-height",
 	"min-width",
 	"min-height",
+	"width",
+	"height",
 
 	"wrap",
 	"wrap-vertical",
@@ -184,43 +203,79 @@ static void tfunc2_classes_attributes(JSONState *json, unsigned int token){
 
 
 		case 17: // max-width
-			class_ptr->size_max.x = JSONTokenValue(json, token + 1)._int;
+			if(json->json_string[json->tokens[token + 1].end - 1] == '%'){
+				class_ptr->size_max_percent.x = strntol(json->json_string + json->tokens[token + 1].start, json->tokens[token + 1].end - json->tokens[token + 1].start - 1);
+			}else{
+				class_ptr->size_max.x = JSONTokenValue(json, token + 1)._int;
+			}
+
 			break;
 		case 18: // max-height
-			class_ptr->size_max.y = JSONTokenValue(json, token + 1)._int;
+			if(json->json_string[json->tokens[token + 1].end - 1] == '%'){
+				class_ptr->size_max_percent.y = strntol(json->json_string + json->tokens[token + 1].start, json->tokens[token + 1].end - json->tokens[token + 1].start - 1);
+			}else{
+				class_ptr->size_max.y = JSONTokenValue(json, token + 1)._int;
+			}
 			break;
 		case 19: // min-width
-			class_ptr->size_min.x = JSONTokenValue(json, token + 1)._int;
+			if(json->json_string[json->tokens[token + 1].end - 1] == '%'){
+				class_ptr->size_min_percent.x = strntol(json->json_string + json->tokens[token + 1].start, json->tokens[token + 1].end - json->tokens[token + 1].start - 1);
+			}else{
+				class_ptr->size_min.x = JSONTokenValue(json, token + 1)._int;
+			}
 			break;
 		case 20: // min-height
-			class_ptr->size_min.y = JSONTokenValue(json, token + 1)._int;
+			if(json->json_string[json->tokens[token + 1].end - 1] == '%'){
+				class_ptr->size_min_percent.y = strntol(json->json_string + json->tokens[token + 1].start, json->tokens[token + 1].end - json->tokens[token + 1].start - 1);
+			}else{
+				class_ptr->size_min.y = JSONTokenValue(json, token + 1)._int;
+			}
 			break;
 
-		case 21: // wrap
+		case 21: // width
+			if(json->json_string[json->tokens[token + 1].end - 1] == '%'){
+				class_ptr->size_max_percent.x = strntol(json->json_string + json->tokens[token + 1].start, json->tokens[token + 1].end - json->tokens[token + 1].start - 1);
+				class_ptr->size_min_percent.x = strntol(json->json_string + json->tokens[token + 1].start, json->tokens[token + 1].end - json->tokens[token + 1].start - 1);
+			}else{
+				class_ptr->size_max.x = JSONTokenValue(json, token + 1)._int;
+				class_ptr->size_min.x = JSONTokenValue(json, token + 1)._int;
+			}
 			break;
-		case 22: // wrap-vertical
+		case 22: // height
+			if(json->json_string[json->tokens[token + 1].end - 1] == '%'){
+				class_ptr->size_max_percent.y = strntol(json->json_string + json->tokens[token + 1].start, json->tokens[token + 1].end - json->tokens[token + 1].start - 1);
+				class_ptr->size_min_percent.y = strntol(json->json_string + json->tokens[token + 1].start, json->tokens[token + 1].end - json->tokens[token + 1].start - 1);
+			}else{
+				class_ptr->size_max.y = JSONTokenValue(json, token + 1)._int;
+				class_ptr->size_min.y = JSONTokenValue(json, token + 1)._int;
+			}
+			break;
+
+		case 23: // wrap
+			break;
+		case 24: // wrap-vertical
 			class_ptr->wrap_vertical = JSONTokenHash(json, token + 1, boolean_dict);
 			break;
-		case 23: // wrap-reverse
+		case 25: // wrap-reverse
 			class_ptr->wrap_reverse = JSONTokenHash(json, token + 1, boolean_dict);
 			break;
-		case 24: // cull
+		case 26: // cull
 			break;
-		case 25: // inherit
+		case 27: // inherit
 			break;
-		case 26: // origin-c
+		case 28: // origin-c
 			class_ptr->origin_c = JSONTokenHash(json, token + 1, origin_names);
 			break;
-		case 27: // origin-p
+		case 29: // origin-p
 			class_ptr->origin_p = JSONTokenHash(json, token + 1, origin_names);
 			break;
 
 
-		case 28: // on-hold
+		case 30: // on-hold
 			class_ptr->class_hold = NULL;
 			JSONTokenToString(json, token + 1, &class_ptr->class_hold);
 			break;
-		case 29: // on-hover
+		case 31: // on-hover
 			class_ptr->class_hover = NULL;
 			JSONTokenToString(json, token + 1, &class_ptr->class_hover);
 			break;
@@ -331,8 +386,10 @@ void UIParse(UIState *state, char *path){
 		ui_state_ptr->path = malloc(strlen(path));
 		memcpy(ui_state_ptr->path, path, strlen(path));
 
+		// Initialize root element
 		element_ptr = UINewElement(state);
-		
+		element_ptr->class = UIDefaultRootClass();
+
 
 		JSONState json = JSONOpen(path);
 		JSONSetTokenFunc(&json, NULL, tfunc0_default);

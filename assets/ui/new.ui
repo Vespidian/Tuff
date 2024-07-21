@@ -21,11 +21,27 @@
 			border-top: 4,
 			border-right: 5,
 			border-bottom: 6,
+			padding: 10,
 		},
 		"hehe": {
 			origin-c: bottom-left,
 			origin-p: bottom-left,
+			margin: 0,
+			width: 100%,
+			height: 50,
 		}
+		"button": {
+			height: 30,
+			margin: 0,
+		}
+		"left": {
+			origin-p: left,
+			origin-c: left,
+		},
+		"right": {
+			origin-p: right,
+			origin-c: right,
+		},
 	},
 	elements: [
 		{
@@ -50,16 +66,24 @@
 				},
 			],
 		},
-					{
-			name: "daw",
+		{
+			name: "oof",
 		},
 		{
 			name: "hehe",
 			class: "hehe",
-		},
-		{
-			name: "hoohoo",
-			class: "hehe",
+			children: [
+				{
+					name: "left",
+					class: "left",
+					class: "button",
+				},
+				{
+					name: "right",
+					class: "right",
+					class: "button",
+				},
+			],
 		},
 	],
 },

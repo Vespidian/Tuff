@@ -16,7 +16,7 @@ UIState UINewState(){
 	return state;
 }
 
-UIClass UIDefaultClass(){
+UIClass UIDefaultEmptyClass(){
 	UIClass c;
 
 	c.id = -1;
@@ -25,6 +25,8 @@ UIClass UIDefaultClass(){
 
 	c.size_min = (iVector2){-1, -1};
 	c.size_max = (iVector2){-1, -1};
+	c.size_min_percent = (Vector2){-1, -1};
+	c.size_max_percent = (Vector2){-1, -1};
 
 	c.padding = (iVector4){-1, -1, -1, -1};
 	c.border = (iVector4){-1, -1, -1, -1};
@@ -54,7 +56,7 @@ UIClass *UINewClass(UIState *state){
 	UIClass *c = &state->classes[0];
 	if((state != NULL) && (state->num_classes < UI_STATE_MAX_CLASSES)){
 		c = &state->classes[state->num_classes];
-		*c = UIDefaultClass();
+		*c = UIDefaultEmptyClass();
 		c->id = state->num_classes++;
 	}else{
 		DebugLog(D_ERR, "%s:%s: error: Could not create new class: UI_STATE_MAX_CLASSES reached", __FILE__, __LINE__);
@@ -63,7 +65,7 @@ UIClass *UINewClass(UIState *state){
 	return c;
 }
 
-UIClass UIElementDefaultClass(){
+UIClass UIDefaultElementClass(){
 	UIClass c;
 
 	c.id = -1;
@@ -72,10 +74,48 @@ UIClass UIElementDefaultClass(){
 
 	c.size_min = (iVector2){100, 100};
 	c.size_max = (iVector2){200, 200};
+	c.size_min_percent = (Vector2){-1, -1};
+	c.size_max_percent = (Vector2){-1, -1};
 
 	c.padding = (iVector4){10, 10, 10, 10};
 	c.border = (iVector4){1, 1, 1, 1};
 	c.margin = (iVector4){10, 10, 10, 10};
+	c.color = (Vector3){1, 1, 1};
+	c.border_color = (Vector3){0, 0, 0};
+
+	c.wrap = true;
+	c.wrap_vertical = false;
+	c.wrap_reverse = false;
+	c.origin_p = UI_ORIGIN_NORTHWEST;
+	c.origin_c = UI_ORIGIN_NORTHWEST;
+
+	c.culling = false;
+	c.inherit = false;
+
+	/** Mouse Events **/
+	c.class_hold = NULL;
+	c.class_hover = NULL;
+
+	c.event_func = NULL;
+	
+	return c;
+}
+
+UIClass UIDefaultRootClass(){
+	UIClass c;
+
+	c.id = -1;
+	c.name = NULL;
+	c.offset = (iVector2){0, 0};
+
+	c.size_min = (iVector2){100, 100};
+	c.size_max = (iVector2){200, 200};
+	c.size_min_percent = (Vector2){-1, -1};
+	c.size_max_percent = (Vector2){-1, -1};
+
+	c.padding = (iVector4){0, 0, 0, 0};
+	c.border = (iVector4){0, 0, 0, 0};
+	c.margin = (iVector4){0, 0, 0, 0};
 	c.color = (Vector3){1, 1, 1};
 	c.border_color = (Vector3){0, 0, 0};
 
@@ -125,8 +165,8 @@ UIElement *UINewElement(UIState *state){
 		e->visible_children = true;
 		e->input_type = UI_INPUT_NONE;
 
-		e->class = UIDefaultClass();
-		e->style = UIElementDefaultClass();
+		e->class = UIDefaultEmptyClass();
+		e->style = UIDefaultElementClass();
 		e->event_func = NULL;
 
 		e->parent = NULL;
