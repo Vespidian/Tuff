@@ -24,6 +24,12 @@ void UIElementApplyClass(UIElement *element, UIClass *class){
 		(class->size_max.x == -1) ? true : (element->style.size_max.x = class->size_max.x);
 		(class->size_max.y == -1) ? true : (element->style.size_max.y = class->size_max.y);
 
+		(class->size_min_percent.x == -1) ? true : (element->style.size_min_percent.x = class->size_min_percent.x);
+		(class->size_min_percent.y == -1) ? true : (element->style.size_min_percent.y = class->size_min_percent.y);
+		
+		(class->size_max_percent.x == -1) ? true : (element->style.size_max_percent.x = class->size_max_percent.x);
+		(class->size_max_percent.y == -1) ? true : (element->style.size_max_percent.y = class->size_max_percent.y);
+
 		// Padding
 		(class->padding.x == -1) ? true : (element->style.padding.x = class->padding.x);
 		(class->padding.y == -1) ? true : (element->style.padding.y = class->padding.y);
@@ -63,7 +69,7 @@ void UIElementApplyClass(UIElement *element, UIClass *class){
 	}
 }
 
-iVector2 UIElementCalculateOriginP(UIElement *element){
+iVector2 UIElementCalculateOriginP(UIElement *element, UI_ORIGIN origin_type){
 	iVector2 origin = {0, 0};
 
 	if(element != NULL){
@@ -90,7 +96,7 @@ iVector2 UIElementCalculateOriginP(UIElement *element){
 			element->style.padding.w
 		;
 
-		switch(element->style.origin_p){
+		switch(origin_type){
 			case UI_ORIGIN_UNDEFINED:
 			case UI_ORIGIN_NORTHWEST:
 				// This is the default
@@ -210,24 +216,18 @@ void UIElementUpdatePosition(UIElement *element){
 		if(element->parent == NULL){
 			offset = (iVector2){element->transform.x, element->transform.y};
 		}else{
-			offset = UIElementCalculateOriginP(element->parent);
+			offset = UIElementCalculateOriginP(element->parent, element->style.origin_p);
 
-			if(element->parent->children[0] == element){
-
-				// This is the first element, so we take into account 
-				// both x and y origin shifting
-				iVector2 origin_offset = UIElementCalculateOriginC(element);
-				offset.x += origin_offset.x;
-				offset.y += origin_offset.y;
-
-			}else{
-
-				// When there are existing siblings, we must find the last sibling
-				// and position relative to that
-				int i = 0;
-				for(; (element->parent->children[i + 1] != element); i++);
-				// I'th element is now the element right before 'element'
-				
+			// When there are existing siblings, we must find the last sibling
+			// and position relative to that
+			int i = -1;
+			for(int k = 0; (element->parent->children[k] != element); k++){
+				if(element->parent->children[k]->style.origin_p == element->style.origin_p){
+					i = k;
+				}
+			}
+			// I'th element is now the element right before 'element'
+			if(i != -1){
 				if(element->parent->style.wrap_vertical == false){
 					// HORIZONTAL
 
@@ -272,6 +272,10 @@ void UIElementUpdatePosition(UIElement *element){
 
 					offset.x += UIElementCalculateOriginC(element).x;
 				}
+			}else{
+				iVector2 origin_offset = UIElementCalculateOriginC(element);
+				offset.x += origin_offset.x;
+				offset.y += origin_offset.y;
 			}
 		}
 		
@@ -302,6 +306,8 @@ void UIElementUpdateSize(UIElement *element){
 		for(int i = 0; i < element->num_classes; i++){
 			UIElementApplyClass(element, element->classes[i]);
 		}
+
+		// Apply temporary classes and clear buffer
 		for(int i = 0; i < element->num_tmp_classes; i++){
 			UIElementApplyClass(element, element->tmp_classes[i]);
 		}
@@ -334,7 +340,7 @@ void UIElementUpdateSize(UIElement *element){
 				int widest = 0;
 				for(int i = 0; i < element->num_children; i++){
 					int sum = 0;
-
+					
 					// Child size
 					element->transform.w += element->children[i]->transform.w;
 					sum += element->children[i]->transform.z;

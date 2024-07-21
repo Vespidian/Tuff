@@ -82,6 +82,8 @@ typedef enum UI_INPUT_TYPE{
  * 
 */
 
+extern bool ui_focused;
+
 /**
  * Future refactoring idea:
  * Each class is an array of effects that can be applied to an element.
@@ -124,6 +126,9 @@ typedef struct UIClass{
 
 	iVector2 size_min;
 	iVector2 size_max;
+
+	Vector2 size_min_percent;
+	Vector2 size_max_percent;
 
 	// padding
 	iVector4 padding;

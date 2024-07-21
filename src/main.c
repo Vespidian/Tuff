@@ -79,3 +79,10 @@ void EngineLoop(){
 
     PushRender();
 }
+
+/** WHEN COME BACK :
+ * - Convert 'bundle' namespace into 'tuff' namespace
+ * - make resource arrays statically allocated
+ * - integrate physics sim
+ * - set up UI for physics sim parameters and pause / play, etc..
+*/

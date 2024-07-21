@@ -9,8 +9,11 @@
 #include "event.h"
 #include "ui.h"
 
+bool ui_focused = false;
+
 void UIInteract(UIState *state){
 	UIElement *mouse_element = NULL;
+	ui_focused = false;
 
 	if(state != NULL){
 		UI_MOUSE_EVENT event_type = 0;
@@ -64,6 +67,7 @@ void UIInteract(UIState *state){
 
 		// Only test events if the mouse is hovering over an element
 		if(mouse_element != NULL){
+			ui_focused = true;
 			// Mouse entered
 			if((mouse_element->mouse_events & UI_MOUSE_HOVER) == 0){
 				event_type |= UI_MOUSE_ENTER;

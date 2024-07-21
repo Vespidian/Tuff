@@ -3,6 +3,7 @@
 #include <cglm/cglm.h>
 
 #include "vectorlib.h"
+#include "ui.h"
 #include "event.h"
 #include "engine.h"
 
@@ -16,57 +17,59 @@ static float yaw, pitch = 0.25;
 static float sensitivity = 0.005f;
 static float move_sensitivity = 0.0025f;
 static void MouseEvent(EventData event){
-	if(mouse_clicked){
-		printf("CLICKED\n");
-		hold_pos = mouse_pos;
-		SDL_SetRelativeMouseMode(SDL_TRUE);
-	}
-	if(mouse_released){
-		printf("RELEASED\n");
-		SDL_SetRelativeMouseMode(SDL_FALSE);
-	}
-
-	if(mouse_held){
-
-		diff_pos.x = 0;
-		diff_pos.y = 0;
-		if((mouse_pos.x != hold_pos.x) || (mouse_pos.y != hold_pos.y)){
-			diff_pos.x = mouse_pos.x - hold_pos.x;
-			diff_pos.y = mouse_pos.y - hold_pos.y;
-
-			SDL_WarpMouseInWindow(window, hold_pos.x, hold_pos.y);
-
+	if(!ui_focused){
+		if(mouse_clicked){
+			printf("CLICKED\n");
+			hold_pos = mouse_pos;
+			SDL_SetRelativeMouseMode(SDL_TRUE);
+		}
+		if(mouse_released){
+			printf("RELEASED\n");
+			SDL_SetRelativeMouseMode(SDL_FALSE);
 		}
 
-		if(event.keyStates[SDL_SCANCODE_LSHIFT]){
-			Vector3 tmp = {-diff_pos.x * move_sensitivity * view_distance, -diff_pos.y * move_sensitivity * view_distance, 0};
-			glm_vec3_rotate(tmp.v, -pitch * 2, (vec3){1, 0, 0});
-			glm_vec3_rotate(tmp.v, yaw, (vec3){0, 1, 0});
-			view_position.x += -tmp.x;
-			view_position.y += tmp.y;
-			view_position.z += tmp.z;
+		if(mouse_held){
 
-		}else{
+			diff_pos.x = 0;
+			diff_pos.y = 0;
+			if((mouse_pos.x != hold_pos.x) || (mouse_pos.y != hold_pos.y)){
+				diff_pos.x = mouse_pos.x - hold_pos.x;
+				diff_pos.y = mouse_pos.y - hold_pos.y;
 
-			yaw += diff_pos.x * sensitivity;
-			pitch += diff_pos.y * sensitivity;
+				SDL_WarpMouseInWindow(window, hold_pos.x, hold_pos.y);
 
-			if(pitch > M_PI * 2){
-				pitch -= M_PI * 2;
-			}
-			if(pitch < 0){
-				pitch += M_PI * 2;
 			}
 
-			if(yaw > M_PI * 2){
-				yaw -= M_PI * 2;
-			}
-			if(yaw < 0){
-				yaw += M_PI * 2;
-			}
+			if(event.keyStates[SDL_SCANCODE_LSHIFT]){
+				Vector3 tmp = {-diff_pos.x * move_sensitivity * view_distance, -diff_pos.y * move_sensitivity * view_distance, 0};
+				glm_vec3_rotate(tmp.v, -pitch * 2, (vec3){1, 0, 0});
+				glm_vec3_rotate(tmp.v, yaw, (vec3){0, 1, 0});
+				view_position.x += -tmp.x;
+				view_position.y += tmp.y;
+				view_position.z += tmp.z;
 
-			direction.x = yaw;
-			direction.y = pitch;
+			}else{
+
+				yaw += diff_pos.x * sensitivity;
+				pitch += diff_pos.y * sensitivity;
+
+				if(pitch > M_PI * 2){
+					pitch -= M_PI * 2;
+				}
+				if(pitch < 0){
+					pitch += M_PI * 2;
+				}
+
+				if(yaw > M_PI * 2){
+					yaw -= M_PI * 2;
+				}
+				if(yaw < 0){
+					yaw += M_PI * 2;
+				}
+
+				direction.x = yaw;
+				direction.y = pitch;
+			}
 		}
 	}
 }

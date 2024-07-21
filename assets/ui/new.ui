@@ -5,7 +5,6 @@
 			max-width: 500,
 			min-width: 900,
 			min-height: 100,
-			origin-p: right,
 			wrap-reverse: true,
 		},
 		"extra": {
@@ -17,11 +16,16 @@
 			color: #e2e2e2,
 			on-hover: "extra",
 			origin-c: right,
+			origin-p: right,
 			border-left: 3,
 			border-top: 4,
 			border-right: 5,
 			border-bottom: 6,
 		},
+		"hehe": {
+			origin-c: bottom-left,
+			origin-p: bottom-left,
+		}
 	},
 	elements: [
 		{
@@ -46,8 +50,16 @@
 				},
 			],
 		},
+					{
+			name: "daw",
+		},
 		{
 			name: "hehe",
+			class: "hehe",
+		},
+		{
+			name: "hoohoo",
+			class: "hehe",
 		},
 	],
 },
