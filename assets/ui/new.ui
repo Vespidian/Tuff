@@ -1,29 +1,6 @@
 {
 	classes: {
-		"root": {
-			margin: 20,
-			max-width: 500,
-			min-width: 900,
-			min-height: 100,
-			wrap-reverse: true,
-		},
-		"extra": {
-			color: #ff0000,
-			padding-left: 30,
-		}
-		"changed": {
-			border-color: #abcdef,
-			color: #e2e2e2,
-			on-hover: "extra",
-			origin-c: right,
-			origin-p: right,
-			border-left: 3,
-			border-top: 4,
-			border-right: 5,
-			border-bottom: 6,
-			padding: 10,
-		},
-		"hehe": {
+		"control-panel": {
 			origin-c: bottom-left,
 			origin-p: bottom-left,
 			margin: 0,
@@ -31,61 +8,28 @@
 			height: 50,
 			border: 0,
 			color: #252526,
-		}
+		},
 		"button": {
 			height: 30,
 			width: 30,
 			margin: 0,
-		}
-		"left": {
+		},
+		"pause": {
 			origin-p: left,
 			origin-c: left,
 			border-color: #ff0000,
 		},
-		"right": {
-			origin-p: right,
-			origin-c: right,
-		},
 	},
 	elements: [
 		{
-			name: "menu",
-			class: "root",
-			text: "i am root",
+			name: "control-panel",
+			class: "control-panel",
 			children: [
 				{
-					name: "a1",
-					text: "howdy",
-					class: "changed",
-				},
-				{
-					name: "b1",
-					class: "changed",
-					children: [
-						{
-							name: "idk",
-							class: "extra",
-						}
-					],
-				},
-			],
-		},
-		{
-			name: "oof",
-		},
-		{
-			name: "hehe",
-			class: "hehe",
-			children: [
-				{
-					name: "left",
-					class: "left",
+					name: "pause",
+					class: "pause",
 					class: "button",
-				},
-				{
-					name: "right",
-					class: "right",
-					class: "button",
+					texture: "textures/pause.png",
 				},
 			],
 		},
