@@ -75,11 +75,13 @@ void EngineLoop(){
     RenderText(&default_font, 1.001, SCREEN_WIDTH - 100, 10, TEXT_ALIGN_LEFT, "testing");
 
 
-    UIUpdate(&state);
+    // UIUpdate(&state);
 
-    UIInteract(&state);
+    // UIInteract(&state);
 
-    UIRender(&state);
+    // UIRender(&state);
+
+    UIPush(&state);
 
     PushRender();
 }

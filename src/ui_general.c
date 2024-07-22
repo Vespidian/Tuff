@@ -292,3 +292,17 @@ UIElement *UIFindElement(UIState *state, char *name){
 
 	return e;
 }
+
+void UIUpdate(UIState *state);
+void UIInteract(UIState *state);
+void UIRender(UIState *state);
+void UIPush(UIState *state){
+	// Determine element sizing and positioning
+	UIUpdate(state);
+
+	// Evaluate element-mouse interaction
+    UIInteract(state);
+
+	// Call rendering API and render UI elements to screen
+    UIRender(state);
+}

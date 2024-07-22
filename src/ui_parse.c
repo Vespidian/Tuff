@@ -11,11 +11,16 @@
 #include "debug.h"
 #include "ui.h"
 
+extern UIClass UIDefaultRootClass();
+extern UIElement *UINewElement(UIState *state);
+extern void UIElementAddChild(UIElement *parent, UIElement *child);
+extern UIClass *UINewClass(UIState *state);
+
+
 static UIState *ui_state_ptr = NULL;
 static UIClass *class_ptr = NULL;
 static UIElement *element_ptr = NULL;
 
-extern UIClass UIDefaultRootClass();
 
 static char *boolean_dict[] = {
 	"false",
