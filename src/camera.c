@@ -19,12 +19,10 @@ static float move_sensitivity = 0.0025f;
 static void MouseEvent(EventData event){
 	if(!ui_focused){
 		if(mouse_clicked){
-			printf("CLICKED\n");
 			hold_pos = mouse_pos;
 			SDL_SetRelativeMouseMode(SDL_TRUE);
 		}
 		if(mouse_released){
-			printf("RELEASED\n");
 			SDL_SetRelativeMouseMode(SDL_FALSE);
 		}
 

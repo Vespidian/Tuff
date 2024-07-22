@@ -414,11 +414,13 @@ void EngineLoop(){
 	// extern AttribArray quad_vao;
 	// RenderQuad(undefined_texture, NULL, &dst, 0, (Vector4){1, 1, 1, 1}, 0);
 	// AppendInstance(quad_vao, data, *model.mesh, model.material->shader, 1, texture_array);
-	UIUpdate(&state);
+	// UIUpdate(&state);
 
-    UIInteract(&state);
+    // UIInteract(&state);
 
-    UIRender(&state);
+    // UIRender(&state);
+
+    UIPush(&state);
 
     PushRender();
 }

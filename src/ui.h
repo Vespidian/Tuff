@@ -16,12 +16,6 @@ typedef enum UI_ORIGIN {
 	UI_ORIGIN_SOUTHEAST
 }UI_ORIGIN;
 
-typedef enum UI_SCALE_TYPE {
-	UI_SCALE_UNDEFINED = 0,
-	UI_SCALE_PIXELS,
-	UI_SCALE_PERCENT
-}UI_SCALE_TYPE;
-
 typedef enum UI_MOUSE_EVENT{
 	// Triggered once
 	UI_MOUSE_CLICK   = 1 << 0,
@@ -47,7 +41,6 @@ typedef enum UI_INPUT_TYPE{
  * they are ignored and not passed to the element)
  * (Only the subelement with the specified value is ignored)
  * 
- * UI_SCALE_TYPE scale_type			UI_SCALE_UNDEFINED
  * iVector2 offset					any xy = 2147483647
  * iVector2 size_min				any xy = -1
  * iVector2 size_max				any xy = -1
@@ -66,7 +59,6 @@ typedef enum UI_INPUT_TYPE{
  * 
  * DEFAULTS: (The element.style class's default values)
  * 
- * UI_SCALE_TYPE scale_type			UI_SCALE_PIXELS
  * iVector2 offset					(0, 0)
  * iVector2 size_min				100					(TBD)
  * iVector2 size_max				-1					(TBD)
@@ -121,27 +113,33 @@ typedef struct UIClass{
 	int id;
 	char *name;
 
-	UI_SCALE_TYPE scale_type;
-
 	iVector2 offset;
 
+	// Smallest size the element could have (no children)
 	iVector2 size_min;
+
+	// Biggest size the element could have (children fully stretch it)
 	iVector2 size_max;
 
+	// size_min as a percentage of the parent's size
 	Vector2 size_min_percent;
+
+	// size_max as a percentage of the parent's size
 	Vector2 size_max_percent;
 
-	// padding
+	// padding (left, top, right, bottom) -> (x, y, z, w)
 	iVector4 padding;
 
-	// border
+	// border width (left, top, right, bottom) -> (x, y, z, w)
 	iVector4 border;
 
-	// margin
+	// margin (left, top, right, bottom) -> (x, y, z, w)
 	iVector4 margin;
 
 	// color
 	Vector3 color;
+
+	// border color
 	Vector3 border_color;
 
 	// Defines whether or not a child will be placed in the next 
@@ -171,10 +169,6 @@ typedef struct UIClass{
 	bool inherit;
 
 	/** MOUSE EVENTS **/
-	// int class_hold_id;
-	// int class_hover_id;
-	// struct UIClass *class_hold;
-	// struct UIClass *class_hover;
 	char *class_hold;
 	char *class_hover;
 
@@ -239,64 +233,118 @@ typedef struct UIState{
 	// when initializing a UIState
 	char *path;
 	
+	// Array of all elements loaded into this UIState
 	UIElement elements[UI_STATE_MAX_ELEMENTS];
 	unsigned int num_elements;
 	
+	// Array of all classes loaded into this UIState
 	UIClass classes[UI_STATE_MAX_CLASSES];
 	unsigned int num_classes;
 
-	
+	// UIElement the mouse is currently hovered over (NULL means mouse is over elements[0] or 'root')
 	UIElement *focused_element;
 
 
 }UIState;
 
 
+
+
 /**
- * LAYOUT STUFFS
+ * --- LAYOUT ---
 */
 extern unsigned int UI_WINDOW_WIDTH;
 extern unsigned int UI_WINDOW_HEIGHT;
 
+/**
+ * @brief Initialize an empty UIState
+*/
 UIState UINewState();
-UIElement *UINewElement(UIState *state);
-void UIElementAddChild(UIElement *parent, UIElement *child);
 
-// void UIFreeElement(UIElement *element);
+/**
+ * @brief Opens 'path' and attempts to load it into 'state'
+ * @param state Pointer to state which will contain data loaded from file
+ * @param path File to load as UI data
+*/
+void UIParse(UIState *state, char *path);
+
+/**
+ * @brief Frees 'state' and any internally allocated data
+ * @param state Pointer to UIState to be free'd
+*/
 void UIFreeState(UIState *state);
+
 
 void UIElementAddClass(UIElement *element, UIClass *class);
 void UIElementAddTmpClass(UIElement *element, UIClass *class);
 
-// void UIElementUpdateChildren(UIElement *element);
-void UIUpdate(UIState *state);
-
-
-UIClass *UINewClass(UIState *state);
-
+/**
+ * @brief Find an element in 'state' called 'name' and return a pointer to it
+ * @param state State in which to search for the element
+ * @param name Name of the element to search for
+ * @return Pointer to the found element - NULL means 'name' does not exist in 'state'
+*/
 UIElement *UIFindElement(UIState *state, char *name);
+
+/**
+ * @brief Find a class in 'state' called 'name' and return a pointer to it
+ * @param state State in which to search for the class
+ * @param name Name of the class to search for
+ * @return Pointer to the found class - NULL means 'name' does not exist in 'state'
+*/
 UIClass *UIFindClass(UIState *state, char *name);
 
 
 /**
- * RENDER STUFFS
+ * --- INTERACT ---
 */
 
-void InitUIRender();
-void UIRender(UIState *state);
+/**
+ * @brief Set the function to be called when a mouse event happens to an element with 'class' applied to it
+ * @param class Class which 'event_func' will be applied through
+ * @param event_func Function to be called when a mouse event happens to an element
+*/
+void UIClassSetEventFunc(UIClass *class, UIMouseEventFunc_c event_func);
+
+/**
+ * @brief Set the hold class of another class
+ * @param class Class which 'event_func' will be applied through
+ * @param event_func 'event_class' gets applied to an element which has 'class' applied when the mouse is clicked and held on said element
+*/
+void UIClassSetEventClass_hold(UIClass *class, UIClass *event_class);
+
+/**
+ * @brief Set the hover class of another class
+ * @param class Class which 'event_func' will be applied through
+ * @param event_func 'event_class' gets applied to an element which has 'class' applied when the mouse is hovered over said element
+*/
+void UIClassSetEventClass_hover(UIClass *class, UIClass *event_class);
 
 
 /**
- * INTERACT STUFFS
+ * @brief Turn 'element' into a slider object which can be interacted with
+ * @param element Element to become a slider
+ * @param min Minimum value
+ * @param max Maximum value
+ * @param val_default Starting value
+ * @param step Change of slider value equivalent to the mouse moving 1 pixel
+*/
+void UISliderNew(UIElement *element, float min, float max, float val_default, float step);
+
+
+/**
+ * --- RENDER ---
 */
 
-void UIInteract(UIState *state);
-void UIClassSetEventFunc(UIClass *class, UIMouseEventFunc_c event_func);
-void UIClassSetEventClass_hold(UIClass *class, UIClass *event_class);
-void UIClassSetEventClass_hover(UIClass *class, UIClass *event_class);
+/**
+ * @brief Initialize the UI rendering subsystem
+*/
+void InitUIRender();
 
-void UIParse(UIState *state, char *path);
-
-void UISliderNew(UIElement *element, float min, float max, float val_default, float step);
+/**
+ * @brief Evaluates size and positioning of elements, and renders output to the screen
+ * @param state Pointer to the UIState to be evaluated
+*/
+void UIPush(UIState *state);
 
 #endif
