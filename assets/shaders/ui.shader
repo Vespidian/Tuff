@@ -70,10 +70,6 @@
 				vec2 texture_size = textureSize(src_texture, 0);
 				vec2 px_coord = tex_coord * scale_v;
 
-				tex_coord *= texture_src_f.zw / texture_size;
-				tex_coord += texture_src_f.xy / texture_size;
-
-				// FragColor = texture(src_texture, tex_coord) * vec4(color_v, 1);
 				// if(FragColor.a < 0.01){
 				// 	discard;
 				// }
@@ -86,10 +82,10 @@
 				vec3 shape = vec3(bl.x * bl.y * tr.x * tr.y);
 
 
+				FragColor = texture(src_texture, tex_coord);
+				FragColor *= vec4(shape * color_v + (1-shape) * border_color_v, 1);
+
 				// FragColor = vec4(vec3(random(px_coord)), 1);
-				// FragColor *= vec4(color_v, 1);
-				FragColor = vec4(shape * color_v + (1-shape) * border_color_v, 1);
-				// FragColor = vec4(vec3(), 1);
 			}
 		",
 	},

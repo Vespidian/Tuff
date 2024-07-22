@@ -307,6 +307,7 @@ static char *element_attributes[] = {
 	"class",
 	"text",
 	"children",
+	"texture",
 
 	NULL
 };
@@ -332,6 +333,13 @@ static void tfunc2_element_data(JSONState *json, unsigned int token){
 			JSONSetTokenFunc(json, NULL, tfunc1_new_elements);
 			JSONParse(json);
 
+			break;
+		case 4: // texture
+			char *str = NULL;
+			JSONTokenToString(json, token + 1, &str);
+			element_ptr->texture = TextureOpen(str, TEXTURE_FILTERING_NEAREST);
+			free(str);
+			str = NULL;
 			break;
 		default: break;
 	}

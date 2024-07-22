@@ -15,13 +15,15 @@
 #include "engine.h"
 #include "ui.h"
 
-extern Texture texture;
+// extern Texture texture;
 
 Shader ui_shader;
 
 AttribArray ui_vao;
 GLTF ui_gltf;
 Mesh ui_mesh;
+
+Texture default_texture;
 
 static void InitUIGL(){
 	ui_gltf = GLTFOpen("../assets/models/plane.gltf");
@@ -62,18 +64,20 @@ void InitUIRender(){
 	ShaderUniformSetSampler2D(&ui_shader, "src_texture", 0);
 	ShaderUniformSetMat4(&ui_shader, "tex_coordinates", default_texture_coordinates);
 
+	default_texture = TextureOpen("../assets/textures/ui_default.png", TEXTURE_FILTERING_NEAREST);
+
 	// Setup global uniforms
 	glUniformBlockBinding(ui_shader.id, glGetUniformBlockIndex(ui_shader.id, "ShaderGlobals"), 0);
 }
 
 
 
-void UIRenderElement(UIElement *element){
+static void UIRenderElement(UIElement *element, int depth){
 	if(element != NULL && element->parent != NULL && element->visible){
 		Vector3 r = {
 			element->transform.x,
 			element->transform.y,
-			1
+			depth
 		};
 		Vector2 scale = {
 			element->transform.z,
@@ -87,7 +91,7 @@ void UIRenderElement(UIElement *element){
 		memcpy(&data[8], element->style.border_color.v, sizeof(Vector3));
 		memcpy(&data[11], element->style.border.v, sizeof(iVector4));
 
-		Texture texture_array[16] = {texture};
+		Texture texture_array[16] = {element->texture};
 
 		AppendInstance(ui_vao, data, ui_mesh, &ui_shader, 1, texture_array);
 
@@ -136,7 +140,7 @@ void UIRender(UIState *state){
 
 			
 		}else{
-			UIRenderElement(element);
+			UIRenderElement(element, 1);
 		}
 
 		// TODO: take a look here, does the below loop not 
@@ -144,7 +148,7 @@ void UIRender(UIState *state){
 
 		// Loop from leaves to root
 		for(int i = (num_children - 1); i >= 0; i--){
-			UIRenderElement(children[i]);
+			UIRenderElement(children[i], i);
 		}
 
 		free(children);

@@ -40,7 +40,7 @@ void EngineSetup(){
     MaterialUniformSetVec3(mat, "light_pos", (vec3){1, 1, 1});
 
 
-    texture = TextureOpen("../assets/texture.png", TEXTURE_FILTERING_NEAREST);
+    texture = TextureOpen("../assets/textures/pause.png", TEXTURE_FILTERING_NEAREST);
 
     InitUIRender();
     UIParse(&state, "../assets/ui/new.ui");
@@ -52,6 +52,9 @@ void EngineSetup(){
     // Implement a show/hide button
     UIFindElement(&state, "hehe")->event_func = tmp;
 
+
+    UIFindElement(&state, "oof")->texture = texture;
+    UIFindElement(&state, "left")->texture = texture;
 }
 
 void EngineExit(){

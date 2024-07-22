@@ -7,6 +7,8 @@
 #include "debug.h"
 #include "ui.h"
 
+extern Texture default_texture;
+
 UIState UINewState(){
 	UIState state;
 	state.path = NULL;
@@ -160,6 +162,8 @@ UIElement *UINewElement(UIState *state){
 		e->transform = (iVector4){0, 0, 100, 100};
 		e->offset = (iVector4){0, 0, 0, 0};
 		
+		e->texture = default_texture;
+
 		e->mouse_events = 0;
 		e->visible = true;
 		e->visible_children = true;

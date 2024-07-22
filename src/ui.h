@@ -1,6 +1,7 @@
 #ifndef UI_LAYOUT_H_
 #define UI_LAYOUT_H_
 
+#include "textures.h"
 
 typedef enum UI_ORIGIN {
 	UI_ORIGIN_UNDEFINED = -1,
@@ -200,6 +201,8 @@ typedef struct UIElement{
 	UIClass **tmp_classes;
 	unsigned int num_tmp_classes;
 
+	Texture texture;
+
 	// Final absolute positioning and scale
 	iVector4 transform;
 	iVector4 offset;
@@ -280,7 +283,6 @@ UIClass *UIFindClass(UIState *state, char *name);
 */
 
 void InitUIRender();
-void UIRenderElement(UIElement *element);
 void UIRender(UIState *state);
 
 
