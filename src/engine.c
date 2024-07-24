@@ -3,13 +3,14 @@
 
 #include <stdbool.h>
 #include <unistd.h>
+#include <cglm/cglm.h>
 
+#include "vectorlib.h"
 #include "debug.h"
 #include "sdl_gl_init.h"
-#include "bundle.h"
 #include "engine.h"
 #include "event.h"
-#include "camera.h"
+#include "textures.h"
 #include "render_text.h"
 #include "renderer/quad.h"
 
@@ -28,8 +29,7 @@ int main(int argc, char *argv[]){
 
     while(running){
         EventListener();
-        
-		UpdateCamera();
+
         UpdateGL();
 
         EngineLoop();
@@ -50,13 +50,12 @@ void Init(){
     InitDebug();
     InitEvents();
     InitSDL();
-    InitUndefined(); // Must be called for the bundle.h library
+	InitTextures();
 
     if(chdir("../assets") != 0){
 		perror("Could not set working directory");
 	}
 
-	InitCamera();
 	InitFonts();
 	InitQuadRender();
 
