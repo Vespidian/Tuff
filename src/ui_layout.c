@@ -6,6 +6,10 @@
 #include "debug.h"
 #include "ui.h"
 
+// TMP
+extern int SCREEN_HEIGHT;
+extern int SCREEN_WIDTH;
+
 unsigned int UI_WINDOW_WIDTH = 100;
 unsigned int UI_WINDOW_HEIGHT = 100;
 
@@ -318,98 +322,98 @@ void UIElementUpdateSize(UIElement *element){
 		// And finally, apply the element's own class to itself
 		UIElementApplyClass(element, &element->class);
 
-		// Look at children for size and any stretching
-		element->transform.z = 
-			element->style.border.x + 
-			element->style.border.z + 
-			element->style.padding.x + 
-			element->style.padding.z + 
-			element->offset.z
-		;
-		element->transform.w = 
-			element->style.border.y + 
-			element->style.border.w + 
-			element->style.padding.y + 
-			element->style.padding.w + 
-			element->offset.w
-		;
-
-		if(element->visible_children){
-			if(element->style.wrap_vertical == true){
-				// VERTICAL
-				int widest = 0;
-				for(int i = 0; i < element->num_children; i++){
-					int sum = 0;
-					
-					// Child size
-					element->transform.w += element->children[i]->transform.w;
-					sum += element->children[i]->transform.z;
-
-					// Child margin
-					element->transform.w += element->children[i]->style.margin.y;
-					element->transform.w += element->children[i]->style.margin.w;
-					sum += element->children[i]->style.margin.x;
-					sum += element->children[i]->style.margin.z;
-
-					if(sum > widest){
-						widest = sum;
-					}
-
-				}
-				element->transform.z += widest;
-
-			}else{
-				// HORIZONTAL
-				int tallest = 0;
-				for(int i = 0; i < element->num_children; i++){
-					if(element->children[i]->visible){
-						int sum = 0;
-
-						// Child size
-						element->transform.z += element->children[i]->transform.z;
-						sum += element->children[i]->transform.w;
-
-						// Child margin
-						element->transform.z += element->children[i]->style.margin.x;
-						element->transform.z += element->children[i]->style.margin.z;
-						sum += element->children[i]->style.margin.y;
-						sum += element->children[i]->style.margin.w;
-
-						if(sum > tallest){
-							tallest = sum;
-						}
-					}
-
-				}
-				element->transform.w += tallest;
-			}
-		}
 
 		if(element->parent != NULL){
+			// Look at children for size and any stretching
+			element->transform.z = 
+				element->style.border.x + 
+				element->style.border.z + 
+				element->style.padding.x + 
+				element->style.padding.z + 
+				element->offset.z
+			;
+			element->transform.w = 
+				element->style.border.y + 
+				element->style.border.w + 
+				element->style.padding.y + 
+				element->style.padding.w + 
+				element->offset.w
+			;
+
+			if(element->visible_children){
+				if(element->style.wrap_vertical == true){
+					// VERTICAL
+					int widest = 0;
+					for(int i = 0; i < element->num_children; i++){
+						int sum = 0;
+						
+						// Child size
+						element->transform.w += element->children[i]->transform.w;
+						sum += element->children[i]->transform.z;
+
+						// Child margin
+						element->transform.w += element->children[i]->style.margin.y;
+						element->transform.w += element->children[i]->style.margin.w;
+						sum += element->children[i]->style.margin.x;
+						sum += element->children[i]->style.margin.z;
+
+						if(sum > widest){
+							widest = sum;
+						}
+
+					}
+					element->transform.z += widest;
+
+				}else{
+					// HORIZONTAL
+					int tallest = 0;
+					for(int i = 0; i < element->num_children; i++){
+						if(element->children[i]->visible){
+							int sum = 0;
+
+							// Child size
+							element->transform.z += element->children[i]->transform.z;
+							sum += element->children[i]->transform.w;
+
+							// Child margin
+							element->transform.z += element->children[i]->style.margin.x;
+							element->transform.z += element->children[i]->style.margin.z;
+							sum += element->children[i]->style.margin.y;
+							sum += element->children[i]->style.margin.w;
+
+							if(sum > tallest){
+								tallest = sum;
+							}
+						}
+
+					}
+					element->transform.w += tallest;
+				}
+			}
+
 			(element->style.size_min_percent.x != -1) ? (element->style.size_min.x = (element->parent->transform.z * element->style.size_min_percent.x / 100.0f)) : false;
 			(element->style.size_min_percent.y != -1) ? (element->style.size_min.y = (element->parent->transform.w * element->style.size_min_percent.y / 100.0f)) : false;
 			(element->style.size_max_percent.x != -1) ? (element->style.size_max.x = (element->parent->transform.z * element->style.size_max_percent.x / 100.0f)) : false;
 			(element->style.size_max_percent.y != -1) ? (element->style.size_max.y = (element->parent->transform.w * element->style.size_max_percent.y / 100.0f)) : false;
-		}
 
-		// Limit size of element if children go beyond max size
-		if((element->transform.z > element->style.size_max.x) && (element->style.size_max.x != -1)){
-			element->transform.z = element->style.size_max.x;
-		}else if(element->transform.z < element->style.size_min.x){
-			element->transform.z = element->style.size_min.x;
-		}
+			// Limit size of element if children go beyond max size
+			if((element->transform.z > element->style.size_max.x) && (element->style.size_max.x != -1)){
+				element->transform.z = element->style.size_max.x;
+			}else if(element->transform.z < element->style.size_min.x){
+				element->transform.z = element->style.size_min.x;
+			}
 
-		if((element->transform.w > element->style.size_max.y) && (element->style.size_max.y != -1)){
-			element->transform.w = element->style.size_max.y;
-		}else if(element->transform.w < element->style.size_min.y){
-			element->transform.w = element->style.size_min.y;
-		}
-
-		if(element->parent == NULL){
+			if((element->transform.w > element->style.size_max.y) && (element->style.size_max.y != -1)){
+				element->transform.w = element->style.size_max.y;
+			}else if(element->transform.w < element->style.size_min.y){
+				element->transform.w = element->style.size_min.y;
+			}
+		}else{
+			element->transform.x = 0;
+			element->transform.y = 0;
 			element->transform.z = UI_WINDOW_WIDTH;
 			element->transform.w = UI_WINDOW_HEIGHT;
 		}
-
 	}
 }
 
@@ -449,6 +453,11 @@ void UIUpdate(UIState *state){
 			}
 		}
 
+		// Make sure root element is fully updated from the start
+		UI_WINDOW_HEIGHT = SCREEN_HEIGHT;
+		UI_WINDOW_WIDTH = SCREEN_WIDTH;
+		state->elements[0].transform.z = SCREEN_WIDTH;
+		state->elements[0].transform.w = SCREEN_HEIGHT;
 
 		// Loop from leaves to root, calculating the size of each element
 		for(int i = (num_children - 1); i >= 0; i--){
