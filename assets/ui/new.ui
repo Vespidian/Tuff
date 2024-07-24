@@ -1,93 +1,61 @@
 {
 	classes: {
 		"root": {
-			margin: 20,
-			max-width: 500,
-			min-width: 900,
-			min-height: 100,
-			wrap-reverse: true,
+			wrap-vertical: true,
 		},
-		"extra": {
-			color: #ff0000,
-			padding-left: 30,
-		}
-		"changed": {
-			border-color: #abcdef,
-			color: #e2e2e2,
-			on-hover: "extra",
-			origin-c: right,
-			origin-p: right,
-			border-left: 3,
-			border-top: 4,
-			border-right: 5,
-			border-bottom: 6,
-			padding: 10,
+		"panel": {
+			origin-c: top-right,
+			origin-p: top-right,
+			color: #252526,
 		},
-		"hehe": {
-			origin-c: bottom-left,
-			origin-p: bottom-left,
+		"control-panel": {
 			margin: 0,
 			width: 100%,
 			height: 50,
 			border: 0,
-			color: #252526,
-		}
+		},
 		"button": {
-			height: 30,
-			width: 30,
+			height: 32,
+			width: 32,
 			margin: 0,
-		}
-		"left": {
+		},
+		"pause": {
 			origin-p: left,
 			origin-c: left,
-			border-color: #ff0000,
 		},
-		"right": {
+		"menu-toggle": {
 			origin-p: right,
 			origin-c: right,
 		},
+		"menu": {
+
+		},
 	},
 	elements: [
+		class: "root",
+		{
+			name: "control-panel",
+			class: "control-panel",
+			class: "panel",
+			children: [
+				{
+					name: "pause",
+					class: "pause",
+					class: "button",
+					texture: "textures/pause.png",
+				},
+				{
+					name: "menu-toggle",
+					class: "button",
+					class: "menu-toggle",
+					texture: "textures/menu.png",
+				},
+			],
+		},
 		{
 			name: "menu",
-			class: "root",
-			text: "i am root",
-			children: [
-				{
-					name: "a1",
-					text: "howdy",
-					class: "changed",
-				},
-				{
-					name: "b1",
-					class: "changed",
-					children: [
-						{
-							name: "idk",
-							class: "extra",
-						}
-					],
-				},
-			],
-		},
-		{
-			name: "oof",
-		},
-		{
-			name: "hehe",
-			class: "hehe",
-			children: [
-				{
-					name: "left",
-					class: "left",
-					class: "button",
-				},
-				{
-					name: "right",
-					class: "right",
-					class: "button",
-				},
-			],
+			class: "panel",
+			class: "menu",
 		},
 	],
 },

@@ -99,7 +99,7 @@ UIClass UIDefaultElementClass(){
 	c.class_hover = NULL;
 
 	c.event_func = NULL;
-	
+
 	return c;
 }
 
@@ -122,8 +122,8 @@ UIClass UIDefaultRootClass(){
 	c.border_color = (Vector3){0, 0, 0};
 
 	c.wrap = true;
-	c.wrap_vertical = false;
-	c.wrap_reverse = false;
+	c.wrap_vertical = -1;
+	c.wrap_reverse = -1;
 	c.origin_p = UI_ORIGIN_NORTHWEST;
 	c.origin_c = UI_ORIGIN_NORTHWEST;
 
@@ -135,7 +135,7 @@ UIClass UIDefaultRootClass(){
 	c.class_hover = NULL;
 
 	c.event_func = NULL;
-	
+
 	return c;
 }
 
@@ -155,13 +155,13 @@ UIElement *UINewElement(UIState *state){
 
 		e->num_classes = 0;
 		e->classes = NULL;
-		
+
 		e->num_tmp_classes = 0;
 		e->tmp_classes = NULL;
 
 		e->transform = (iVector4){0, 0, 100, 100};
 		e->offset = (iVector4){0, 0, 0, 0};
-		
+
 		e->texture = default_texture;
 
 		e->mouse_events = 0;
@@ -186,14 +186,14 @@ UIElement *UINewElement(UIState *state){
 static void UIFreeElement(UIElement *element){
 	free(element->name);
 	element->name = NULL;
-	
+
 	free(element->text);
 	element->text = NULL;
 
 	free(element->children);
 	element->children = NULL;
 	element->num_children = 0;
-	
+
 	free(element->classes);
 	element->classes = NULL;
 	element->num_classes = 0;
@@ -297,6 +297,7 @@ void UIUpdate(UIState *state);
 void UIInteract(UIState *state);
 void UIRender(UIState *state);
 void UIPush(UIState *state){
+
 	// Determine element sizing and positioning
 	UIUpdate(state);
 

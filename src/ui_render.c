@@ -97,10 +97,10 @@ static void UIRenderElement(UIElement *element, int depth){
 
 		if(element->text != NULL){
 			RenderText(
-				&default_font, 
-				1.001, 
-				element->transform.x + element->style.border.x + element->style.padding.x, 
-				element->transform.y + element->style.border.y + element->style.padding.y, 
+				&default_font,
+				1.001,
+				element->transform.x + element->style.border.x + element->style.padding.x,
+				element->transform.y + element->style.border.y + element->style.padding.y,
 				TEXT_ALIGN_LEFT,
 				element->text
 			);
@@ -115,7 +115,7 @@ void UIRender(UIState *state){
 
 		// Root element
 		UIElement *element = &state->elements[0];
-		
+
 		// Initially we create an array of all children
 		UIElement **children;
 		unsigned int num_children = 1;
@@ -138,17 +138,17 @@ void UIRender(UIState *state){
 				children[num_children] = NULL;
 			}
 
-			
+
 		}else{
 			UIRenderElement(element, 1);
 		}
 
-		// TODO: take a look here, does the below loop not 
+		// TODO: take a look here, does the below loop not
 		// render 'element' twice if num_childre is zero?
 
 		// Loop from leaves to root
 		for(int i = (num_children - 1); i >= 0; i--){
-			UIRenderElement(children[i], i);
+			UIRenderElement(children[i], -num_children + i);
 		}
 
 		free(children);

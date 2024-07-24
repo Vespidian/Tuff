@@ -76,19 +76,19 @@ static int strntol(char *string, unsigned int length){
 static char *class_attributes[] = {
 	"color",
 	"border-color",
-	
+
 	"padding",
 	"padding-top",
 	"padding-bottom",
 	"padding-left",
 	"padding-right",
-	
+
 	"margin",
 	"margin-top",
 	"margin-bottom",
 	"margin-left",
 	"margin-right",
-	
+
 	"border",
 	"border-top",
 	"border-bottom",
@@ -284,7 +284,7 @@ static void tfunc2_classes_attributes(JSONState *json, unsigned int token){
 			class_ptr->class_hover = NULL;
 			JSONTokenToString(json, token + 1, &class_ptr->class_hover);
 			break;
-		
+
 
 		default:
 			JSONTokenToString(json, token, &str);
@@ -352,18 +352,26 @@ static void tfunc2_element_data(JSONState *json, unsigned int token){
 
 static void tfunc1_new_elements(JSONState *json, unsigned int token){
 	// JSONToken json_token = JSONTokenValue(json, token);
-	
-	
-	UIElement *element = UINewElement(ui_state_ptr);
 
-	UIElementAddChild(element_ptr, element);
+	if(json->tokens[token].type == JSMN_OBJECT){
+		UIElement *element = UINewElement(ui_state_ptr);
 
-	element_ptr = element;
-	// JSONTokenToString(json, token, &element_ptr->name);
-	JSONSetTokenFunc(json, NULL, tfunc2_element_data);
-	JSONParse(json);
+		UIElementAddChild(element_ptr, element);
 
-	element_ptr = element->parent;
+		element_ptr = element;
+		// JSONTokenToString(json, token, &element_ptr->name);
+		JSONSetTokenFunc(json, NULL, tfunc2_element_data);
+		JSONParse(json);
+
+		element_ptr = element->parent;
+
+	}else if(JSONTokenHash(json, token, element_attributes) == 1){ // class
+		char *name = NULL;
+		JSONTokenToString(json, token + 1, &name);
+		UIElementAddClass(element_ptr, UIFindClass(ui_state_ptr, name));
+		free(name);
+		name = NULL;
+	}
 
 }
 

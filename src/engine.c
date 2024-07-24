@@ -27,13 +27,14 @@ int main(int argc, char *argv[]){
     Init();
 
     while(running){
+        EventListener();
+        
 		UpdateCamera();
         UpdateGL();
 
         EngineLoop();
 
         SDL_GL_SwapWindow(window);
-        EventListener();
 
 		engine_time++;
 

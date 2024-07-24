@@ -22,8 +22,9 @@ UIState state;
 
 void tmp(UIState *state, UIElement *element, UI_MOUSE_EVENT events){
     if(events & UI_MOUSE_CLICK){
-        UIElement *e = UIFindElement(state, "idk");
+        UIElement *e = UIFindElement(state, "menu");
         e->visible = !e->visible;
+        e->visible_children = e->visible;
     }
 }
 
@@ -46,15 +47,12 @@ void EngineSetup(){
     UIParse(&state, "../assets/ui/new.ui");
     
     // Create a slider
-    UISliderNew(UIFindElement(&state, "b1"), 0, 100, 5, 0.1);
-    UIFindElement(&state, "b1")->slider.modify_width = true;
+    // UISliderNew(UIFindElement(&state, "b1"), 0, 100, 5, 0.1);
+    // UIFindElement(&state, "b1")->slider.modify_width = true;
 
     // Implement a show/hide button
-    UIFindElement(&state, "hehe")->event_func = tmp;
+    UIFindElement(&state, "menu-toggle")->event_func = tmp;
 
-
-    UIFindElement(&state, "oof")->texture = texture;
-    UIFindElement(&state, "left")->texture = texture;
 }
 
 void EngineExit(){
@@ -72,7 +70,7 @@ void EngineLoop(){
 	AppendInstance(model.attr, data, *model.mesh, model.material->shader, 0, NULL);
 
 
-    RenderText(&default_font, 1.001, SCREEN_WIDTH - 100, 10, TEXT_ALIGN_LEFT, "testing");
+    RenderText(&default_font, 1.001, SCREEN_WIDTH - 80, SCREEN_HEIGHT - 30, TEXT_ALIGN_LEFT, "testing");
 
 
     // UIUpdate(&state);
