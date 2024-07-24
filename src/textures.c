@@ -17,12 +17,12 @@
 #endif
 
 
-extern Texture undefined_texture;
+Texture undefined_texture;
 
-// void InitTextures(){
-//     undefined_texture = TextureOpen("../bin/builtin_assets/undefined.png", TEXTURE_FILTERING_NEAREST);
-//     DebugLog(D_ACT, "Initialized texture subsystem");
-// }
+void InitTextures(){
+    undefined_texture = TextureOpen("../bin/builtin_assets/undefined.png", TEXTURE_FILTERING_NEAREST);
+    DebugLog(D_ACT, "Initialized texture subsystem");
+}
 
 void TextureFree(Texture *texture){
 	if(texture != NULL){

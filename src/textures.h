@@ -15,12 +15,12 @@ typedef struct Texture{
 /**
  *  Texture to be used in error cases
  */
-// extern Texture undefined_texture;
+extern Texture undefined_texture;
 
 /**
  * Initialize the texture subsystem
  */
-// void InitTextures();
+void InitTextures();
 
 /**
  * Opens the texture at location 'path'. If it cannot be
