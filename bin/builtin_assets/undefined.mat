@@ -1,7 +1,0 @@
-{
-	name: "Undefined Material",
-	shader: "../bin/builtin_assets/undefined.shader",
-	uniforms: [
-
-	],
-}

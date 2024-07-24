@@ -1,6 +1,6 @@
 CC = gcc
 
-# DEFINES = -DNOOPENGL
+DEFINES = -DNOOPENGL
 
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
 	LDFLAGS = -L../lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lglew32 -lopengl32
