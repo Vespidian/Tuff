@@ -1,0 +1,22 @@
+{
+	name: "Default Material",
+	shader: "../assets/default.shader",
+	uniforms: [
+		{
+			name: "albedo_tex",
+			value: "images/image.png",
+		},
+		{
+			name: "opacity_u",
+			value: 255,
+		},
+		{
+			name: "tint_u",
+			value: [0, 1.0, 745.692],
+		},
+		{
+			name: "value",
+			value: 56.7,
+		},
+	],
+}
