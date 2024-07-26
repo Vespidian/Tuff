@@ -1,37 +1,62 @@
 {
 	classes: {
+		"root": {
+			wrap-vertical: true,
+		},
+		"panel": {
+			color: #252526,
+		},
 		"control-panel": {
-			origin-c: bottom-left,
-			origin-p: bottom-left,
+			origin-c: top-right,
+			origin-p: top-right,
 			margin: 0,
 			width: 100%,
 			height: 50,
 			border: 0,
-			color: #252526,
 		},
 		"button": {
-			height: 30,
-			width: 30,
+			height: 32,
+			width: 32,
 			margin: 0,
 		},
 		"pause": {
 			origin-p: left,
 			origin-c: left,
-			border-color: #ff0000,
+		},
+		"menu-toggle": {
+			origin-p: right,
+			origin-c: right,
+		},
+		"menu": {
+			origin-p: top-right,
+			origin-c: top-right,
 		},
 	},
 	elements: [
+		class: "root",
 		{
 			name: "control-panel",
+			class: "panel",
 			class: "control-panel",
 			children: [
 				{
 					name: "pause",
-					class: "pause",
 					class: "button",
+					class: "pause",
 					texture: "textures/pause.png",
+				},
+				{
+					name: "menu-toggle",
+					class: "button",
+					class: "menu-toggle",
+					texture: "textures/menu.png",
 				},
 			],
 		},
+		{
+			name: "menu",
+			class: "panel",
+			class: "menu",
+		}
 	],
 },

@@ -1,4 +1,5 @@
 #include <GL/glew.h>
+#include <cglm/cglm.h>
 #include <string.h>
 
 #include "bundle.h"
@@ -19,6 +20,9 @@ typedef struct Atom{
 	Vector3 color;
     float radius;
 	float mass;
+
+	unsigned int num_bonds;
+	struct Bond *bonds[8];
 }Atom;
 
 typedef struct Bond{
@@ -29,10 +33,11 @@ typedef struct Bond{
 	float stiffness;
 }Bond;
 
-#define num_atoms 14
-#define num_bonds 6
-Atom atoms[num_atoms];
-Bond bonds[num_bonds];
+#define MAX_BONDS 8
+unsigned int num_atoms = 0;
+unsigned int num_bonds = 0;
+Atom atoms[1000];
+Bond bonds[1000];
 float bound_size = 6;
 Vector3 bound_max;
 Vector3 bound_min;
@@ -44,15 +49,18 @@ bool paused = true;
 
 Bundle bundle;
 GLTF *sphere;
+GLTF *cylinder;
 Material *mat;
 Model model;
+Model cylinder_model;
 
 UIState state;
 
-void tmp(UIState *state, UIElement *element, UI_MOUSE_EVENT events){
+static void ToggleMenu(UIState *state, UIElement *element, UI_MOUSE_EVENT events){
     if(events & UI_MOUSE_CLICK){
-        UIElement *e = UIFindElement(state, "idk");
+        UIElement *e = UIFindElement(state, "menu");
         e->visible = !e->visible;
+		e->visible_children = e->visible;
     }
 }
 
@@ -80,6 +88,43 @@ static void Grav(EventData event){
 GLTF *plane;
 Model model2;
 
+Atom *NewAtom(Vector3 position, Vector3 color, float radius, float mass){
+	Atom *a = &atoms[num_atoms++];
+	a->position = position;
+	a->prev_position = position;
+	a->acceleration = (Vector3){0, 0, 0};
+	a->color = color;
+	a->radius = radius;
+	a->mass = mass;
+
+	a->num_bonds = 0;
+	for(int i = 0; i < MAX_BONDS; i++){
+		a->bonds[i] = NULL;
+	}
+
+	return a;
+}
+
+Bond *NewBond(Atom *a, Atom *b, float distance, float stiffness){
+	Bond *bond = NULL;
+	
+	if((a->num_bonds < MAX_BONDS) && (b->num_bonds < MAX_BONDS)){
+		bond = &bonds[num_bonds++];
+		bond->a = a;
+		bond->b = b;
+		bond->distance = distance;
+		bond->stiffness = stiffness;
+
+		a->num_bonds++;
+		b->num_bonds++;
+		a->bonds[a->num_bonds] = bond;
+		b->bonds[b->num_bonds] = bond;
+	}
+
+	return bond;
+}
+
+
 void EngineSetup(){
     UI_WINDOW_HEIGHT = SCREEN_HEIGHT;
     UI_WINDOW_WIDTH = SCREEN_WIDTH;
@@ -87,11 +132,13 @@ void EngineSetup(){
 
     bundle = BundleOpen(NULL);
     sphere = BundleGLTFOpen(&bundle, "models/sphere.gltf");
-    // plane = BundleGLTFOpen(&bundle, "models/plane.gltf");
+    cylinder = BundleGLTFOpen(&bundle, "models/cylinder.gltf");
+    plane = BundleGLTFOpen(&bundle, "models/platform.gltf");
     mat = BundleMaterialOpen(&bundle, "materials/default.mat");
     // model = ModelNew(NULL, &sphere->meshes[0], mat);
     model = ModelNew(NULL, &BundleGLTFFind(&bundle, "models/sphere.gltf", true)->meshes[0], mat);
-    // model2 = ModelNew(NULL, &BundleGLTFFind(&bundle, "models/plane.gltf", true)->meshes[0], mat);
+	cylinder_model = ModelNew(NULL, &BundleGLTFFind(&bundle, "models/cylinder.gltf", true)->meshes[0], mat);
+    model2 = ModelNew(NULL, &BundleGLTFFind(&bundle, "models/platform.gltf", true)->meshes[0], mat);
 
     MaterialUniformSetVec3(mat, "light_pos", (vec3){1, 1, 1});
 
@@ -109,63 +156,57 @@ void EngineSetup(){
     // UISliderNew(UIFindElement(&state, "b1"), 0, 100, 5, 0.1);
     // UIFindElement(&state, "b1")->slider.modify_width = true;
 
-    // // Implement a show/hide button
-    // UIFindElement(&state, "hehe")->event_func = tmp;
-
     // Play / pause button
     UIFindElement(&state, "pause")->event_func = Pause;
+
+	// Menu button
+    UIFindElement(&state, "menu-toggle")->event_func = ToggleMenu;
 
 
 
 	bound_max = (Vector3){bound_size, 2*bound_size, bound_size};
 	bound_min = (Vector3){-bound_size, 0, -bound_size};
 
-	for(int i = 0; i < num_atoms; i++){
-		atoms[i].color.x = (float)rand() / (float)RAND_MAX;
-		atoms[i].color.y = (float)rand() / (float)RAND_MAX;
-		atoms[i].color.z = (float)rand() / (float)RAND_MAX;
-
-		// atoms[i].radius = (float)rand() / (float)RAND_MAX + 0.1;
-		// atoms[i].mass = atoms[i].radius;
-		atoms[i].radius = 0.5;
-		atoms[i].mass = 1;
-
-		atoms[i].acceleration.x = 0;
-		atoms[i].acceleration.y = 0;
-		atoms[i].acceleration.z = 0;
-
-		atoms[i].position.x = ((float)rand() / (float)RAND_MAX - 0.5) * 16;
-		atoms[i].position.y = ((float)rand() / (float)RAND_MAX - 0.5) * 16 + bound_size;
-		atoms[i].position.z = ((float)rand() / (float)RAND_MAX - 0.5) * 16;
-
-		atoms[i].prev_position.x = atoms[i].position.x;
-		atoms[i].prev_position.y = atoms[i].position.y;
-		atoms[i].prev_position.z = atoms[i].position.z;
+	for(int i = 0; i < 20; i++){
+		NewAtom(
+			(Vector3){
+				((float)rand() / (float)RAND_MAX - 0.5) * 16, 
+				((float)rand() / (float)RAND_MAX - 0.5) * 16 + bound_size, 
+				((float)rand() / (float)RAND_MAX - 0.5) * 16
+			},
+			(Vector3){
+				(float)rand() / (float)RAND_MAX, 
+				(float)rand() / (float)RAND_MAX, 
+				(float)rand() / (float)RAND_MAX
+			},
+			0.5,
+			1
+		);
 	}
 
-	atoms[0].position.x = -2;
-	atoms[0].position.y = 2;
-	atoms[0].position.z = 2;
+	// atoms[0].position.x = -2;
+	// atoms[0].position.y = 2;
+	// atoms[0].position.z = 2;
 
-	atoms[0].prev_position.x = -2;
-	atoms[0].prev_position.y = 2;
-	atoms[0].prev_position.z = 2;
+	// atoms[0].prev_position.x = -2;
+	// atoms[0].prev_position.y = 2;
+	// atoms[0].prev_position.z = 2;
 
-	// atoms[0].prev_position.z = 0.1;
-	atoms[0].mass = 1;
-	atoms[0].radius = 0.75;
+	// // atoms[0].prev_position.z = 0.1;
+	// atoms[0].mass = 1;
+	// atoms[0].radius = 0.75;
 
 
-	atoms[1].position.x = 2;
-	atoms[1].position.y = 2;
-	atoms[1].position.z = 2;
+	// atoms[1].position.x = 2;
+	// atoms[1].position.y = 2;
+	// atoms[1].position.z = 2;
 
-	atoms[1].prev_position.x = 2;
-	atoms[1].prev_position.y = 2;
-	atoms[1].prev_position.z = 2.04;
+	// atoms[1].prev_position.x = 2;
+	// atoms[1].prev_position.y = 2;
+	// atoms[1].prev_position.z = 2.04;
 
-	atoms[1].mass = 1;
-	atoms[1].radius = 0.75;
+	// atoms[1].mass = 1;
+	// atoms[1].radius = 0.75;
 
 	// atoms[1].prev_position.z = 0.1;
 	// for(int i = 0; i < 10; i++){
@@ -176,27 +217,17 @@ void EngineSetup(){
 
 	// }
 	// bonds[9].b = &atoms[2];
-	for(int i = 0; i < num_bonds; i++){
-		bonds[i].stiffness = 10;
-		bonds[i].distance = 0.1;
-	}
-	bonds[0].a = &atoms[0];
-	bonds[0].b = &atoms[1];
+	// for(int i = 0; i < 6; i++){
+	// 	bonds[i].stiffness = 10;
+	// 	bonds[i].distance = 2;
+	// }
+	NewBond(&atoms[0], &atoms[1], 2, 20);
+	NewBond(&atoms[2], &atoms[1], 2, 20);
+	NewBond(&atoms[3], &atoms[1], 2, 20);
+	NewBond(&atoms[3], &atoms[0], 2, 20);
+	NewBond(&atoms[3], &atoms[2], 2, 20);
+	NewBond(&atoms[0], &atoms[2], 2, 20);
 
-	bonds[1].a = &atoms[0];
-	bonds[1].b = &atoms[2];
-
-	bonds[2].a = &atoms[0];
-	bonds[2].b = &atoms[3];
-
-	bonds[3].a = &atoms[1];
-	bonds[3].b = &atoms[3];
-
-	bonds[4].a = &atoms[2];
-	bonds[4].b = &atoms[3];
-
-	bonds[5].a = &atoms[1];
-	bonds[5].b = &atoms[2];
 
 }
 
@@ -257,7 +288,7 @@ void ApplyBond(Bond bond){
 	Vector3 n;
 	glm_vec3_copy(normal.v, n.v);
 	glm_normalize(n.v);
-	glm_vec3_scale(n.v, bond.stiffness * (3 - distance) / (b->mass / total_mass), n.v);
+	glm_vec3_scale(n.v, bond.stiffness * (bond.distance - distance) / (b->mass / total_mass), n.v);
 
 	glm_vec3_add(a->acceleration.v, n.v, a->acceleration.v);
 
@@ -266,71 +297,89 @@ void ApplyBond(Bond bond){
 	glm_vec3_add(b->acceleration.v, n.v, b->acceleration.v);
 }
 
+bool CheckBonded(Atom *a, Atom *b){
+	bool ret = false;
+	for(int i = 0; i < MAX_BONDS; i++){
+		if(a->bonds[i] == NULL){
+			continue;
+		}
+		if((a->bonds[i]->a == b) || (a->bonds[i]->b == b)){
+			ret = true;
+			break;
+		}
+	}
+	return ret;
+}
+
 void ApplyCollision(Atom *a, Atom *b, bool preserve, int id, int id2){
-	Vector3 normal;
-	glm_vec3_sub(a->position.v, b->position.v, normal.v);
+	if(!CheckBonded(a, b)){
+		// {
 
-	float distance = glm_vec3_norm(normal.v);
-	glm_vec3_normalize(normal.v);
+		Vector3 normal;
+		glm_vec3_sub(a->position.v, b->position.v, normal.v);
 
-	// float total_mass = a->mass + b->mass;
+		float distance = glm_vec3_norm(normal.v);
+		glm_vec3_normalize(normal.v);
 
-	/** Entity - entity gravity **/
-	// Vector3 grav;
-	// glm_vec3_copy(normal.v, grav.v);
-	// glm_normalize(grav.v);
-	// glm_vec3_scale(grav.v, b->mass / -(distance * distance), grav.v);
-	// glm_vec3_add(a->acceleration.v, grav.v, a->acceleration.v);
+		// float total_mass = a->mass + b->mass;
 
-	// /** Spring **/
-	// float stiffness = 1;
-	// if(id == 0 && id2 == 1){
-	// 	Vector3 n;
-	// 	glm_vec3_copy(normal.v, n.v);
-	// 	glm_normalize(n.v);
-	// 	glm_vec3_scale(n.v, stiffness * (3 - distance) / (b->mass / total_mass), n.v);
+		/** Entity - entity gravity **/
+		// Vector3 grav;
+		// glm_vec3_copy(normal.v, grav.v);
+		// glm_normalize(grav.v);
+		// glm_vec3_scale(grav.v, b->mass / -(distance * distance), grav.v);
+		// glm_vec3_add(a->acceleration.v, grav.v, a->acceleration.v);
 
-	// 	glm_vec3_add(a->acceleration.v, n.v, a->acceleration.v);
+		// /** Spring **/
+		// float stiffness = 1;
+		// if(id == 0 && id2 == 1){
+		// 	Vector3 n;
+		// 	glm_vec3_copy(normal.v, n.v);
+		// 	glm_normalize(n.v);
+		// 	glm_vec3_scale(n.v, stiffness * (3 - distance) / (b->mass / total_mass), n.v);
 
-
-	// 	glm_vec3_scale(n.v, -b->mass / a->mass, n.v);
-	// 	glm_vec3_add(b->acceleration.v, n.v, b->acceleration.v);
-	// }
+		// 	glm_vec3_add(a->acceleration.v, n.v, a->acceleration.v);
 
 
-	// If the atoms are too close together, push em away from eachother
-	if(distance < (a->radius + b->radius)){
+		// 	glm_vec3_scale(n.v, -b->mass / a->mass, n.v);
+		// 	glm_vec3_add(b->acceleration.v, n.v, b->acceleration.v);
+		// }
 
 
-		float delta = a->radius + b->radius - distance;
-		glm_vec3_scale(normal.v, delta * 0.5, normal.v);
-
-		Vector3 va;
-		Vector3 vb;
-		glm_vec3_sub(a->position.v, a->prev_position.v, va.v);
-		glm_vec3_sub(b->position.v, b->prev_position.v, vb.v);
+		// If the atoms are too close together, push em away from eachother
+		if(distance < (a->radius + b->radius)){
 
 
-			glm_vec3_add(a->position.v, normal.v, a->position.v);
-			glm_vec3_sub(b->position.v, normal.v, b->position.v);
+			float delta = a->radius + b->radius - distance;
+			glm_vec3_scale(normal.v, delta * 0.5, normal.v);
+
+			Vector3 va;
+			Vector3 vb;
+			glm_vec3_sub(a->position.v, a->prev_position.v, va.v);
+			glm_vec3_sub(b->position.v, b->prev_position.v, vb.v);
 
 
-		if(preserve){
-			glm_vec3_copy(a->position.v, a->prev_position.v);
-			glm_vec3_copy(b->position.v, b->prev_position.v);
-
-			float damp = 1;
-
-			glm_normalize(normal.v);
-			glm_vec3_scale(normal.v, ((a->mass - b->mass)/(a->mass + b->mass) * glm_vec3_norm(va.v)) + (2*b->mass/(a->mass+b->mass)*glm_vec3_norm(vb.v))*damp, normal.v);
-			glm_vec3_add(a->position.v, normal.v, a->position.v);
+				glm_vec3_add(a->position.v, normal.v, a->position.v);
+				glm_vec3_sub(b->position.v, normal.v, b->position.v);
 
 
-			glm_normalize(normal.v);
-			// glm_vec3_scale(normal.v, glm_vec3_norm(vb.v) * a->mass, normal.v);
-			glm_vec3_scale(normal.v, (2*a->mass/(a->mass+b->mass)*glm_vec3_norm(va.v)) + ((b->mass - a->mass)/(a->mass + b->mass) * glm_vec3_norm(vb.v))*damp, normal.v);
-			glm_vec3_sub(b->position.v, normal.v, b->position.v);
+			if(preserve){
+				glm_vec3_copy(a->position.v, a->prev_position.v);
+				glm_vec3_copy(b->position.v, b->prev_position.v);
 
+				float damp = 1;
+
+				glm_normalize(normal.v);
+				glm_vec3_scale(normal.v, ((a->mass - b->mass)/(a->mass + b->mass) * glm_vec3_norm(va.v)) + (2*b->mass/(a->mass+b->mass)*glm_vec3_norm(vb.v))*damp, normal.v);
+				glm_vec3_add(a->position.v, normal.v, a->position.v);
+
+
+				glm_normalize(normal.v);
+				// glm_vec3_scale(normal.v, glm_vec3_norm(vb.v) * a->mass, normal.v);
+				glm_vec3_scale(normal.v, (2*a->mass/(a->mass+b->mass)*glm_vec3_norm(va.v)) + ((b->mass - a->mass)/(a->mass + b->mass) * glm_vec3_norm(vb.v))*damp, normal.v);
+				glm_vec3_sub(b->position.v, normal.v, b->position.v);
+
+			}
 		}
 	}
 }
@@ -393,7 +442,7 @@ void EngineLoop(){
 		}
 		// atoms[2].position = (Vector3){0, 13, 0};
 	}
-	RenderText(&default_font, 1.001, 10, 10, TEXT_ALIGN_LEFT, "Total energy: %f", total_energy);
+	RenderText(&default_font, 1.001, 10, 60, TEXT_ALIGN_LEFT, "Total energy: %f", total_energy);
 
 	for(int i = 0; i < num_atoms; i++){
 		memcpy(&data[0], atoms[i].position.v, sizeof(Vector3));
@@ -402,6 +451,17 @@ void EngineLoop(){
 
     	AppendInstance(model.attr, data, *model.mesh, model.material->shader, 1, texture_array);
 	}
+
+	data[0] = 0;
+	data[1] = 0;
+	data[2] = 0;
+	data[3] = 1;
+	data[4] = 1;
+	data[5] = 1;
+	data[6] = bound_size;
+	AppendInstance(model2.attr, data, *model2.mesh, model2.material->shader, 1, texture_array);
+
+	
 
 	// Vector3 planepos = {0, -bound_size, 0};
 	// memcpy(&data[0], planepos.v, sizeof(Vector3));
