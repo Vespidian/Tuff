@@ -89,6 +89,9 @@ void InitCamera(){
 }
 
 void UpdateCamera(){
+
+	// yaw += 0.005;
+
     Vector3 tmp = {0, 0, view_distance};
     glm_vec3_rotate(tmp.v, -pitch * 2, (vec3){1, 0, 0});
     glm_vec3_rotate(tmp.v, -yaw, (vec3){0, 1, 0});

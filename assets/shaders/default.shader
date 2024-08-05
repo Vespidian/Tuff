@@ -182,9 +182,9 @@
 				// FragColor *= vec4(diffuse + specular + ambient, 1);
 				FragColor *= vec4(diffuse + ambient, 1);
 
-				if(id == 3){
-					FragColor = vec4(1, 1, 1, 1);
-				}
+				// if(id == 3){
+				// 	FragColor = vec4(1, 1, 1, 1);
+				// }
 
 
 				float grid_size = checker_size;
