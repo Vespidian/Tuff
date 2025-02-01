@@ -70,6 +70,9 @@ void UIElementApplyClass(UIElement *element, UIClass *class){
 		// Origins
 		(class->origin_c == UI_ORIGIN_UNDEFINED) ? true : (element->style.origin_c = class->origin_c);
 		(class->origin_p == UI_ORIGIN_UNDEFINED) ? true : (element->style.origin_p = class->origin_p);
+
+		// Visibility
+		(class->visible == -1) ? true : (element->style.visible = class->visible);
 	}
 }
 
@@ -282,7 +285,7 @@ void UIElementUpdatePosition(UIElement *element){
 				offset.y += origin_offset.y;
 			}
 		}
-		
+
 		element->transform.x = offset.x + element->offset.x;
 		element->transform.y = offset.y + element->offset.y;
 	}
@@ -391,10 +394,20 @@ void UIElementUpdateSize(UIElement *element){
 				}
 			}
 
-			(element->style.size_min_percent.x != -1) ? (element->style.size_min.x = (element->parent->transform.z * element->style.size_min_percent.x / 100.0f)) : false;
-			(element->style.size_min_percent.y != -1) ? (element->style.size_min.y = (element->parent->transform.w * element->style.size_min_percent.y / 100.0f)) : false;
-			(element->style.size_max_percent.x != -1) ? (element->style.size_max.x = (element->parent->transform.z * element->style.size_max_percent.x / 100.0f)) : false;
-			(element->style.size_max_percent.y != -1) ? (element->style.size_max.y = (element->parent->transform.w * element->style.size_max_percent.y / 100.0f)) : false;
+			// (element->style.size_min_percent.x != -1) ? (element->style.size_min.x = (element->parent->transform.z * element->style.size_min_percent.x / 100.0f)) : false;
+			// (element->style.size_min_percent.y != -1) ? (element->style.size_min.y = (element->parent->transform.w * element->style.size_min_percent.y / 100.0f)) : false;
+			// (element->style.size_max_percent.x != -1) ? (element->style.size_max.x = (element->parent->transform.z * element->style.size_max_percent.x / 100.0f)) : false;
+			// (element->style.size_max_percent.y != -1) ? (element->style.size_max.y = (element->parent->transform.w * element->style.size_max_percent.y / 100.0f)) : false;
+			
+			Vector2 size = {
+				element->parent->transform.z - element->parent->style.border.x - element->parent->style.border.z - element->parent->style.padding.x - element->parent->style.padding.z - element->parent->style.margin.x - element->parent->style.margin.z,
+				element->parent->transform.w - element->parent->style.border.y - element->parent->style.border.w - element->parent->style.padding.y - element->parent->style.padding.w - element->parent->style.margin.y - element->parent->style.margin.w
+			};
+			
+			(element->style.size_min_percent.x != -1) ? (element->style.size_min.x = (size.x * element->style.size_min_percent.x / 100.0f)) : false;
+			(element->style.size_min_percent.y != -1) ? (element->style.size_min.y = (size.y * element->style.size_min_percent.y / 100.0f)) : false;
+			(element->style.size_max_percent.x != -1) ? (element->style.size_max.x = (size.x * element->style.size_max_percent.x / 100.0f)) : false;
+			(element->style.size_max_percent.y != -1) ? (element->style.size_max.y = (size.y * element->style.size_max_percent.y / 100.0f)) : false;
 
 			// Limit size of element if children go beyond max size
 			if((element->transform.z > element->style.size_max.x) && (element->style.size_max.x != -1)){

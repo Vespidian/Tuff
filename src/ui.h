@@ -164,6 +164,9 @@ typedef struct UIClass{
 	// of this parent element
 	int8_t culling;
 
+	// Whether or not this element is rendered
+	int8_t visible;
+
 	// When 'inherit' is true, the children of this element will be 
 	// automatically given this class
 	bool inherit;
