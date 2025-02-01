@@ -73,7 +73,7 @@ void InitUIRender(){
 
 
 static void UIRenderElement(UIElement *element, int depth){
-	if(element != NULL && element->parent != NULL && element->visible){
+	if(element != NULL && element->parent != NULL && element->visible && element->style.visible){
 		Vector3 r = {
 			element->transform.x,
 			element->transform.y,
@@ -96,12 +96,15 @@ static void UIRenderElement(UIElement *element, int depth){
 		AppendInstance(ui_vao, data, ui_mesh, &ui_shader, 1, texture_array);
 
 		if(element->text != NULL){
-			RenderText(
+			RenderTextEx(
 				&default_font,
 				1.001,
 				element->transform.x + element->style.border.x + element->style.padding.x,
 				element->transform.y + element->style.border.y + element->style.padding.y,
+				(Vector4){1, 1, 1, 1},
 				TEXT_ALIGN_LEFT,
+				0,
+				-1,
 				element->text
 			);
 		}

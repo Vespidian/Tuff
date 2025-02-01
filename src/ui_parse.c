@@ -106,6 +106,7 @@ static char *class_attributes[] = {
 	"wrap-vertical",
 	"wrap-reverse",
 	"cull",
+	"visible",
 	"inherit",
 	"origin-c",
 	"origin-p",
@@ -266,21 +267,24 @@ static void tfunc2_classes_attributes(JSONState *json, unsigned int token){
 			break;
 		case 26: // cull
 			break;
-		case 27: // inherit
+		case 27: // visible
+			class_ptr->visible = JSONTokenHash(json, token + 1, boolean_dict);
 			break;
-		case 28: // origin-c
+		case 28: // inherit
+			break;
+		case 29: // origin-c
 			class_ptr->origin_c = JSONTokenHash(json, token + 1, origin_names);
 			break;
-		case 29: // origin-p
+		case 30: // origin-p
 			class_ptr->origin_p = JSONTokenHash(json, token + 1, origin_names);
 			break;
 
 
-		case 30: // on-hold
+		case 31: // on-hold
 			class_ptr->class_hold = NULL;
 			JSONTokenToString(json, token + 1, &class_ptr->class_hold);
 			break;
-		case 31: // on-hover
+		case 32: // on-hover
 			class_ptr->class_hover = NULL;
 			JSONTokenToString(json, token + 1, &class_ptr->class_hover);
 			break;

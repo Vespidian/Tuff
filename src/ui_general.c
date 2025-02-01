@@ -43,6 +43,7 @@ UIClass UIDefaultEmptyClass(){
 	c.origin_c = UI_ORIGIN_UNDEFINED;
 
 	c.culling = -1;
+	c.visible = -1;
 	c.inherit = false;
 
 	/** Mouse Events **/
@@ -92,6 +93,7 @@ UIClass UIDefaultElementClass(){
 	c.origin_c = UI_ORIGIN_NORTHWEST;
 
 	c.culling = false;
+	c.visible = true;
 	c.inherit = false;
 
 	/** Mouse Events **/
@@ -128,6 +130,7 @@ UIClass UIDefaultRootClass(){
 	c.origin_c = UI_ORIGIN_NORTHWEST;
 
 	c.culling = false;
+	c.visible = true;
 	c.inherit = false;
 
 	/** Mouse Events **/

@@ -60,6 +60,8 @@ void UIInteract(UIState *state){
 				}
 
 			}
+			free(children);
+			children = NULL;
 		}else{
 			mouse_element = state->focused_element;
 			state->focused_element = NULL;
