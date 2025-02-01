@@ -7,7 +7,7 @@ ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
 	CFLAGS = -Wall -g
 	INCLUDE = -isystem ../include -isystem ../include/win_only
 else
-	LDFLAGS = -lSDL2 -lSDL2_image -lGLEW -lGL -lm -g
+	LDFLAGS = -lSDL2 -lSDL2_image -lGLEW -lGL -lm -g -lserialport
 	CFLAGS = -Wall -g
 	INCLUDE = -isystem ../include
 endif

@@ -1,0 +1,256 @@
+{
+	classes: {
+		"root": {
+			wrap-vertical: false,
+		},
+		"text": {
+			border: 0,
+			padding: 0,
+			margin: 0,
+			min-height: 0,
+			min-width: 0,
+			margin-bottom: 10,
+			margin-top: 4,
+		},
+		"control-panel": {
+			origin-c: top-left,
+			origin-p: top-left,
+			color: #303030,
+			width: 200,
+			margin: 0,
+			height: 100%,
+			border: 0,
+			wrap-vertical: true,
+		},
+		"slider": {
+			color: #4672B3,
+			height: 24,
+			width: 100%,
+			border: 2,
+			border-color: #545454,
+			margin: 0,
+			padding: 0,
+			margin-top: 10,
+
+		},
+		"hline": {
+			color: #545454,
+			width: 90%,
+			height: 1,
+			border: 0,
+			padding: 0,
+			margin: 10,
+			margin-bottom: 8,
+			margin-top: 14,
+		},
+		"hlist": {
+			width: 100%,
+			min-height: 0,
+			margin: 0,
+			padding: 0,
+			visible: false,
+		},
+		"slider-small": {
+			width: 75%,
+			margin-top: 16,
+		},
+		"button": {
+			color: #545454,
+			border-color: #606060,
+			margin: 0,
+			height: 32,
+			width: 32,
+			margin-top: 10,
+			margin-right: 15,
+			padding: 0,
+
+		},
+		"light-trigger":{
+			color: #ffffff,
+			border: 0,
+			margin-top: 10,
+			margin-right: 8,
+		},
+		"button-trigger":{
+			width: 45%,
+			padding-top: 3,
+		},
+		"button-serial":{
+			color: #ffffff,
+			height: 16,
+			width: 16,
+			border: 0,
+		},
+		"serial-list":{
+			color: #606060,
+			width: 100%,
+			wrap-vertical: true,
+			min-height: 0,
+			border: 0,
+			padding: 0,
+			margin: 0,
+			margin-top: 10,
+		},
+		"serialport": {
+			border: 0,
+			border-bottom: 1,
+			margin: 0,
+			padding: 0,
+			padding-top: 4,
+			color: #707070,
+			border-color: #404040,
+			width: 100%,
+			height: 24,
+		},
+		"channel-toggle": {
+			height: 32,
+			margin: 0,
+			width: 32,
+			margin-right: 8,
+			padding-left: 8,
+			padding-top: 8,
+			border: 0,
+		},
+		"channel1":{
+			color: #4672B3,
+		},
+		"channel2":{
+			color: #C9656F,
+		},
+		"channel3":{
+			color: #089E7C,
+		},
+		"channel4":{
+			color: #B97D4C,
+		},
+	},
+	elements: [
+		class: "root",
+		{
+			name: "control-panel",
+			class: "control-panel",
+			children: [
+				{text: "Sampling", class: "text",},
+				{class: "hline",},
+
+				{text: "Sample Frequency", class: "text",},
+
+				{
+					name: "slider-sampling-freq-bg",
+					class: "slider",
+
+				},
+
+
+				{text: "Num Samples", class: "text",},
+
+				{
+					name: "slider-num-samples",
+					class: "slider",
+				},
+
+
+				{class: "hline",},
+				{text: "Trigger",class: "text",},
+				{class: "hline",},
+
+
+				// TRIGGER THRESHOLD
+				{text: "Threshold", class: "text",},
+				{
+					class: "hlist",
+					children: [
+						{
+							name: "button-trigger-threshold",
+							class: "button",
+							class: "light-trigger",
+							texture: "textures/button_pressed.png",
+						},
+						{
+							name: "slider-trigger-threshold",
+							class: "slider",
+							class: "slider-small",
+						},
+					],
+				}
+
+				// TRIGGER EDGE
+				{text: "Edge", class: "text",},
+				{
+					class: "hlist",
+					children: [
+						{
+							name: "button-trigger-edge",
+							class: "button",
+							class: "light-trigger",
+							texture: "textures/button.png",
+						},
+						{
+							name: "slider-trigger-edge",
+							class: "slider",
+							class: "slider-small",
+						},
+					],
+				},
+
+				// TRIGGER ONESHOT
+				{
+					class: "hlist",
+					children: [
+						{
+							name: "button-trigger-oneshot",
+							class: "button",
+							class: "button-trigger",
+							text: "One-Shot",
+						},
+						{
+							name: "button-trigger-sample",
+							class: "button",
+							class: "button-trigger",
+							text: "Sample",
+						},
+					],
+				},
+
+				{class: "hline",},
+				{text: "Channels",class: "text",},
+				{class: "hline",},
+
+				{
+					class: "hlist",
+					children: [
+						{name: "channel1", class: "channel-toggle", class: "channel1", texture: "textures/button_pressed.png"},
+						{name: "channel2", class: "channel-toggle", class: "channel2", texture: "textures/button.png"},
+						{name: "channel3", class: "channel-toggle", class: "channel3", texture: "textures/button.png"},
+						{name: "channel4", class: "channel-toggle", class: "channel4", texture: "textures/button.png"},
+					],
+				},
+
+				{class: "hline",},
+				{text: "Serial",class: "text",},
+				{class: "hline",},
+
+				// SERIAL BUTTONS
+				{
+					name: "button-serial-refresh",
+					class: "button",
+					class: "button-serial",
+					texture: "textures/refresh.png",
+				},
+
+				{
+					name: "serial-list",
+					class: "serial-list",
+					children: [
+						{name: "0-serial-list", class:"serialport",},
+						{name: "1-serial-list", class:"serialport",},
+						{name: "2-serial-list", class:"serialport",},
+						{name: "3-serial-list", class:"serialport",},
+					],
+				},
+
+
+			],
+		},
+	],
+}

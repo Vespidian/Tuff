@@ -1,0 +1,5 @@
+{
+	name: "FFT Material",
+	shader: "shaders/fft.shader",
+	uniforms: [],
+}

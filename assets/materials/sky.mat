@@ -1,0 +1,5 @@
+{
+	name: "Sky Material",
+	shader: "shaders/sky.shader",
+	uniforms: [],
+}

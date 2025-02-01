@@ -3,14 +3,15 @@
 		{
 			"name": "Root",
 			"path": ".",
-		}
+		},
 		{
-			"name": "Resources",
-			"path": "resources",
+			"name": "Assets",
+			"path": "assets",
 		}
 	],
 	"settings": {
 		"files.exclude":{
+			"assets/": true,
 			"include/": true,
 			"lib/": true,
 			"bin/*.dll": true,
@@ -19,8 +20,7 @@
 			"models/": true,
 			"images/": true,
 			"resources/": true,
-		}
-		"problems.decorations.enabled": false,
+		},
 		"explorer.sortOrder": "type",
 		"files.associations": {
 			"*.shader": "glsl",
